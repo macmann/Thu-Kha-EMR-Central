@@ -2,6 +2,37 @@ import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const DEFAULT_TENANT_CODE = process.env.DEFAULT_TENANT_CODE ?? 'default';
+const DEFAULT_TENANT_NAME = process.env.DEFAULT_TENANT_NAME ?? 'Primary Clinic';
+
+async function ensureDefaultTenant() {
+  return prisma.tenant.upsert({
+    where: { code: DEFAULT_TENANT_CODE },
+    update: { name: DEFAULT_TENANT_NAME },
+    create: { name: DEFAULT_TENANT_NAME, code: DEFAULT_TENANT_CODE },
+  });
+}
+
+async function assignAdminsToTenant(tenantId: string) {
+  const admins = await prisma.user.findMany({
+    where: {
+      status: 'active',
+      role: { in: ['ITAdmin', 'AdminAssistant'] },
+    },
+    select: { userId: true, role: true },
+  });
+
+  await Promise.all(
+    admins.map((admin) =>
+      prisma.userTenant.upsert({
+        where: { tenantId_userId: { tenantId, userId: admin.userId } },
+        update: { role: admin.role },
+        create: { tenantId, userId: admin.userId, role: admin.role },
+      }),
+    ),
+  );
+}
+
 async function seedPharmacyReference() {
   const drugs = await prisma.$transaction([
     prisma.drug.upsert({
@@ -172,6 +203,8 @@ async function main() {
     },
   });
   await seedPharmacyReference();
+  const tenant = await ensureDefaultTenant();
+  await assignAdminsToTenant(tenant.tenantId);
   await seedLabCatalog();
 }
 

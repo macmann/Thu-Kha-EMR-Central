@@ -1,4 +1,5 @@
 import { PrismaClient, PrescriptionStatus, type DispenseStatus } from '@prisma/client';
+import { withTenant } from '../utils/tenant.js';
 import type {
   AdjustStockInput,
   CreateRxInput,
@@ -51,6 +52,7 @@ export async function createPrescription(
   visitId: string,
   doctorId: string,
   patientId: string,
+  tenantId: string,
   payload: CreateRxInput,
 ) {
   const drugIds = payload.items.map((item) => item.drugId);
@@ -64,6 +66,7 @@ export async function createPrescription(
       visitId,
       doctorId,
       patientId,
+      tenantId,
       notes: payload.notes ?? null,
       items: {
         create: payload.items.map((item) => ({
@@ -167,9 +170,10 @@ export async function listLowStockInventory(limit = 5, threshold = 10) {
 
 export async function getPharmacyQueue(
   status: PrescriptionStatus[] = [PrescriptionStatus.PENDING],
+  tenantId: string,
 ) {
   return prisma.prescription.findMany({
-    where: { status: { in: status } },
+    where: withTenant({ status: { in: status } }, tenantId),
     orderBy: { createdAt: 'desc' },
     include: { items: true, patient: true, doctor: true },
   });

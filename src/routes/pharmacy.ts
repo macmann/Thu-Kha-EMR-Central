@@ -5,6 +5,9 @@ import { z } from 'zod';
 
 import { requireAuth, requireRole, type AuthRequest } from '../modules/auth/index.js';
 import { validate } from '../middleware/validate.js';
+import { resolveTenant } from '../middleware/tenant.js';
+import { requireTenantRoles } from '../middleware/requireTenantRoles.js';
+import { withTenant } from '../utils/tenant.js';
 import {
   AdjustStockSchema,
   CreateRxSchema,
@@ -64,6 +67,7 @@ const LowStockQuerySchema = z.object({
 });
 
 router.use(requireAuth);
+router.use(resolveTenant);
 
 router.post(
   '/drugs',
@@ -227,14 +231,20 @@ router.get(
 router.post(
   '/visits/:visitId/prescriptions',
   requireRole('Doctor', 'Pharmacist'),
+  requireTenantRoles('Doctor', 'Pharmacist'),
   validate({ body: CreateRxSchema }),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = req.params.visitId;
       const payload = req.body as CreateRxInput;
 
-      const visit = await prisma.visit.findUnique({
-        where: { visitId },
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+
+      const visit = await prisma.visit.findFirst({
+        where: withTenant({ visitId }, tenantId),
         select: { visitId: true, patientId: true, doctorId: true },
       });
 
@@ -251,6 +261,7 @@ router.post(
         visitId,
         visit.doctorId,
         patientId,
+        tenantId,
         payload,
       );
 
@@ -275,7 +286,15 @@ router.get(
         return acc;
       }, []);
 
-      const queue = await getPharmacyQueue(statuses.length ? statuses : [PrescriptionStatus.PENDING]);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+
+      const queue = await getPharmacyQueue(
+        statuses.length ? statuses : [PrescriptionStatus.PENDING],
+        tenantId,
+      );
       res.json({ data: queue });
     } catch (error) {
       next(error);

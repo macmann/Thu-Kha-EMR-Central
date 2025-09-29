@@ -1,11 +1,14 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { requireAuth, requireRole, type AuthRequest } from '../auth/index.js';
+import { requireAuth, type AuthRequest } from '../auth/index.js';
 import { logDataChange } from '../audit/index.js';
 import { validate } from '../../middleware/validate.js';
 import { CreateRxSchema, type CreateRxInput } from '../../validation/pharmacy.js';
 import { createPrescription } from '../../services/pharmacyService.js';
+import { resolveTenant } from '../../middleware/tenant.js';
+import { requireTenantRoles } from '../../middleware/requireTenantRoles.js';
+import { withTenant } from '../../utils/tenant.js';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -50,13 +53,17 @@ const visitSchema = z.object({
   observations: z.array(observationSchema).optional(),
 });
 
-router.post('/visits', requireAuth, requireRole('Doctor'), async (req: AuthRequest, res: Response) => {
+router.post('/visits', requireAuth, resolveTenant, requireTenantRoles('Doctor'), async (req: AuthRequest, res: Response) => {
   const parsed = visitSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
   const { diagnoses, medications, labResults, observations, ...visitData } = parsed.data;
-  const data: any = { ...visitData };
+  const tenantId = req.tenantId;
+  if (!tenantId) {
+    return res.status(400).json({ error: 'Tenant context missing' });
+  }
+  const data: any = { ...visitData, tenantId };
   if (diagnoses && diagnoses.length) {
     data.diagnoses = { create: diagnoses };
   }
@@ -64,7 +71,9 @@ router.post('/visits', requireAuth, requireRole('Doctor'), async (req: AuthReque
     data.medications = { create: medications };
   }
   if (labResults && labResults.length) {
-    data.labResults = { create: labResults };
+    data.labResults = {
+      create: labResults.map((result) => ({ ...result, tenantId })),
+    };
   }
   if (observations && observations.length) {
     data.observations = {
@@ -101,30 +110,38 @@ router.post('/visits', requireAuth, requireRole('Doctor'), async (req: AuthReque
   res.status(201).json(visit);
 });
 
-router.get('/patients/:id/visits', requireAuth, async (req: Request, res: Response) => {
+router.get('/patients/:id/visits', requireAuth, resolveTenant, requireTenantRoles(), async (req: AuthRequest, res: Response) => {
   const id = req.params.id;
   try {
     z.string().uuid().parse(id);
   } catch {
     return res.status(400).json({ error: 'invalid id' });
   }
+  const tenantId = req.tenantId;
+  if (!tenantId) {
+    return res.status(400).json({ error: 'Tenant context missing' });
+  }
   const visits = await prisma.visit.findMany({
-    where: { patientId: id },
+    where: withTenant({ patientId: id }, tenantId),
     orderBy: { visitDate: 'desc' },
     include: { doctor: { select: { doctorId: true, name: true, department: true } } },
   });
   res.json(visits);
 });
 
-router.get('/visits/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/visits/:id', requireAuth, resolveTenant, requireTenantRoles(), async (req: AuthRequest, res: Response) => {
   const id = req.params.id;
   try {
     z.string().uuid().parse(id);
   } catch {
     return res.status(400).json({ error: 'invalid id' });
   }
-  const visit = await prisma.visit.findUnique({
-    where: { visitId: id },
+  const tenantId = req.tenantId;
+  if (!tenantId) {
+    return res.status(400).json({ error: 'Tenant context missing' });
+  }
+  const visit = await prisma.visit.findFirst({
+    where: withTenant({ visitId: id }, tenantId),
     include: {
       doctor: { select: { doctorId: true, name: true, department: true } },
       diagnoses: { orderBy: { createdAt: 'desc' } },
@@ -140,15 +157,21 @@ router.get('/visits/:id', requireAuth, async (req: Request, res: Response) => {
 router.post(
   '/visits/:visitId/prescriptions',
   requireAuth,
-  requireRole('Doctor', 'Pharmacist'),
+  resolveTenant,
+  requireTenantRoles('Doctor', 'Pharmacist'),
   validate({ body: CreateRxSchema }),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const visitId = req.params.visitId;
       const payload = req.body as CreateRxInput;
 
-      const visit = await prisma.visit.findUnique({
-        where: { visitId },
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+
+      const visit = await prisma.visit.findFirst({
+        where: withTenant({ visitId }, tenantId),
         select: { visitId: true, patientId: true, doctorId: true },
       });
 
@@ -165,6 +188,7 @@ router.post(
         visitId,
         visit.doctorId,
         patientId,
+        tenantId,
         payload,
       );
 

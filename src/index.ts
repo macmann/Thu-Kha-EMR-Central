@@ -1,11 +1,13 @@
 import 'dotenv/config';
 import path from 'path';
-import express, { Request, Response } from 'express';
+import express, { Request, Response, Router } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 import { apiRouter } from './server.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import authRouter, { requireAuth } from './modules/auth/index.js';
+import { resolveTenant } from './middleware/tenant.js';
 
 if (
   process.env.DATABASE_URL &&
@@ -62,7 +64,14 @@ app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
-app.use('/api', apiRouter);
+app.use('/api/auth', authRouter);
+
+const protectedApi = Router();
+protectedApi.use(requireAuth);
+protectedApi.use(resolveTenant);
+protectedApi.use(apiRouter);
+
+app.use('/api', protectedApi);
 
 const clientDir = path.resolve(process.cwd(), 'dist_client');
 app.use(express.static(clientDir));
