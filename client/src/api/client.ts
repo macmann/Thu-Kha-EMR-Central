@@ -1,4 +1,4 @@
-import { fetchJSON } from './http';
+import { fetchJSON, HttpError } from './http';
 
 export type Role =
   | 'Doctor'
@@ -188,6 +188,50 @@ export interface VisitDetail extends Visit {
   observations: Observation[];
 }
 
+export interface PatientTenantLinkSummary {
+  tenantId: string;
+  tenantName: string;
+  mrn: string | null;
+  isCurrentTenant: boolean;
+}
+
+export interface DoctorTenantLinkSummary {
+  tenantId: string;
+  tenantName: string;
+  tenantCode: string;
+  role: Role;
+  isCurrentTenant: boolean;
+}
+
+export interface GlobalSearchPatientResult {
+  patientId: string;
+  name: string;
+  dob: string;
+  currentTenantMrn: string | null;
+  tenants: PatientTenantLinkSummary[];
+}
+
+export interface GlobalSearchDoctorResult {
+  doctorId: string;
+  name: string;
+  department: string;
+  tenants: DoctorTenantLinkSummary[];
+}
+
+export interface GlobalSearchResponse {
+  patients: GlobalSearchPatientResult[];
+  doctors: GlobalSearchDoctorResult[];
+}
+
+export interface PatientTenantMeta {
+  mrn: string | null;
+  seenAt: Array<{
+    tenantId: string;
+    tenantName: string;
+    mrn: string | null;
+  }>;
+}
+
 export interface CohortResult {
   patientId: string;
   name: string;
@@ -251,6 +295,18 @@ export async function searchPatients(query: string): Promise<Patient[]> {
   return fetchJSON(`/patients?query=${encodeURIComponent(query)}`);
 }
 
+export async function globalSearch(query: string, limit = 10): Promise<GlobalSearchResponse> {
+  const trimmed = query.trim();
+  if (!trimmed) {
+    return { patients: [], doctors: [] };
+  }
+  const params = new URLSearchParams({ query: trimmed });
+  if (limit) {
+    params.set('limit', String(limit));
+  }
+  return fetchJSON(`/search?${params.toString()}`);
+}
+
 export async function listDoctors(): Promise<Doctor[]> {
   return fetchJSON('/doctors');
 }
@@ -299,6 +355,28 @@ export async function listPatientVisits(id: string): Promise<Visit[]> {
 
 export async function getVisit(id: string): Promise<VisitDetail> {
   return fetchJSON(`/visits/${id}`);
+}
+
+export async function getPatientTenantMeta(patientId: string): Promise<PatientTenantMeta> {
+  try {
+    return await fetchJSON(`/patients/${patientId}/tenant-meta`);
+  } catch (error) {
+    if (error instanceof HttpError && error.status === 404) {
+      return { mrn: null, seenAt: [] };
+    }
+    throw error;
+  }
+}
+
+export async function upsertPatientTenant(
+  patientId: string,
+  mrn?: string,
+): Promise<{ tenantId: string; patientId: string; mrn: string | null }> {
+  return fetchJSON('/patient-tenants', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ patientId, mrn }),
+  });
 }
 
 export async function searchInventoryDrugs(

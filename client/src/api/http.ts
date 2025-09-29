@@ -1,6 +1,15 @@
 let accessToken: string | null = null;
 let listeners: Array<(token: string | null) => void> = [];
 
+export class HttpError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
 export function getAccessToken() {
   return accessToken;
 }
@@ -15,6 +24,27 @@ export function subscribeAccessToken(cb: (token: string | null) => void) {
   return () => {
     listeners = listeners.filter((fn) => fn !== cb);
   };
+}
+
+async function parseErrorMessage(response: Response) {
+  const errText = await response.text();
+  if (!errText) {
+    return response.statusText;
+  }
+
+  try {
+    const parsed = JSON.parse(errText);
+    if (typeof parsed === 'string') {
+      return parsed;
+    }
+    if (parsed && typeof parsed.error === 'string') {
+      return parsed.error;
+    }
+  } catch {
+    // ignore JSON parse errors
+  }
+
+  return errText;
 }
 
 export async function fetchJSON(
@@ -38,8 +68,8 @@ export async function fetchJSON(
       headers.set('Authorization', `Bearer ${refreshData.accessToken}`);
       const retryRes = await fetch(`/api${path}`, { ...options, headers });
       if (!retryRes.ok) {
-        const errText = await retryRes.text();
-        throw new Error(errText || retryRes.statusText);
+        const message = await parseErrorMessage(retryRes);
+        throw new HttpError(retryRes.status, message || retryRes.statusText);
       }
       return retryRes.json();
     }
@@ -50,8 +80,8 @@ export async function fetchJSON(
     if (response.status === 401) {
       setAccessToken(null);
     }
-    const errText = await response.text();
-    throw new Error(errText || response.statusText);
+    const message = await parseErrorMessage(response);
+    throw new HttpError(response.status, message || response.statusText);
   }
   return response.json();
 }

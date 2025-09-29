@@ -9,12 +9,17 @@ const placeholderLogo = (name: string) =>
     .map((part) => part[0]?.toUpperCase())
     .join('');
 
-const TenantPicker: React.FC = () => {
+interface TenantPickerProps {
+  forceOpen?: boolean;
+  onClose?: () => void;
+}
+
+const TenantPicker: React.FC<TenantPickerProps> = ({ forceOpen = false, onClose }) => {
   const { tenants, activeTenant, setActiveTenant, isSwitching } = useTenant();
   const [error, setError] = useState<string | null>(null);
   const [pendingTenantId, setPendingTenantId] = useState<string | null>(null);
 
-  const shouldShow = tenants.length > 1 && !activeTenant;
+  const shouldShow = forceOpen || (tenants.length > 1 && !activeTenant);
 
   if (!shouldShow) {
     return null;
@@ -25,6 +30,7 @@ const TenantPicker: React.FC = () => {
     setPendingTenantId(tenantId);
     try {
       await setActiveTenant(tenantId);
+      onClose?.();
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -37,7 +43,16 @@ const TenantPicker: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 px-6 py-12">
-      <div className="w-full max-w-3xl rounded-2xl bg-white p-10 shadow-2xl">
+      <div className="relative w-full max-w-3xl rounded-2xl bg-white p-10 shadow-2xl">
+        {forceOpen && onClose && (
+          <button
+            type="button"
+            className="absolute right-4 top-4 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        )}
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-semibold text-slate-900">Choose your clinic</h2>
           <p className="mt-2 text-sm text-slate-500">
