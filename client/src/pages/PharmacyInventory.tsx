@@ -14,6 +14,7 @@ import {
   searchInventoryDrugs,
   scanInvoiceForInventory,
 } from '../api/client';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface ReceiveFormState {
   batchNo: string;
@@ -41,6 +42,7 @@ function formatDate(iso?: string | null) {
 }
 
 export default function PharmacyInventory() {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
   const [suggestions, setSuggestions] = useState<InventoryDrug[]>([]);
   const [selectedDrug, setSelectedDrug] = useState<InventoryDrug | null>(null);
@@ -112,7 +114,7 @@ export default function PharmacyInventory() {
         }
       } catch (error) {
         if (!cancelled) {
-          setStockError(error instanceof Error ? error.message : 'Unable to load stock');
+          setStockError(error instanceof Error ? error.message : t('Unable to load stock.'));
         }
       } finally {
         if (!cancelled) {
@@ -125,14 +127,14 @@ export default function PharmacyInventory() {
     return () => {
       cancelled = true;
     };
-  }, [selectedDrug]);
+  }, [selectedDrug, t]);
 
   const totalOnHand = useMemo(() => stockItems.reduce((sum, item) => sum + item.qtyOnHand, 0), [stockItems]);
 
   async function handleReceive(event: FormEvent) {
     event.preventDefault();
     if (!selectedDrug) {
-      setReceiveError('Select a medication before recording stock.');
+      setReceiveError(t('Select a medication before recording stock.'));
       setReceiveStatus('error');
       return;
     }
@@ -140,7 +142,7 @@ export default function PharmacyInventory() {
     const drugId = selectedDrug.drugId;
     const qty = Number.parseInt(receiveForm.qtyOnHand, 10);
     if (Number.isNaN(qty) || qty < 0) {
-      setReceiveError('Quantity on hand must be zero or greater.');
+      setReceiveError(t('Quantity on hand must be zero or greater.'));
       setReceiveStatus('error');
       return;
     }
@@ -152,7 +154,7 @@ export default function PharmacyInventory() {
     };
 
     if (!payload.location) {
-      setReceiveError('Location is required.');
+      setReceiveError(t('Location is required.'));
       setReceiveStatus('error');
       return;
     }
@@ -180,7 +182,7 @@ export default function PharmacyInventory() {
       await receiveStockItems([payload]);
       setReceiveStatus('success');
       setReceiveForm(EMPTY_RECEIVE_FORM);
-      setScanNotice('Select another line item or upload a new invoice to continue.');
+      setScanNotice(t('Select another line item or upload a new invoice to continue.'));
       // refresh stock list
       const data = await listStockItems(drugId);
       setStockItems(data);
@@ -191,14 +193,14 @@ export default function PharmacyInventory() {
       setAdjustments(initial);
     } catch (error) {
       setReceiveStatus('error');
-      setReceiveError(error instanceof Error ? error.message : 'Unable to record stock');
+      setReceiveError(error instanceof Error ? error.message : t('Unable to record stock.'));
     }
   }
 
   async function handleAdjust(event: FormEvent) {
     event.preventDefault();
     if (!selectedDrug) {
-      setAdjustError('Select a medication to adjust inventory.');
+      setAdjustError(t('Select a medication to adjust inventory.'));
       setAdjustStatus('error');
       return;
     }
@@ -225,7 +227,7 @@ export default function PharmacyInventory() {
     });
 
     if (!changes.length) {
-      setAdjustError('No adjustments detected. Update a quantity before submitting.');
+      setAdjustError(t('No adjustments detected. Update a quantity before submitting.'));
       setAdjustStatus('error');
       return;
     }
@@ -246,7 +248,7 @@ export default function PharmacyInventory() {
       setAdjustments(initial);
     } catch (error) {
       setAdjustStatus('error');
-      setAdjustError(error instanceof Error ? error.message : 'Unable to adjust stock');
+      setAdjustError(error instanceof Error ? error.message : t('Unable to adjust stock.'));
     }
   }
 
@@ -267,14 +269,14 @@ export default function PharmacyInventory() {
         }));
       }
       if (result.lineItems.length) {
-        setScanNotice('Select an invoice line to apply its details to the stock form.');
+        setScanNotice(t('Select an invoice line to apply its details to the stock form.'));
       } else {
-        setScanNotice('No medication lines were detected. Enter the stock details manually.');
+        setScanNotice(t('No medication lines were detected. Enter the stock details manually.'));
       }
     } catch (error) {
       setInvoiceResult(null);
       setScanStatus('error');
-      setScanError(error instanceof Error ? error.message : 'Unable to scan the invoice. Try again.');
+      setScanError(error instanceof Error ? error.message : t('Unable to scan the invoice. Try again.'));
     } finally {
       event.target.value = '';
     }
@@ -305,19 +307,21 @@ export default function PharmacyInventory() {
     const resolved = appliedForm ?? receiveForm;
     const missing: string[] = [];
     if (!selectedDrug) {
-      missing.push('select a medication');
+      missing.push(t('Select a medication'));
     }
     if (!resolved.qtyOnHand.trim()) {
-      missing.push('quantity');
+      missing.push(t('Quantity'));
     }
     if (!resolved.location.trim()) {
-      missing.push('location');
+      missing.push(t('Location'));
     }
 
     setScanNotice(
       missing.length
-        ? `Complete the following before recording stock: ${missing.join(', ')}.`
-        : 'Verify the prefilled details and record the stock.',
+        ? t('Complete the following before recording stock: {items}.', {
+            items: missing.join(', '),
+          })
+        : t('Verify the prefilled details and record the stock.'),
     );
   }
 
@@ -348,19 +352,23 @@ export default function PharmacyInventory() {
     setAdjustments({});
   }
 
-  const subtitle = selectedDrug
-    ? `Managing inventory for ${selectedDrug.name} ${selectedDrug.strength}`
-    : 'Search for a medication to manage inventory levels.';
+  const subtitle = useMemo(() => {
+    if (selectedDrug) {
+      const name = [selectedDrug.name, selectedDrug.strength].filter(Boolean).join(' ');
+      return t('Managing inventory for {name}', { name });
+    }
+    return t('Search for a medication to manage inventory levels.');
+  }, [selectedDrug, t]);
 
   return (
-    <DashboardLayout title="Pharmacy Inventory" subtitle={subtitle} activeItem="pharmacy">
+    <DashboardLayout title={t('Pharmacy Inventory')} subtitle={subtitle} activeItem="pharmacy">
       <div className="space-y-6">
         <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <header className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">Inventory Workspace</h1>
+              <h1 className="text-xl font-semibold text-gray-900">{t('Inventory Workspace')}</h1>
               <p className="text-sm text-gray-600">
-                Search for a drug to receive new stock or adjust current quantities.
+                {t('Search for a drug to receive new stock or adjust current quantities.')}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -368,7 +376,7 @@ export default function PharmacyInventory() {
                 to="/pharmacy/drugs/new"
                 className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
               >
-                Add new medication
+                {t('Add new medication')}
               </Link>
               {selectedDrug ? (
                 <button
@@ -376,7 +384,7 @@ export default function PharmacyInventory() {
                   onClick={resetSelection}
                   className="rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
                 >
-                  Clear selection
+                  {t('Clear selection')}
                 </button>
               ) : null}
             </div>
@@ -384,7 +392,7 @@ export default function PharmacyInventory() {
 
           <div className="relative mt-6 max-w-xl">
             <label className="text-sm font-medium text-gray-700" htmlFor="inventory-search">
-              Find a medication
+              {t('Find a medication')}
             </label>
             <input
               id="inventory-search"
@@ -394,7 +402,7 @@ export default function PharmacyInventory() {
                 setSearchTerm(event.target.value);
                 setSelectedDrug(null);
               }}
-              placeholder="Start typing a medication name or strength"
+              placeholder={t('Start typing a medication name or strength')}
               className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
               autoComplete="off"
             />
@@ -422,17 +430,15 @@ export default function PharmacyInventory() {
         {selectedDrug ? (
           <div className="grid gap-6 lg:grid-cols-2">
             <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-gray-900">Receive Stock</h2>
-              <p className="mt-1 text-sm text-gray-600">
-                Capture new inventory lots as they arrive in the pharmacy.
-              </p>
+              <h2 className="text-lg font-semibold text-gray-900">{t('Receive Stock')}</h2>
+              <p className="mt-1 text-sm text-gray-600">{t('Capture new inventory lots as they arrive in the pharmacy.')}</p>
 
               <div className="mt-4 rounded-2xl border border-dashed border-blue-200 bg-blue-50/40 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h3 className="text-sm font-semibold text-blue-900">Scan invoice for stock</h3>
+                    <h3 className="text-sm font-semibold text-blue-900">{t('Scan invoice for stock')}</h3>
                     <p className="mt-1 text-xs text-blue-900/80">
-                      Upload an invoice to prefill quantities, batch numbers, and pricing automatically.
+                      {t('Upload an invoice to prefill quantities, batch numbers, and pricing automatically.')}
                     </p>
                   </div>
                   <label className="inline-flex cursor-pointer items-center justify-center rounded-full border border-blue-500 bg-white px-4 py-2 text-xs font-semibold text-blue-700 shadow-sm transition hover:bg-blue-50">
@@ -442,12 +448,12 @@ export default function PharmacyInventory() {
                       className="sr-only"
                       onChange={handleInvoiceUpload}
                     />
-                    {scanStatus === 'scanning' ? 'Scanning…' : 'Upload invoice'}
+                    {scanStatus === 'scanning' ? t('Scanning…') : t('Upload invoice')}
                   </label>
                 </div>
 
                 {scanStatus === 'scanning' ? (
-                  <p className="mt-3 text-xs font-medium text-blue-900">Scanning invoice with AI…</p>
+                  <p className="mt-3 text-xs font-medium text-blue-900">{t('Scanning invoice with AI…')}</p>
                 ) : null}
                 {scanError ? (
                   <div className="mt-3 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs text-red-600 shadow-sm">
@@ -463,10 +469,10 @@ export default function PharmacyInventory() {
                         <div className="flex flex-wrap items-center gap-2">
                           {invoiceMetadata.vendor ? <span className="font-semibold">{invoiceMetadata.vendor}</span> : null}
                           {invoiceMetadata.invoiceNumber ? (
-                            <span className="text-blue-900/70">Invoice #{invoiceMetadata.invoiceNumber}</span>
+                            <span className="text-blue-900/70">{t('Invoice #{number}', { number: invoiceMetadata.invoiceNumber })}</span>
                           ) : null}
                           {invoiceMetadata.invoiceDate ? (
-                            <span className="text-blue-900/70">Dated {invoiceMetadata.invoiceDate}</span>
+                            <span className="text-blue-900/70">{t('Dated {date}', { date: invoiceMetadata.invoiceDate })}</span>
                           ) : null}
                         </div>
                       </div>
@@ -474,7 +480,7 @@ export default function PharmacyInventory() {
 
                     {scanWarnings.length ? (
                       <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2 text-xs text-yellow-800 shadow-sm">
-                        <p className="font-semibold">Review required</p>
+                        <p className="font-semibold">{t('Review required')}</p>
                         <ul className="mt-1 list-disc space-y-1 pl-4">
                           {scanWarnings.map((warning, index) => (
                             <li key={index}>{warning}</li>
@@ -486,14 +492,18 @@ export default function PharmacyInventory() {
                     {invoiceLines.length ? (
                       <div className="space-y-2">
                         {invoiceLines.map((line, index) => {
-                          const label = line.brandName || line.genericName || `Line ${index + 1}`;
+                          const label = line.brandName || line.genericName || t('Line {index}', { index: index + 1 });
                           const secondary = [line.strength, line.form].filter(Boolean).join(' • ');
                           const details = [
                             line.packageDescription,
-                            line.quantity != null ? `${line.quantity} units` : null,
+                            line.quantity != null ? t('{count} units', { count: line.quantity }) : null,
                             line.unitCost != null
-                              ? `Unit cost ${formatCurrency(line.unitCost)}`
+                              ? t('Unit cost {amount}', { amount: formatCurrency(line.unitCost) })
                               : null,
+                          ].filter(Boolean);
+                          const batchParts = [
+                            line.batchNumber ? t('Batch {number}', { number: line.batchNumber }) : null,
+                            line.expiryDate ? t('Expiry {date}', { date: line.expiryDate }) : null,
                           ].filter(Boolean);
                           return (
                             <div
@@ -504,18 +514,11 @@ export default function PharmacyInventory() {
                                 <p className="text-sm font-semibold text-gray-900">{label}</p>
                                 {secondary ? <p className="text-xs text-gray-600">{secondary}</p> : null}
                                 {details.length ? <p className="mt-1 text-xs text-gray-500">{details.join(' • ')}</p> : null}
-                                {line.batchNumber || line.expiryDate ? (
-                                  <p className="mt-1 text-xs text-gray-500">
-                                    {[
-                                      line.batchNumber ? `Batch ${line.batchNumber}` : null,
-                                      line.expiryDate ? `Expiry ${line.expiryDate}` : null,
-                                    ]
-                                      .filter(Boolean)
-                                      .join(' • ')}
-                                  </p>
+                                {batchParts.length ? (
+                                  <p className="mt-1 text-xs text-gray-500">{batchParts.join(' • ')}</p>
                                 ) : null}
                                 {line.suggestedLocation ? (
-                                  <p className="mt-1 text-xs text-gray-500">Suggested location: {line.suggestedLocation}</p>
+                                  <p className="mt-1 text-xs text-gray-500">{t('Suggested location: {location}', { location: line.suggestedLocation })}</p>
                                 ) : null}
                               </div>
                               <button
@@ -523,7 +526,7 @@ export default function PharmacyInventory() {
                                 onClick={() => applyInvoiceLine(line)}
                                 className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
                               >
-                                Use details
+                                {t('Use details')}
                               </button>
                             </div>
                           );
@@ -531,7 +534,7 @@ export default function PharmacyInventory() {
                       </div>
                     ) : scanStatus === 'success' ? (
                       <p className="text-xs text-blue-900/80">
-                        No medication lines were detected. Enter the stock details manually.
+                        {t('No medication lines were detected. Enter the stock details manually.')}
                       </p>
                     ) : null}
 
@@ -547,14 +550,14 @@ export default function PharmacyInventory() {
               <form className="mt-4 space-y-4" onSubmit={handleReceive}>
                 <div>
                   <label className="text-sm font-medium text-gray-700" htmlFor="receive-location">
-                    Storage location
+                    {t('Storage location')}
                   </label>
                   <input
                     id="receive-location"
                     type="text"
                     value={receiveForm.location}
                     onChange={(event) => setReceiveForm((prev) => ({ ...prev, location: event.target.value }))}
-                    placeholder="e.g., Main Pharmacy - Shelf A"
+                    placeholder={t('e.g., Main Pharmacy - Shelf A')}
                     className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     required
                   />
@@ -563,7 +566,7 @@ export default function PharmacyInventory() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="text-sm font-medium text-gray-700" htmlFor="receive-qty">
-                      Quantity on hand
+                      {t('Quantity on hand')}
                     </label>
                     <input
                       id="receive-qty"
@@ -577,14 +580,14 @@ export default function PharmacyInventory() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700" htmlFor="receive-batch">
-                      Batch number
+                      {t('Batch number')}
                     </label>
                     <input
                       id="receive-batch"
                       type="text"
                       value={receiveForm.batchNo}
                       onChange={(event) => setReceiveForm((prev) => ({ ...prev, batchNo: event.target.value }))}
-                      placeholder="Optional"
+                      placeholder={t('Optional')}
                       className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                   </div>
@@ -593,7 +596,7 @@ export default function PharmacyInventory() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="text-sm font-medium text-gray-700" htmlFor="receive-expiry">
-                      Expiry date
+                      {t('Expiry date')}
                     </label>
                     <input
                       id="receive-expiry"
@@ -605,7 +608,7 @@ export default function PharmacyInventory() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700" htmlFor="receive-cost">
-                      Unit cost
+                      {t('Unit cost')}
                     </label>
                     <input
                       id="receive-cost"
@@ -614,7 +617,7 @@ export default function PharmacyInventory() {
                       step="0.01"
                       value={receiveForm.unitCost}
                       onChange={(event) => setReceiveForm((prev) => ({ ...prev, unitCost: event.target.value }))}
-                      placeholder="Optional"
+                      placeholder={t('Optional')}
                       className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                   </div>
@@ -622,7 +625,7 @@ export default function PharmacyInventory() {
 
                 {receiveStatus === 'success' ? (
                   <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                    Stock recorded successfully.
+                    {t('Stock recorded successfully.')}
                   </div>
                 ) : null}
                 {receiveStatus === 'error' && receiveError ? (
@@ -634,7 +637,7 @@ export default function PharmacyInventory() {
                   className="w-full rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                   disabled={receiveStatus === 'saving'}
                 >
-                  {receiveStatus === 'saving' ? 'Saving…' : 'Record stock'}
+                  {receiveStatus === 'saving' ? t('Saving…') : t('Record stock')}
                 </button>
               </form>
             </section>
@@ -642,25 +645,23 @@ export default function PharmacyInventory() {
             <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">Adjust Inventory</h2>
-                  <p className="mt-1 text-sm text-gray-600">
-                    Update quantities for existing batches after cycle counts or corrections.
-                  </p>
+                  <h2 className="text-lg font-semibold text-gray-900">{t('Adjust Inventory')}</h2>
+                  <p className="mt-1 text-sm text-gray-600">{t('Update quantities for existing batches after cycle counts or corrections.')}</p>
                 </div>
                 <div className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
-                  Total on hand: {totalOnHand}
+                  {t('Total on hand: {count}', { count: totalOnHand })}
                 </div>
               </div>
 
               {stockLoading ? (
                 <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                  Loading stock details…
+                  {t('Loading stock details…')}
                 </div>
               ) : stockError ? (
                 <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{stockError}</div>
               ) : stockItems.length === 0 ? (
                 <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                  No stock entries found for this medication yet.
+                  {t('No stock entries found for this medication yet.')}
                 </div>
               ) : (
                 <form className="mt-4 space-y-4" onSubmit={handleAdjust}>
@@ -668,11 +669,11 @@ export default function PharmacyInventory() {
                     <table className="min-w-full divide-y divide-gray-200 text-sm">
                       <thead className="bg-gray-50 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                         <tr>
-                          <th className="px-4 py-3">Location</th>
-                          <th className="px-4 py-3">Batch</th>
-                          <th className="px-4 py-3">Expiry</th>
-                          <th className="px-4 py-3">Current qty</th>
-                          <th className="px-4 py-3">New qty</th>
+                          <th className="px-4 py-3">{t('Location')}</th>
+                          <th className="px-4 py-3">{t('Batch')}</th>
+                          <th className="px-4 py-3">{t('Expiry')}</th>
+                          <th className="px-4 py-3">{t('Current qty')}</th>
+                          <th className="px-4 py-3">{t('New qty')}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
@@ -704,21 +705,21 @@ export default function PharmacyInventory() {
 
                   <div>
                     <label className="text-sm font-medium text-gray-700" htmlFor="adjust-reason">
-                      Adjustment reason (optional)
+                      {t('Adjustment reason (optional)')}
                     </label>
                     <textarea
                       id="adjust-reason"
                       value={adjustReason}
                       onChange={(event) => setAdjustReason(event.target.value)}
                       rows={3}
-                      placeholder="Document why this change is being made"
+                      placeholder={t('Document why this change is being made')}
                       className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
                     />
                   </div>
 
                   {adjustStatus === 'success' ? (
                     <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-                      Inventory updated.
+                      {t('Inventory updated.')}
                     </div>
                   ) : null}
                   {adjustStatus === 'error' && adjustError ? (
@@ -730,7 +731,7 @@ export default function PharmacyInventory() {
                     className="w-full rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
                     disabled={adjustStatus === 'saving'}
                   >
-                    {adjustStatus === 'saving' ? 'Updating…' : 'Apply adjustments'}
+                    {adjustStatus === 'saving' ? t('Updating…') : t('Apply adjustments')}
                   </button>
                 </form>
               )}
@@ -738,7 +739,7 @@ export default function PharmacyInventory() {
           </div>
         ) : (
           <section className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/40 p-10 text-center text-sm text-blue-700">
-            Select a medication to begin managing inventory.
+            {t('Select a medication to begin managing inventory.')}
           </section>
         )}
       </div>
