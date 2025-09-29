@@ -93,20 +93,103 @@ BEGIN
     SET "appName" = EXCLUDED."appName",
         "updatedAt" = CURRENT_TIMESTAMP;
 
-  UPDATE "Appointment" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "Visit" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "VisitLabResult" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "Prescription" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "Dispense" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "StockItem" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "Invoice" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "InvoiceItem" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "Payment" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "PaymentAllocation" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "Vitals" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "Problem" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "LabOrder" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
-  UPDATE "LabResult" SET "tenantId" = default_tenant WHERE "tenantId" IS NULL;
+  UPDATE "Appointment" a
+  SET "tenantId" = default_tenant
+  WHERE a."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = a."tenantId"
+     );
+
+  UPDATE "Visit" v
+  SET "tenantId" = default_tenant
+  WHERE v."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = v."tenantId"
+     );
+
+  UPDATE "VisitLabResult" vlr
+  SET "tenantId" = default_tenant
+  WHERE vlr."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = vlr."tenantId"
+     );
+
+  UPDATE "Prescription" pr
+  SET "tenantId" = default_tenant
+  WHERE pr."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = pr."tenantId"
+     );
+
+  UPDATE "Dispense" d
+  SET "tenantId" = default_tenant
+  WHERE d."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = d."tenantId"
+     );
+
+  UPDATE "StockItem" si
+  SET "tenantId" = default_tenant
+  WHERE si."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = si."tenantId"
+     );
+
+  UPDATE "Invoice" inv
+  SET "tenantId" = default_tenant
+  WHERE inv."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = inv."tenantId"
+     );
+
+  UPDATE "InvoiceItem" ii
+  SET "tenantId" = default_tenant
+  WHERE ii."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = ii."tenantId"
+     );
+
+  UPDATE "Payment" pay
+  SET "tenantId" = default_tenant
+  WHERE pay."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = pay."tenantId"
+     );
+
+  UPDATE "PaymentAllocation" pa
+  SET "tenantId" = default_tenant
+  WHERE pa."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = pa."tenantId"
+     );
+
+  UPDATE "Vitals" vt
+  SET "tenantId" = default_tenant
+  WHERE vt."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = vt."tenantId"
+     );
+
+  UPDATE "Problem" pb
+  SET "tenantId" = default_tenant
+  WHERE pb."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = pb."tenantId"
+     );
+
+  UPDATE "LabOrder" lo
+  SET "tenantId" = default_tenant
+  WHERE lo."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = lo."tenantId"
+     );
+
+  UPDATE "LabResult" lr
+  SET "tenantId" = default_tenant
+  WHERE lr."tenantId" IS NULL
+     OR NOT EXISTS (
+       SELECT 1 FROM "Tenant" t WHERE t."tenantId" = lr."tenantId"
+     );
 
   INSERT INTO "UserTenant" ("userId", "tenantId", "role")
   SELECT u."userId", default_tenant, u."role"
