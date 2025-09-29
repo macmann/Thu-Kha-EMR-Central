@@ -16,6 +16,10 @@ import reportsRouter from './modules/reports/index.js';
 import pharmacyRouter from './routes/pharmacy.js';
 import billingRouter from './routes/billing.js';
 import clinicalRouter from './routes/clinical.js';
+import sessionsRouter from './routes/sessions.js';
+import meRouter from './routes/me.js';
+import patientTenantsRouter from './routes/patientTenants.js';
+import searchRouter from './routes/search.js';
 
 export const apiRouter = Router();
 
@@ -37,6 +41,10 @@ apiRouter.use('/reports', reportsRouter);
 apiRouter.use('/pharmacy', pharmacyRouter);
 apiRouter.use(billingRouter);
 apiRouter.use(clinicalRouter);
+apiRouter.use('/sessions', sessionsRouter);
+apiRouter.use('/me', meRouter);
+apiRouter.use(patientTenantsRouter);
+apiRouter.use('/search', searchRouter);
 apiRouter.use(docsRouter);
 
 export default apiRouter;
