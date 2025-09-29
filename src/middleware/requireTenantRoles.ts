@@ -17,7 +17,10 @@ export function requireTenantRoles(...roles: Role[]) {
         return res.status(400).json({ error: 'Tenant context missing' });
       }
 
-      if (user.role === 'ITAdmin' && (roles.length === 0 || roles.includes('ITAdmin'))) {
+      if (
+        (user.role === 'ITAdmin' || user.role === 'SystemAdmin') &&
+        (roles.length === 0 || roles.includes('ITAdmin') || roles.includes('SystemAdmin'))
+      ) {
         req.tenantRole = user.role as RoleName;
         return next();
       }

@@ -11,6 +11,7 @@ Signed-in user,Signed-in user,ဝင်ရောက်ထားသောအသ�
 Doctor,Doctor,ဆရာဝန်
 Administrative Assistant,Administrative Assistant,စီမံရေးကူညီသူ
 IT Administrator,IT Administrator,IT အုပ်ချုပ်ရေးမှူး
+System Administrator,System Administrator,စနစ် အုပ်ချုပ်ရေးမှူး
 Sign in to your account,Sign in to your account,သင့်အကောင့်သို့ ဝင်ရောက်ပါ
 Username or Email,Username or Email,အသုံးပြုသူအမည် သို့မဟုတ် အီးမေးလ်
 Password,Password,စကားဝှက်
@@ -122,6 +123,7 @@ Jump into commonly referenced patient segments.,Jump into commonly referenced pa
 Need to add someone?,Need to add someone?,တစ်ယောက် ထပ်ထည့်လိုပါသလား။
 Can't find the patient you're looking for? Create a new record in just a few steps.,Can't find the patient you're looking for? Create a new record in just a few steps.,ရှာဖွေနေသော လူနာကို မတွေ့ဘူးလား။ အဆင့်အနည်းငယ်သာဖြင့် မှတ်တမ်းအသစ်တစ်ခု ဖန်တီးနိုင်ပါသည်။
 IT Administrator Dashboard,IT Administrator Dashboard,IT အုပ်ချုပ်ရေးမှူး ဒက်ရှ်ဘုတ်
+System Administrator Dashboard,System Administrator Dashboard,စနစ် အုပ်ချုပ်ရေးမှူး ဒက်ရှ်ဘုတ်
 Monitor user accounts, system access, and staff setup.,Monitor user accounts, system access, and staff setup.,အသုံးပြုသူအကောင့်များ၊ စနစ်ဝင်ရောက်ခွင့်နှင့် ဝန်ထမ်း စနစ်သတ်မှတ်ခြင်းကို စောင့်ကြည့်ပါ။
 Staff Accounts,Staff Accounts,ဝန်ထမ်းအကောင့်များ
 Active Accounts,Active Accounts,လှုပ်ရှားနေသော အကောင့်များ
@@ -229,6 +231,10 @@ Expiry date,Expiry date,သက်တမ်းကုန်နေ့
 Unit cost,Unit cost,ယူနစ်စျေးနှုန်း
 Stock recorded successfully.,Stock recorded successfully.,စတော့မှတ်တမ်းတင်ပြီးပါပြီ။
 Saving…,Saving…,သိမ်းဆည်းနေပါသည်...
+Save Changes,Save Changes,ပြင်ဆင်ချက်များကို သိမ်းဆည်းပါ
+Only system administrators can update branding details.,Only system administrators can update branding details.,စနစ် အုပ်ချုပ်ရေးမှူးများသာ တံဆိပ် အချက်အလက်များကို ပြင်ဆင်ခွင့်ရှိသည်။
+Branding updated.,Branding updated.,တံဆိပ် အချက်အလက်များကို ပြင်ဆင်ပြီးပါပြီ။
+Unable to update branding.,Unable to update branding.,တံဆိပ် အချက်အလက်များကို ပြင်ဆင်၍မရနိုင်ပါ။
 Record stock,Record stock,စတော့ကို မှတ်တမ်းတင်ပါ
 Adjust Inventory,Adjust Inventory,စတော့ ပြင်ဆင်ပါ
 Update quantities for existing batches after cycle counts or corrections.,Update quantities for existing batches after cycle counts or corrections.,စတော့ရေတွက်ပြီးနောက် လက်ရှိဘုတ်များ၏ အရေအတွက်ကို ပြင်ဆင်ပါ။

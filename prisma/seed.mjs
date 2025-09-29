@@ -14,10 +14,12 @@ function d(s) { return s ? new Date(`${s}T00:00:00Z`) : null; }
 async function seedUsers() {
   const adminEmail = 'admin@example.com';
   const assistantEmail = 'assistant@example.com';
+  const systemAdminEmail = 'sysadmin@example.com';
   const doctorEmail = 'drsmith@example.com';
 
   const adminHash = await bcrypt.hash('AdminPass123!', 10);
   const assistantHash = await bcrypt.hash('AssistantPass123!', 10);
+  const systemAdminHash = await bcrypt.hash('SysAdminPass123!', 10);
   const doctorHash = await bcrypt.hash('DoctorPass123!', 10);
 
   const doctorRecord = await prisma.doctor.findFirst({
@@ -50,6 +52,20 @@ async function seedUsers() {
     await prisma.user.update({ where: { email: assistantEmail }, data: assistantData });
   } else {
     await prisma.user.create({ data: assistantData });
+  }
+
+  const systemAdmin = await prisma.user.findUnique({ where: { email: systemAdminEmail } });
+  const systemAdminData = {
+    email: systemAdminEmail,
+    passwordHash: systemAdminHash,
+    role: 'SystemAdmin',
+    status: 'active',
+    doctorId: null,
+  };
+  if (systemAdmin) {
+    await prisma.user.update({ where: { email: systemAdminEmail }, data: systemAdminData });
+  } else {
+    await prisma.user.create({ data: systemAdminData });
   }
 
   const doctor = await prisma.user.findUnique({ where: { email: doctorEmail } });

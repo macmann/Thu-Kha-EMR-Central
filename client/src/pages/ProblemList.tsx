@@ -23,7 +23,10 @@ export default function ProblemList() {
   const { patientId } = useParams<'patientId'>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canEdit = useMemo(() => user && ['Doctor', 'ITAdmin'].includes(user.role), [user]);
+  const canEdit = useMemo(
+    () => user && ['Doctor', 'ITAdmin', 'SystemAdmin'].includes(user.role),
+    [user],
+  );
   const canResolve = canEdit;
   const [problems, setProblems] = useState<ProblemEntry[]>([]);
   const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'RESOLVED' | 'ALL'>('ACTIVE');

@@ -55,8 +55,8 @@ export default function Home() {
     return <DoctorQueueDashboard />;
   }
 
-  if (user?.role === 'ITAdmin') {
-    return <ITAdminDashboard />;
+  if (user?.role === 'ITAdmin' || user?.role === 'SystemAdmin') {
+    return <ITAdminDashboard role={user.role} />;
   }
 
   if (user?.role === 'Pharmacist' || user?.role === 'PharmacyTech') {
@@ -70,7 +70,7 @@ export default function Home() {
   return <TeamDashboard role={user?.role} />;
 }
 
-function ITAdminDashboard() {
+function ITAdminDashboard({ role = 'ITAdmin' }: { role?: 'ITAdmin' | 'SystemAdmin' }) {
   const { accessToken } = useAuth();
   const { t } = useTranslation();
   const [usersData, setUsersData] = useState<UserAccount[] | null>(null);
@@ -208,7 +208,7 @@ function ITAdminDashboard() {
 
   return (
     <DashboardLayout
-      title={t('IT Administrator Dashboard')}
+      title={t(role === 'SystemAdmin' ? 'System Administrator Dashboard' : 'IT Administrator Dashboard')}
       subtitle={t('Monitor user accounts, system access, and staff setup.')}
       activeItem="dashboard"
     >
@@ -340,6 +340,7 @@ const ACCOUNT_ROLE_LABELS: Record<UserAccount['role'], string> = {
   Cashier: 'Cashier',
   AdminAssistant: 'Administrative Assistant',
   ITAdmin: 'IT Administrator',
+  SystemAdmin: 'System Administrator',
   Pharmacist: 'Pharmacist',
   PharmacyTech: 'Pharmacy Technician',
   InventoryManager: 'Inventory Manager',

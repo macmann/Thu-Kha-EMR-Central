@@ -1,0 +1,96 @@
+import request from 'supertest';
+import { PrismaClient } from '@prisma/client';
+import { app } from '../src/index';
+
+const prisma = new PrismaClient();
+
+function makeAuthHeader(userId: string, role: string, email: string, tenantId?: string) {
+  const header = Buffer.from(JSON.stringify({ alg: 'none', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(
+    JSON.stringify({ sub: userId, role, email, ...(tenantId ? { tenantId } : {}) }),
+  ).toString('base64url');
+  return `Bearer ${header}.${payload}.`;
+}
+
+describe('Clinic configuration permissions', () => {
+  let tenantId: string;
+  let systemAdminId: string;
+  let itAdminId: string;
+
+  beforeAll(async () => {
+    const tenant = await prisma.tenant.create({
+      data: { name: 'Configurable Clinic', code: `clinic-${Date.now()}` },
+    });
+    tenantId = tenant.tenantId;
+
+    const systemAdmin = await prisma.user.create({
+      data: {
+        email: `sysadmin-${Date.now()}@example.com`,
+        passwordHash: 'x',
+        role: 'SystemAdmin',
+        status: 'active',
+      },
+    });
+    systemAdminId = systemAdmin.userId;
+
+    const itAdmin = await prisma.user.create({
+      data: {
+        email: `itadmin-${Date.now()}@example.com`,
+        passwordHash: 'x',
+        role: 'ITAdmin',
+        status: 'active',
+      },
+    });
+    itAdminId = itAdmin.userId;
+  });
+
+  afterAll(async () => {
+    await prisma.tenantConfiguration.deleteMany({ where: { tenantId } });
+    await prisma.userTenant.deleteMany({ where: { tenantId } });
+    await prisma.user.deleteMany({ where: { userId: { in: [systemAdminId, itAdminId] } } });
+    await prisma.tenant.deleteMany({ where: { tenantId } });
+    await prisma.$disconnect();
+  });
+
+  it('allows a system administrator to read and update clinic configuration', async () => {
+    const authHeader = makeAuthHeader(
+      systemAdminId,
+      'SystemAdmin',
+      'sysadmin@example.com',
+      tenantId,
+    );
+
+    const initialRes = await request(app)
+      .get('/api/settings/clinic')
+      .set('Authorization', authHeader);
+
+    expect(initialRes.status).toBe(200);
+    expect(initialRes.body.appName).toBeDefined();
+    expect(initialRes.body.widgetEnabled).toBe(false);
+
+    const updateRes = await request(app)
+      .patch('/api/settings/clinic')
+      .set('Authorization', authHeader)
+      .send({ appName: 'Downtown Family Clinic', widgetEnabled: true });
+
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.appName).toBe('Downtown Family Clinic');
+    expect(updateRes.body.widgetEnabled).toBe(true);
+
+    const stored = await prisma.tenantConfiguration.findUnique({ where: { tenantId } });
+    expect(stored?.appName).toBe('Downtown Family Clinic');
+    expect(stored?.widgetEnabled).toBe(true);
+  });
+
+  it('prevents IT administrators from updating clinic configuration', async () => {
+    const authHeader = makeAuthHeader(itAdminId, 'ITAdmin', 'itadmin@example.com', tenantId);
+
+    const res = await request(app)
+      .patch('/api/settings/clinic')
+      .set('Authorization', authHeader)
+      .send({ appName: 'Unauthorized Update' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe('Forbidden');
+  });
+});

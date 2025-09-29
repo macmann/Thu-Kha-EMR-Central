@@ -2,11 +2,14 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   createDoctor,
   createUserAccount,
+  getClinicConfiguration,
   listDoctors,
   listUsers,
+  updateClinicConfiguration,
   updateUserAccount,
   type CreateUserPayload,
   type Doctor,
+  type UpdateClinicConfigurationPayload,
   type UpdateUserPayload,
   type UserAccount,
 } from '../api/client';
@@ -17,7 +20,7 @@ interface SettingsContextType {
   logo: string | null;
   users: UserAccount[];
   doctors: Doctor[];
-  updateSettings: (data: { appName?: string; logo?: string | null }) => void;
+  updateSettings: (data: UpdateClinicConfigurationPayload) => Promise<void>;
   addUser: (user: CreateUserPayload) => Promise<UserAccount>;
   updateUser: (id: string, data: UpdateUserPayload) => Promise<UserAccount>;
   addDoctor: (doctor: { name: string; department: string }) => Promise<Doctor>;
@@ -32,22 +35,36 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [logo, setLogo] = useState<string | null>(null);
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [widgetEnabled, setWidgetEnabled] = useState<boolean>(false);
+  const [widgetEnabled, setWidgetEnabledState] = useState<boolean>(false);
   const { accessToken } = useAuth();
 
   useEffect(() => {
-    const stored = localStorage.getItem('appSettings');
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.appName) setAppName(parsed.appName);
-        if (parsed.logo) setLogo(parsed.logo);
-        if (typeof parsed.widgetEnabled === 'boolean') setWidgetEnabled(parsed.widgetEnabled);
-      } catch {
-        /* ignore */
-      }
+    if (!accessToken) {
+      setAppName('EMR System');
+      setLogo(null);
+      setWidgetEnabledState(false);
+      return;
     }
-  }, []);
+
+    let active = true;
+    getClinicConfiguration()
+      .then((configuration) => {
+        if (!active) return;
+        setAppName(configuration.appName || 'EMR System');
+        setLogo(configuration.logo ?? null);
+        setWidgetEnabledState(Boolean(configuration.widgetEnabled));
+      })
+      .catch(() => {
+        if (!active) return;
+        setAppName('EMR System');
+        setLogo(null);
+        setWidgetEnabledState(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken) {
@@ -94,21 +111,34 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [accessToken]);
 
   useEffect(() => {
-    localStorage.setItem(
-      'appSettings',
-      JSON.stringify({ appName, logo, widgetEnabled }),
-    );
-  }, [appName, logo, widgetEnabled]);
-
-  useEffect(() => {
     if (typeof document !== 'undefined') {
       document.title = appName || 'EMR System';
     }
   }, [appName]);
 
-  const updateSettings = (data: { appName?: string; logo?: string | null }) => {
-    if (data.appName !== undefined) setAppName(data.appName);
-    if (data.logo !== undefined) setLogo(data.logo);
+  const updateSettings = async (data: UpdateClinicConfigurationPayload) => {
+    const payload: UpdateClinicConfigurationPayload = {};
+
+    if (data.appName !== undefined) {
+      payload.appName = data.appName;
+    }
+
+    if (data.logo !== undefined) {
+      payload.logo = data.logo;
+    }
+
+    if (data.widgetEnabled !== undefined) {
+      payload.widgetEnabled = data.widgetEnabled;
+    }
+
+    if (Object.keys(payload).length === 0) {
+      return;
+    }
+
+    const updated = await updateClinicConfiguration(payload);
+    setAppName(updated.appName || 'EMR System');
+    setLogo(updated.logo ?? null);
+    setWidgetEnabledState(Boolean(updated.widgetEnabled));
   };
 
   const addUser = async (user: CreateUserPayload) => {
@@ -131,6 +161,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const created = await createDoctor(doctor);
     setDoctors((prev) => [...prev, created]);
     return created;
+  };
+
+  const setWidgetEnabled = (enabled: boolean) => {
+    setWidgetEnabledState(enabled);
   };
 
   return (

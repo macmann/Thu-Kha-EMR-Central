@@ -28,7 +28,10 @@ export default function LabOrderDetailPage() {
   const { labOrderId } = useParams<'labOrderId'>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const canEnterResults = useMemo(() => user && ['LabTech', 'ITAdmin'].includes(user.role), [user]);
+  const canEnterResults = useMemo(
+    () => user && ['LabTech', 'ITAdmin', 'SystemAdmin'].includes(user.role),
+    [user],
+  );
   const [order, setOrder] = useState<LabOrderEntry | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

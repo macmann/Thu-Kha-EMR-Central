@@ -22,6 +22,7 @@ const ROLE_LABELS: Record<string, string> = {
   AdminAssistant: 'Administrative Assistant',
   Cashier: 'Cashier',
   ITAdmin: 'IT Administrator',
+  SystemAdmin: 'System Administrator',
   Pharmacist: 'Pharmacist',
   PharmacyTech: 'Pharmacy Technician',
   InventoryManager: 'Inventory Manager',
@@ -61,7 +62,7 @@ export default function AppHeader({
   const userRoleLabel = user ? ROLE_LABELS[user.role] ?? user.role : t('Team Member');
   const userEmail = user?.email ?? t('Signed-in user');
   const searchArea = toolbarContent ?? <GlobalSearch />;
-  const showSettings = user?.role === 'ITAdmin';
+  const showSettings = user?.role === 'ITAdmin' || user?.role === 'SystemAdmin';
 
   const handleOpenTenantPicker = () => {
     if (tenants.length <= 1) {

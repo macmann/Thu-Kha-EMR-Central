@@ -56,23 +56,23 @@ export default function DashboardLayout({
   const roleLabel = user ? t(ROLE_LABELS[user.role] ?? 'Team Member') : t('Team Member');
   const navItems = navigation.filter((item) => {
     if (item.key === 'settings') {
-      return user?.role === 'ITAdmin';
+      return user?.role === 'ITAdmin' || user?.role === 'SystemAdmin';
     }
     if (item.key === 'billing') {
-      return user && ['Cashier', 'ITAdmin', 'Doctor', 'Pharmacist'].includes(user.role);
+      return user && ['Cashier', 'ITAdmin', 'SystemAdmin', 'Doctor', 'Pharmacist'].includes(user.role);
     }
     if (item.key === 'pharmacy') {
       return (
-        user && ['Pharmacist', 'PharmacyTech', 'InventoryManager', 'ITAdmin'].includes(user.role)
+        user && ['Pharmacist', 'PharmacyTech', 'InventoryManager', 'ITAdmin', 'SystemAdmin'].includes(user.role)
       );
     }
     if (item.key === 'lab') {
-      return user && ['Doctor', 'LabTech', 'ITAdmin'].includes(user.role);
+      return user && ['Doctor', 'LabTech', 'ITAdmin', 'SystemAdmin'].includes(user.role);
     }
     return true;
   });
   const displayName = appName || t('EMR System');
-  const showSettings = user?.role === 'ITAdmin';
+  const showSettings = user?.role === 'ITAdmin' || user?.role === 'SystemAdmin';
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const userEmail = user?.email ?? t('Signed-in user');
 
@@ -211,6 +211,7 @@ const ROLE_LABELS: Record<string, string> = {
   AdminAssistant: 'Administrative Assistant',
   Cashier: 'Cashier',
   ITAdmin: 'IT Administrator',
+  SystemAdmin: 'System Administrator',
   Pharmacist: 'Pharmacist',
   PharmacyTech: 'Pharmacy Technician',
   InventoryManager: 'Inventory Manager',

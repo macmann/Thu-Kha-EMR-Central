@@ -19,7 +19,9 @@ export default function PharmacyQueue() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canDispense = user ? ['Pharmacist', 'PharmacyTech'].includes(user.role) : false;
-  const canManageInventory = user ? ['InventoryManager', 'ITAdmin'].includes(user.role) : false;
+  const canManageInventory = user
+    ? ['InventoryManager', 'ITAdmin', 'SystemAdmin'].includes(user.role)
+    : false;
 
   const statusLabels = useMemo(
     () => ({

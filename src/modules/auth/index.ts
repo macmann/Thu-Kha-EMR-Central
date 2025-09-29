@@ -9,6 +9,7 @@ export type RoleName =
   | 'AdminAssistant'
   | 'Cashier'
   | 'ITAdmin'
+  | 'SystemAdmin'
   | 'Pharmacist'
   | 'PharmacyTech'
   | 'InventoryManager'
@@ -93,7 +94,7 @@ export function requireRole(...roles: RoleName[]) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    if (user.role === 'ITAdmin') {
+    if (user.role === 'ITAdmin' || user.role === 'SystemAdmin') {
       return next();
     }
 
