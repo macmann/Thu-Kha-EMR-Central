@@ -160,3 +160,88 @@ Drug allergies,Drug allergies,ဆေးအလွန်မတုံ့ပြန�
 No known allergies,No known allergies,မသိရှိရသေးသော အလွန်မတုံ့ပြန်မှုများ
 Document medications to avoid during care.,Document medications to avoid during care.,ကုသမှုတွင် မသုံးသင့်သော ဆေးဝါးများကို မှတ်တမ်းတင်ပါ။
 e.g. Penicillin, Ibuprofen,e.g. Penicillin, Ibuprofen,ဥပမာ- ပီနစ်ဆီလင်း၊ အိုင်ဘူပရိုဖင်
+Pharmacy,Pharmacy,ဆေးဆိုင်
+Pharmacy status option PENDING,Pending,ဆိုင်းငံ့ထားသည်
+Pharmacy status option PARTIAL,Partial,တစ်စိတ်တစ်ပိုင်း
+Pharmacy status option DISPENSED,Dispensed,ဆေးထုတ်ပြီး
+Loading pharmacy worklist…,Loading pharmacy worklist…,ဆေးဆိုင် လုပ်ဆောင်မှုစာရင်းကို တင်နေပါသည်...
+No prescriptions waiting in this state.,No prescriptions waiting in this state.,ဤအခြေအနေတွင် စောင့်ဆိုင်းသော ဆေးညွှန်းများ မရှိပါ။
+{count} prescriptions queued.,{count} prescriptions queued.,ဆေးညွှန်း {count} ခု စောင့်ဆိုင်းနေသည်။
+Dispensing Queue,Dispensing Queue,ဆေးထုတ် စာရင်း
+Monitor incoming e-prescriptions and jump into dispensing.,Monitor incoming e-prescriptions and jump into dispensing.,အွန်လိုင်း ဆေးညွှန်းများကို စောင့်ကြည့်ပြီး ဆေးထုတ်လုပ်ငန်းသို့ အမြန် ဝင်ရောက်ဆောင်ရွက်ပါ။
+Manage inventory,Manage inventory,စတော့ကို စီမံပါ
+Loading prescriptions…,Loading prescriptions…,ဆေးညွှန်းများကို တင်နေပါသည်...
+Nothing in the queue for this status.,Nothing in the queue for this status.,ဤအခြေအနေတွင် စောင့်ဆိုင်းစာရင်း မရှိပါ။
+Rx #{id},Rx #{id},Rx #{id}
+Ordered by {name},Ordered by {name},{name} မှ မှာကြားထားသည်
+{count} days,{count} days,{count} ရက်
+Qty {quantity},Qty {quantity},အရေအတွက် {quantity}
+Start Dispense,Start Dispense,ဆေးထုတ်လုပ်ရန် စတင်ပါ
+Dispensing restricted to pharmacy staff,Dispensing restricted to pharmacy staff,ဆေးထုတ်လုပ်ရေးကို ဆေးဆိုင်ဝန်ထမ်းများသာ လုပ်ဆောင်နိုင်ပါသည်
+Managing inventory for {name},Managing inventory for {name},{name} အတွက် စတော့ကို စီမံဆောင်ရွက်နေပါသည်
+Search for a medication to manage inventory levels.,Search for a medication to manage inventory levels.,စတော့ကို စီမံရန် ဆေးဝါးတစ်မျိုးကို ရှာဖွေပါ။
+Pharmacy Inventory,Pharmacy Inventory,ဆေးဝါး စတော့စာရင်း
+Inventory Workspace,Inventory Workspace,စတော့ စီမံခန်း
+"Search for a drug to receive new stock or adjust current quantities.","Search for a drug to receive new stock or adjust current quantities.",ဆေးဝါးအသစ်များ ဖမ်းယူရန် သို့မဟုတ် လက်ရှိအရေအတွက်ကို ပြင်ဆင်ရန် ဆေးဝါးကို ရှာဖွေပါ။
+Add new medication,Add new medication,ဆေးဝါးအသစ် ထည့်သွင်းပါ
+Clear selection,Clear selection,ရွေးချယ်ထားသည်ကို ဖယ်ရှားပါ
+Find a medication,Find a medication,ဆေးဝါးတစ်မျိုးကို ရှာပါ
+Start typing a medication name or strength,Start typing a medication name or strength,ဆေးဝါးအမည် သို့မဟုတ် ဖော်မြူလာအား ရိုက်ထည့်ခြင်းစတင်ပါ
+Receive Stock,Receive Stock,စတော့ဝင် စာရင်းတင်ပါ
+Capture new inventory lots as they arrive in the pharmacy.,Capture new inventory lots as they arrive in the pharmacy.,ဆေးဆိုင်သို့ ရောက်ရှိလာသော စတော့အသစ်များကို မှတ်တမ်းတင်ပါ။
+Scan invoice for stock,Scan invoice for stock,စတော့အတွက် ငွေတောင်းခံလွှာကို စကန်းယူပါ
+"Upload an invoice to prefill quantities, batch numbers, and pricing automatically.","Upload an invoice to prefill quantities, batch numbers, and pricing automatically.",အရေအတွက်၊ အမှတ်စဉ် နှင့် စျေးနှုန်းများကို အလိုအလျောက် ဖြည့်သွင်းရန် ငွေတောင်းခံလွှာကို အပ်လုပ်ပါ။
+Scanning…,Scanning…,စကန်းယူနေပါသည်...
+Upload invoice,Upload invoice,ငွေတောင်းခံလွှာကို အပ်လုပ်ပါ
+Scanning invoice with AI…,Scanning invoice with AI…,AI ဖြင့် ငွေတောင်းခံလွှာကို စကန်းယူနေပါသည်...
+Select an invoice line to apply its details to the stock form.,Select an invoice line to apply its details to the stock form.,စတော့ဖောင်တွင် အသုံးပြုရန် ငွေတောင်းခံလွှာထဲမှ တစ်စုတစ်စည်းကို ရွေးချယ်ပါ။
+No medication lines were detected. Enter the stock details manually.,No medication lines were detected. Enter the stock details manually.,ဆေးဝါးအစီအစဉ်များ မတွေ့ပါ။ စတော့အသေးစိတ်ကို ကိုယ်တိုင် ဖြည့်သွင်းပါ။
+Unable to scan the invoice. Try again.,Unable to scan the invoice. Try again.,ငွေတောင်းခံလွှာကို စကန်းမရပါ။ ထပ်စမ်းကြည့်ပါ။
+Select a medication before recording stock.,Select a medication before recording stock.,စတော့ကို မှတ်တမ်းတင်ရန် မတိုင်မှီ ဆေးဝါးတစ်မျိုးကို ရွေးချယ်ပါ။
+Quantity on hand must be zero or greater.,Quantity on hand must be zero or greater.,လက်ကျန်အရေအတွက်သည် သုည သို့မဟုတ် ထို့ထက်မြင့်ရမည်။
+Location is required.,Location is required.,တည်နေရာကို ပြည့်စုံဖော်ပြရပါမည်။
+Select another line item or upload a new invoice to continue.,Select another line item or upload a new invoice to continue.,ဆက်လုပ်ရန် အခြားစုစည်းတစ်ခုကို ရွေးချယ်ပါ သို့မဟုတ် ငွေတောင်းခံလွှာအသစ်တင်ပါ။
+Unable to record stock.,Unable to record stock.,စတော့ကို မှတ်တမ်းတင်မရပါ။
+Select a medication to adjust inventory.,Select a medication to adjust inventory.,စတော့ကို ပြင်ဆင်ရန် ဆေးဝါးတစ်မျိုးကို ရွေးချယ်ပါ။
+No adjustments detected. Update a quantity before submitting.,No adjustments detected. Update a quantity before submitting.,ပြင်ဆင်မှု မတွေ့ပါ။ တင်သွင်းရန် မတိုင်မီ အရေအတွက်ကို ပြင်ဆင်ပါ။
+Unable to adjust stock.,Unable to adjust stock.,စတော့ကို ပြင်ဆင်မရပါ။
+Unable to load stock.,Unable to load stock.,စတော့ဒေတာကို တင်မရပါ။
+Select a medication,Select a medication,ဆေးဝါးတစ်မျိုးကို ရွေးချယ်ပါ
+Quantity,Quantity,အရေအတွက်
+Location,Location,တည်နေရာ
+Complete the following before recording stock: {items}.,Complete the following before recording stock: {items}.,စတော့မှတ်တမ်းတင်မီ အောက်ပါအချက်များကို ပြီးစီးစေပါ- {items}
+Verify the prefilled details and record the stock.,Verify the prefilled details and record the stock.,ဖြည့်သွင်းထားသော အချက်အလက်များကို စစ်ဆေးပြီး စတော့ကို မှတ်တမ်းတင်ပါ။
+Invoice #{number},Invoice #{number},ငွေတောင်းခံလွှာ #{number}
+Dated {date},Dated {date},{date} ရက်စွဲဖြင့်
+Review required,Review required,ပြန်လည်စစ်ဆေးရန် လိုအပ်သည်
+Line {index},Line {index},တန်းစီ {index}
+{count} units,{count} units,{count} ယူနစ်
+Unit cost {amount},Unit cost {amount},ယူနစ်စျေး {amount}
+Batch {number},Batch {number},ဘုတ်အမှတ် {number}
+Expiry {date},Expiry {date},သက်တမ်းကုန် {date}
+Suggested location: {location},Suggested location: {location},အကြံပြုထားသော တည်နေရာ- {location}
+Storage location,Storage location,သိုလှောင်ရာနေရာ
+e.g., Main Pharmacy - Shelf A,e.g., Main Pharmacy - Shelf A,ဥပမာ- မူလဆေးဆိုင် - ထိုင်ခုံ A
+Quantity on hand,Quantity on hand,လက်ကျန်အရေအတွက်
+Batch number,Batch number,ဘုတ်အမှတ်
+Optional,Optional,ရွေးချယ်နိုင်သည်
+Expiry date,Expiry date,သက်တမ်းကုန်နေ့
+Unit cost,Unit cost,ယူနစ်စျေးနှုန်း
+Stock recorded successfully.,Stock recorded successfully.,စတော့မှတ်တမ်းတင်ပြီးပါပြီ။
+Saving…,Saving…,သိမ်းဆည်းနေပါသည်...
+Record stock,Record stock,စတော့ကို မှတ်တမ်းတင်ပါ
+Adjust Inventory,Adjust Inventory,စတော့ ပြင်ဆင်ပါ
+Update quantities for existing batches after cycle counts or corrections.,Update quantities for existing batches after cycle counts or corrections.,စတော့ရေတွက်ပြီးနောက် လက်ရှိဘုတ်များ၏ အရေအတွက်ကို ပြင်ဆင်ပါ။
+Total on hand: {count},Total on hand: {count},လက်ကျန်စုစုပေါင်း- {count}
+Loading stock details…,Loading stock details…,စတော့အသေးစိတ်ကို တင်နေပါသည်...
+No stock entries found for this medication yet.,No stock entries found for this medication yet.,ဤဆေးဝါးအတွက် စတော့မှတ်တမ်း မရှိသေးပါ။
+Batch,Batch,ဘုတ်
+Expiry,Expiry,သက်တမ်းကုန်
+Current qty,Current qty,လက်ရှိ အရေအတွက်
+New qty,New qty,အရေအတွက် အသစ်
+Adjustment reason (optional),Adjustment reason (optional),ပြင်ဆင်ရသည့် အကြောင်းအရင်း (မလိုအပ်နိုင်)
+Document why this change is being made,Document why this change is being made,ဤပြောင်းလဲမှုကို ပြုလုပ်ရသည့် အကြောင်းရင်းကို မှတ်တမ်းတင်ပါ
+Inventory updated.,Inventory updated.,စတော့ကို ပြင်ဆင်ပြီးပါပြီ။
+Updating…,Updating…,အပ်ဒိတ်လုပ်နေပါသည်...
+Apply adjustments,Apply adjustments,ပြင်ဆင်မှုများကို အတည်ပြုပါ
+Select a medication to begin managing inventory.,Select a medication to begin managing inventory.,စတော့စီမံမှု စတင်ရန် ဆေးဝါးတစ်မျိုးကို ရွေးချယ်ပါ။
