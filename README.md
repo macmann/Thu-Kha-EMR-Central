@@ -45,6 +45,16 @@ Thu Kha (သုခ) EMR is a reference implementation of an electronic medical r
    ```
    The API is available at `http://localhost:8080` and the Vite-powered web client at `http://localhost:5173`.
 
+### Creating additional clinics
+
+Initial seed data provisions a single clinic and automatically links all active IT Administrators and Administrative Assistants to it. If you need to register another clinic later on, run the CLI helper and pass the clinic name (plus any admin email addresses that should receive access immediately):
+
+```bash
+npm run tenant:create -- --name "Downtown Clinic" --code downtown --admin admin@example.com
+```
+
+You can repeat `--admin` to associate multiple staff members. The command creates the clinic, ensures the slug/code is unique, and then grants the listed users access with their existing roles. IT Administrators without a clinic membership will see a "No clinics available" banner until they are assigned to at least one clinic.
+
 ## Neon PostgreSQL Setup
 Provision a PostgreSQL instance on [Neon](https://neon.tech) and set the `DATABASE_URL` and `DIRECT_URL` in `.env` (include `sslmode=require` for both). Enable the required extensions:
 ```sql
