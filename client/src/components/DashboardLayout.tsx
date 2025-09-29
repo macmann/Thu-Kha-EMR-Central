@@ -1,21 +1,11 @@
 import { useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  AvatarIcon,
-  CalendarIcon,
-  CloseIcon,
-  DashboardIcon,
-  MenuIcon,
-  PatientsIcon,
-  PharmacyIcon,
-  ReportsIcon,
-  SearchIcon,
-  SettingsIcon,
-} from './icons';
-import LogoutButton from './LogoutButton';
+import { AvatarIcon, CalendarIcon, CloseIcon, DashboardIcon, PatientsIcon, PharmacyIcon, ReportsIcon, SettingsIcon } from './icons';
 import { useAuth } from '../context/AuthProvider';
 import { useSettings } from '../context/SettingsProvider';
 import { useTranslation } from '../hooks/useTranslation';
+import AppHeader from './AppHeader';
+import LogoutButton from './LogoutButton';
 
 type NavigationKey =
   | 'dashboard'
@@ -51,20 +41,6 @@ interface DashboardLayoutProps {
   activeItem?: NavigationKey;
   headerChildren?: ReactNode;
   children: ReactNode;
-}
-
-function DefaultHeaderSearch() {
-  const { t } = useTranslation();
-  return (
-    <div className="relative w-full md:w-72">
-      <SearchIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-      <input
-        type="search"
-        placeholder={t('Search patients...')}
-        className="w-full rounded-full border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-      />
-    </div>
-  );
 }
 
 export default function DashboardLayout({
@@ -209,52 +185,14 @@ export default function DashboardLayout({
 
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
-          <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center justify-between gap-3 md:justify-start">
-                <Link to="/" className="flex items-center gap-3 text-gray-900">
-                  {logo ? (
-                    <img src={logo} alt={`${displayName} logo`} className="h-10 w-auto rounded" />
-                  ) : (
-                    <span className="text-xl font-semibold">{displayName}</span>
-                  )}
-                  {logo && <span className="text-xl font-semibold">{displayName}</span>}
-                </Link>
-                <button
-                  type="button"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-gray-600 hover:bg-gray-100 md:hidden"
-                  onClick={() => setIsMobileNavOpen(true)}
-                  aria-label={t('Open navigation')}
-                  aria-expanded={isMobileNavOpen}
-                >
-                  <MenuIcon className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-end md:gap-4">
-                {headerChildren ?? <DefaultHeaderSearch />}
-                <div className="flex flex-wrap items-center justify-end gap-3">
-                  <div className="hidden flex-col text-right text-xs text-gray-500 sm:flex">
-                    <span className="font-medium text-gray-700">{userEmail}</span>
-                    <span>{roleLabel}</span>
-                  </div>
-                  {showSettings && (
-                    <Link to="/settings" className="text-sm font-medium text-blue-600 hover:underline">
-                      {t('Settings')}
-                    </Link>
-                  )}
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white">
-                    <AvatarIcon className="h-6 w-6" />
-                  </div>
-                  {accessToken && (
-                    <LogoutButton className="text-sm font-medium text-red-600 hover:underline" />
-                  )}
-                </div>
-              </div>
-            </div>
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-              {subtitle && <p className="mt-1 text-sm text-gray-500">{subtitle}</p>}
-            </div>
+          <div className="mx-auto w-full max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+            <AppHeader
+              title={title}
+              subtitle={subtitle}
+              toolbarContent={headerChildren}
+              onOpenMobileNav={() => setIsMobileNavOpen(true)}
+              isMobileNavOpen={isMobileNavOpen}
+            />
           </div>
         </header>
 
