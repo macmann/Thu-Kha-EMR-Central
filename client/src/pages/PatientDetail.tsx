@@ -168,7 +168,7 @@ export default function PatientDetail() {
     );
   }
 
-  const canViewProblems = user && ['Doctor', 'Nurse', 'ITAdmin'].includes(user.role);
+  const canViewProblems = user && ['Doctor', 'Nurse', 'ITAdmin', 'SystemAdmin'].includes(user.role);
 
   const headerActions = (
     <div className="flex flex-col gap-2 md:flex-row md:items-center">

@@ -198,9 +198,10 @@ function formatTimeRange(startMin: number, endMin: number) {
 export default function AppointmentsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const userRole = user?.role ?? 'ITAdmin';
+  const userRole = user?.role ?? 'SystemAdmin';
   const isDoctorUser = userRole === 'Doctor';
-  const canCreateAppointment = userRole === 'AdminAssistant' || userRole === 'ITAdmin';
+  const canCreateAppointment =
+    userRole === 'AdminAssistant' || userRole === 'ITAdmin' || userRole === 'SystemAdmin';
   const { t } = useTranslation();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(false);

@@ -13,6 +13,7 @@ const roleSchema = z.enum([
   'AdminAssistant',
   'Cashier',
   'ITAdmin',
+  'SystemAdmin',
   'Pharmacist',
   'PharmacyTech',
   'InventoryManager',

@@ -20,6 +20,7 @@ import sessionsRouter from './routes/sessions.js';
 import meRouter from './routes/me.js';
 import patientTenantsRouter from './routes/patientTenants.js';
 import searchRouter from './routes/search.js';
+import settingsRouter from './modules/settings/index.js';
 
 export const apiRouter = Router();
 
@@ -45,6 +46,7 @@ apiRouter.use('/sessions', sessionsRouter);
 apiRouter.use('/me', meRouter);
 apiRouter.use(patientTenantsRouter);
 apiRouter.use('/search', searchRouter);
+apiRouter.use('/settings', settingsRouter);
 apiRouter.use(docsRouter);
 
 export default apiRouter;

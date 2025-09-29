@@ -30,7 +30,7 @@ export default function VitalsCard({ patientId, defaultVisitId = '', limit = 10 
   const { t } = useTranslation();
   const { user } = useAuth();
   const canRecord = useMemo(
-    () => user && ['Nurse', 'Doctor', 'ITAdmin'].includes(user.role),
+    () => user && ['Nurse', 'Doctor', 'ITAdmin', 'SystemAdmin'].includes(user.role),
     [user],
   );
   const [vitalsList, setVitalsList] = useState<VitalsEntry[]>([]);

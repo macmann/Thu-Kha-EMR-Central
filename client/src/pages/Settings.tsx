@@ -9,6 +9,7 @@ import {
   listDoctorAvailability,
   type Role,
 } from '../api/client';
+import { useAuth } from '../context/AuthProvider';
 
 type DoctorFormState = {
   name: string;
@@ -26,6 +27,7 @@ const ROLE_LABELS: Record<Role, string> = {
   AdminAssistant: 'Administrative Assistant',
   Cashier: 'Cashier',
   ITAdmin: 'IT Administrator',
+  SystemAdmin: 'System Administrator',
   Pharmacist: 'Pharmacist',
   PharmacyTech: 'Pharmacy Technician',
   InventoryManager: 'Inventory Manager',
@@ -38,6 +40,7 @@ const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
   { value: 'AdminAssistant', label: ROLE_LABELS.AdminAssistant },
   { value: 'Cashier', label: ROLE_LABELS.Cashier },
   { value: 'ITAdmin', label: ROLE_LABELS.ITAdmin },
+  { value: 'SystemAdmin', label: ROLE_LABELS.SystemAdmin },
   { value: 'Pharmacist', label: ROLE_LABELS.Pharmacist },
   { value: 'PharmacyTech', label: ROLE_LABELS.PharmacyTech },
   { value: 'InventoryManager', label: ROLE_LABELS.InventoryManager },
@@ -110,6 +113,7 @@ export default function Settings() {
     setWidgetEnabled,
   } = useSettings();
   const { t, language, setLanguage } = useTranslation();
+  const { user } = useAuth();
 
   const [name, setName] = useState(appName);
   const [userForm, setUserForm] = useState<{ email: string; password: string; role: Role; doctorId: string }>(
@@ -129,11 +133,16 @@ export default function Settings() {
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   const [availabilitySuccess, setAvailabilitySuccess] = useState<string | null>(null);
   const [addingAvailability, setAddingAvailability] = useState(false);
+  const [brandingError, setBrandingError] = useState<string | null>(null);
+  const [brandingSuccess, setBrandingSuccess] = useState<string | null>(null);
+  const [brandingSaving, setBrandingSaving] = useState(false);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   const totalUsers = users.length;
   const totalDoctors = doctors.length;
   const latestDoctor = totalDoctors > 0 ? doctors[totalDoctors - 1] : undefined;
   const latestUser = totalUsers > 0 ? users[totalUsers - 1] : undefined;
+  const isSystemAdmin = user?.role === 'SystemAdmin';
 
   useEffect(() => {
     if (!doctors.length) {
@@ -162,6 +171,10 @@ export default function Settings() {
     });
     setUserDrafts(drafts);
   }, [users]);
+
+  useEffect(() => {
+    setName(appName);
+  }, [appName]);
 
   const assignedDoctorIds = useMemo(() => {
     const ids = new Set<string>();
@@ -231,20 +244,45 @@ export default function Settings() {
     setLanguage(event.target.value as Language);
   }
 
-  function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
+  async function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !isSystemAdmin) return;
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      updateSettings({ logo: reader.result as string });
+      const nextLogo = reader.result as string;
+      setLogoUploading(true);
+      setBrandingError(null);
+      setBrandingSuccess(null);
+      updateSettings({ logo: nextLogo })
+        .then(() => {
+          setBrandingSuccess(t('Branding updated.'));
+        })
+        .catch((error) => {
+          setBrandingError(parseErrorMessage(error, t('Unable to update branding.')));
+        })
+        .finally(() => {
+          setLogoUploading(false);
+        });
     };
     reader.readAsDataURL(file);
   }
 
-  function handleSave(event: FormEvent<HTMLFormElement>) {
+  async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    updateSettings({ appName: name.trim() || 'EMR System' });
+    if (!isSystemAdmin) return;
+
+    setBrandingSaving(true);
+    setBrandingError(null);
+    setBrandingSuccess(null);
+    try {
+      await updateSettings({ appName: name.trim() || 'EMR System', widgetEnabled });
+      setBrandingSuccess(t('Branding updated.'));
+    } catch (error) {
+      setBrandingError(parseErrorMessage(error, t('Unable to update branding.')));
+    } finally {
+      setBrandingSaving(false);
+    }
   }
 
   async function handleAddUser(event: FormEvent<HTMLFormElement>) {
@@ -499,6 +537,11 @@ export default function Settings() {
                   <p className="mt-1 text-sm text-gray-600">
                     Update your organization name, upload a logo, and manage the patient widget visibility.
                   </p>
+                  {!isSystemAdmin && (
+                    <p className="mt-2 text-xs font-semibold text-amber-600">
+                      {t('Only system administrators can update branding details.')}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -513,7 +556,10 @@ export default function Settings() {
                       type="text"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      disabled={!isSystemAdmin || brandingSaving}
+                      className={`mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
+                        !isSystemAdmin ? 'cursor-not-allowed opacity-60' : ''
+                      }`}
                     />
                   </div>
 
@@ -526,7 +572,10 @@ export default function Settings() {
                       type="file"
                       accept="image/*"
                       onChange={handleLogoChange}
-                      className="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-600 hover:file:bg-blue-100"
+                      disabled={!isSystemAdmin || logoUploading}
+                      className={`mt-2 block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:px-4 file:py-2 file:text-sm file:font-semibold ${
+                        !isSystemAdmin ? 'file:bg-gray-200 file:text-gray-500' : 'file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100'
+                      } ${logoUploading ? 'opacity-70' : ''}`}
                     />
                     <p className="mt-1 text-xs text-gray-500">{t('PNG, JPG or SVG up to 1MB.')}</p>
                   </div>
@@ -559,7 +608,11 @@ export default function Settings() {
                     type="button"
                     role="switch"
                     aria-checked={widgetEnabled}
-                    onClick={() => setWidgetEnabled(!widgetEnabled)}
+                    onClick={() => {
+                      if (!isSystemAdmin) return;
+                      setWidgetEnabled(!widgetEnabled);
+                    }}
+                    disabled={!isSystemAdmin}
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition ${
                       widgetEnabled ? 'bg-blue-600' : 'bg-gray-300'
                     }`}
@@ -576,11 +629,25 @@ export default function Settings() {
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
+                    disabled={!isSystemAdmin || brandingSaving}
+                    className={`inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white shadow ${
+                      !isSystemAdmin
+                        ? 'bg-gray-400'
+                        : brandingSaving
+                          ? 'bg-blue-400'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
                   >
-                    Save Changes
+                    {brandingSaving ? t('Saving…') : t('Save Changes')}
                   </button>
                 </div>
+
+                {(brandingError || brandingSuccess) && (
+                  <div className="text-sm">
+                    {brandingError && <p className="text-red-600">{brandingError}</p>}
+                    {brandingSuccess && <p className="text-green-600">{brandingSuccess}</p>}
+                  </div>
+                )}
               </form>
             </div>
 

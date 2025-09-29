@@ -5,11 +5,39 @@ export type Role =
   | 'AdminAssistant'
   | 'Cashier'
   | 'ITAdmin'
+  | 'SystemAdmin'
   | 'Pharmacist'
   | 'PharmacyTech'
   | 'InventoryManager'
   | 'Nurse'
   | 'LabTech';
+
+export interface ClinicConfiguration {
+  appName: string;
+  logo: string | null;
+  widgetEnabled: boolean;
+  updatedAt: string;
+}
+
+export interface UpdateClinicConfigurationPayload {
+  appName?: string;
+  logo?: string | null;
+  widgetEnabled?: boolean;
+}
+
+export function getClinicConfiguration(): Promise<ClinicConfiguration> {
+  return fetchJSON('/settings/clinic');
+}
+
+export function updateClinicConfiguration(
+  payload: UpdateClinicConfigurationPayload,
+): Promise<ClinicConfiguration> {
+  return fetchJSON('/settings/clinic', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
 
 export interface Patient {
   patientId: string;

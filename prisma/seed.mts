@@ -6,18 +6,26 @@ const DEFAULT_TENANT_CODE = process.env.DEFAULT_TENANT_CODE ?? 'default';
 const DEFAULT_TENANT_NAME = process.env.DEFAULT_TENANT_NAME ?? 'Primary Clinic';
 
 async function ensureDefaultTenant() {
-  return prisma.tenant.upsert({
+  const tenant = await prisma.tenant.upsert({
     where: { code: DEFAULT_TENANT_CODE },
     update: { name: DEFAULT_TENANT_NAME },
     create: { name: DEFAULT_TENANT_NAME, code: DEFAULT_TENANT_CODE },
   });
+
+  await prisma.tenantConfiguration.upsert({
+    where: { tenantId: tenant.tenantId },
+    update: { appName: DEFAULT_TENANT_NAME },
+    create: { tenantId: tenant.tenantId, appName: DEFAULT_TENANT_NAME },
+  });
+
+  return tenant;
 }
 
 async function assignAdminsToTenant(tenantId: string) {
   const admins = await prisma.user.findMany({
     where: {
       status: 'active',
-      role: { in: ['ITAdmin', 'AdminAssistant'] },
+      role: { in: ['ITAdmin', 'SystemAdmin', 'AdminAssistant'] },
     },
     select: { userId: true, role: true },
   });

@@ -110,10 +110,16 @@ export default function BillingWorkspace() {
   const [patientVisitsLoading, setPatientVisitsLoading] = useState(false);
   const [patientVisitsError, setPatientVisitsError] = useState<string | null>(null);
   const [patientVisits, setPatientVisits] = useState<Visit[]>([]);
-  const canCollectPayments = user ? ['Cashier', 'ITAdmin'].includes(user.role) : false;
+  const canCollectPayments = user
+    ? ['Cashier', 'ITAdmin', 'SystemAdmin'].includes(user.role)
+    : false;
   const canTriggerVoid = canCollectPayments;
-  const canCreateInvoices = user ? ['Cashier', 'ITAdmin', 'Doctor'].includes(user.role) : false;
-  const canRepostPharmacy = user ? ['Pharmacist', 'ITAdmin'].includes(user.role) : false;
+  const canCreateInvoices = user
+    ? ['Cashier', 'ITAdmin', 'SystemAdmin', 'Doctor'].includes(user.role)
+    : false;
+  const canRepostPharmacy = user
+    ? ['Pharmacist', 'ITAdmin', 'SystemAdmin'].includes(user.role)
+    : false;
 
   useEffect(() => {
     const handle = window.setTimeout(() => setDebouncedPatientQuery(patientQuery.trim()), 300);
