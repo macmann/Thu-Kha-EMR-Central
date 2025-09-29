@@ -3,10 +3,15 @@ import type {
   CreateProblemInput,
   UpdateProblemStatusInput,
 } from '../validation/clinical.js';
+import { NotFoundError } from '../utils/httpErrors.js';
 
 const prisma = new PrismaClient();
 
-export async function addProblem(userId: string, payload: CreateProblemInput): Promise<Problem> {
+export async function addProblem(
+  userId: string,
+  tenantId: string,
+  payload: CreateProblemInput,
+): Promise<Problem> {
   return prisma.problem.create({
     data: {
       patientId: payload.patientId,
@@ -17,16 +22,21 @@ export async function addProblem(userId: string, payload: CreateProblemInput): P
       status: (payload.status as ProblemStatus) ?? ProblemStatus.ACTIVE,
       resolvedDate: payload.resolvedDate ? new Date(payload.resolvedDate) : null,
       createdBy: userId,
+      tenantId,
     },
   });
 }
 
 export async function listProblems(
   patientId: string,
+  tenantId: string,
   status?: string,
 ): Promise<Problem[]> {
   const normalizedStatus = status ? status.trim() : '';
-  const where: { patientId: string; status?: ProblemStatus } = { patientId };
+  const where: { patientId: string; tenantId: string; status?: ProblemStatus } = {
+    patientId,
+    tenantId,
+  };
   if (normalizedStatus) {
     const maybeStatus = normalizedStatus.toUpperCase() as ProblemStatus;
     if (Object.values(ProblemStatus).includes(maybeStatus)) {
@@ -42,9 +52,14 @@ export async function listProblems(
 
 export async function updateProblemStatus(
   problemId: string,
+  tenantId: string,
   status: UpdateProblemStatusInput['status'],
   resolvedDate?: string,
 ): Promise<Problem> {
+  const existing = await prisma.problem.findFirst({ where: { problemId, tenantId } });
+  if (!existing) {
+    throw new NotFoundError('Problem not found');
+  }
   return prisma.problem.update({
     where: { problemId },
     data: {

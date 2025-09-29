@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { requireAuth, requireRole, type AuthRequest } from '../modules/auth/index.js';
 import { validate } from '../middleware/validate.js';
+import { resolveTenant } from '../middleware/tenant.js';
 import {
   AddInvoiceItemSchema,
   CreateInvoiceSchema,
@@ -66,6 +67,7 @@ const ListInvoicesQuerySchema = z.object({
 });
 
 router.use(requireAuth);
+router.use(resolveTenant);
 
 router.post(
   '/billing/invoices',
@@ -74,7 +76,11 @@ router.post(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const payload = req.body as CreateInvoiceInput;
-      const invoice = await createInvoice(payload);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const invoice = await createInvoice(tenantId, payload);
       res.status(201).json(invoice);
     } catch (error) {
       next(error);
@@ -92,7 +98,11 @@ router.get(
         return res.status(400).json({ error: parsed.error.flatten() });
       }
       const { visitId, status } = parsed.data;
-      const where: Prisma.InvoiceWhereInput = {};
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const where: Prisma.InvoiceWhereInput = { tenantId };
       if (visitId) {
         where.visitId = visitId;
       }
@@ -123,8 +133,12 @@ router.get(
   requireRole('Cashier', 'ITAdmin', 'Doctor', 'Pharmacist'),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const invoice = await prisma.invoice.findUnique({
-        where: { invoiceId: req.params.invoiceId },
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const invoice = await prisma.invoice.findFirst({
+        where: { invoiceId: req.params.invoiceId, tenantId },
         include: {
           items: true,
           payments: { include: { allocations: true } },
@@ -149,11 +163,15 @@ router.patch(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const invoiceId = req.params.invoiceId;
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
       const body = req.body as z.infer<typeof ModifyInvoiceItemsSchema>;
       const results: unknown[] = [];
       if (body.add) {
         for (const item of body.add as InvoiceItemInput[]) {
-          results.push(await addInvoiceItem(invoiceId, item));
+          results.push(await addInvoiceItem(invoiceId, tenantId, item));
         }
       }
       if (body.update) {
@@ -196,7 +214,18 @@ router.post(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const { amount, method, referenceNo, note } = req.body as z.infer<typeof PostPaymentSchema>;
-      const payment = await postPayment(req.params.invoiceId, amount, method, referenceNo, note);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const payment = await postPayment(
+        req.params.invoiceId,
+        tenantId,
+        amount,
+        method,
+        referenceNo,
+        note,
+      );
       res.status(201).json(payment);
     } catch (error) {
       next(error);

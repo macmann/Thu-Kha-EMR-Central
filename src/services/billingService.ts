@@ -48,6 +48,7 @@ function formatYangonDate(date: Date): string {
 async function buildInvoiceItemData(
   tx: TransactionClient,
   invoiceId: string,
+  tenantId: string,
   payload: InvoiceItemInput,
 ) {
   let description = payload.description?.trim();
@@ -85,6 +86,7 @@ async function buildInvoiceItemData(
 
   return {
     invoiceId,
+    tenantId,
     sourceType: payload.sourceType,
     sourceRefId: payload.sourceRefId ?? null,
     serviceId: payload.serviceId ?? null,
@@ -179,7 +181,7 @@ export async function computeTotals(invoiceId: string, tx: TransactionClient = p
   });
 }
 
-export async function createInvoice(payload: CreateInvoiceInput) {
+export async function createInvoice(tenantId: string, payload: CreateInvoiceInput) {
   return prisma.$transaction(async (tx) => {
     const invoiceNo = await generateInvoiceNo(tx);
     const discountAmt = normalizeMoney(toDecimal(payload.invoiceDiscountAmt));
@@ -191,6 +193,7 @@ export async function createInvoice(payload: CreateInvoiceInput) {
         invoiceNo,
         visitId: payload.visitId,
         patientId: payload.patientId,
+        tenantId,
         note: payload.note ?? null,
         discountAmt,
         taxAmt,
@@ -199,7 +202,7 @@ export async function createInvoice(payload: CreateInvoiceInput) {
 
     if (payload.items?.length) {
       for (const item of payload.items) {
-        const data = await buildInvoiceItemData(tx, invoice.invoiceId, item);
+        const data = await buildInvoiceItemData(tx, invoice.invoiceId, tenantId, item);
         await tx.invoiceItem.create({ data });
       }
     }
@@ -208,14 +211,17 @@ export async function createInvoice(payload: CreateInvoiceInput) {
   });
 }
 
-export async function addInvoiceItem(invoiceId: string, item: InvoiceItemInput) {
+export async function addInvoiceItem(invoiceId: string, tenantId: string, item: InvoiceItemInput) {
   return prisma.$transaction(async (tx) => {
     const invoice = await tx.invoice.findUnique({ where: { invoiceId } });
     if (!invoice) {
       throw new NotFoundError('Invoice not found');
     }
     await assertInvoiceEditable(invoice);
-    const data = await buildInvoiceItemData(tx, invoiceId, item);
+    if (invoice.tenantId !== tenantId) {
+      throw new NotFoundError('Invoice not found');
+    }
+    const data = await buildInvoiceItemData(tx, invoiceId, tenantId, item);
     const created = await tx.invoiceItem.create({ data });
     await computeTotals(invoiceId, tx);
     return created;
@@ -322,6 +328,7 @@ export async function updateInvoiceAdjustments(
 
 export async function postPayment(
   invoiceId: string,
+  tenantId: string,
   amount: string,
   method: PaymentMethod,
   referenceNo?: string,
@@ -333,6 +340,9 @@ export async function postPayment(
       throw new NotFoundError('Invoice not found');
     }
     await assertInvoiceEditable(invoice);
+    if (invoice.tenantId !== tenantId) {
+      throw new NotFoundError('Invoice not found');
+    }
 
     const paymentAmount = normalizeMoney(toDecimal(amount));
     if (paymentAmount.lessThanOrEqualTo(0)) {
@@ -342,6 +352,7 @@ export async function postPayment(
     const payment = await tx.payment.create({
       data: {
         invoiceId,
+        tenantId,
         method,
         amount: paymentAmount,
         referenceNo: referenceNo ?? null,
@@ -353,6 +364,7 @@ export async function postPayment(
       data: {
         paymentId: payment.paymentId,
         invoiceId,
+        tenantId,
         amount: paymentAmount,
       },
     });
@@ -407,6 +419,7 @@ export async function ensurePharmacyChargeForDispenseItem(dispenseItemId: string
     let invoice = await tx.invoice.findFirst({
       where: {
         visitId: prescription.visitId,
+        tenantId: prescription.tenantId,
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -417,6 +430,7 @@ export async function ensurePharmacyChargeForDispenseItem(dispenseItemId: string
           invoiceNo: await generateInvoiceNo(tx),
           visitId: prescription.visitId,
           patientId: prescription.patientId,
+          tenantId: prescription.tenantId,
           status: InvoiceStatus.DRAFT,
         },
       });
@@ -446,6 +460,7 @@ export async function ensurePharmacyChargeForDispenseItem(dispenseItemId: string
     await tx.invoiceItem.create({
       data: {
         invoiceId: invoice.invoiceId,
+        tenantId: invoice.tenantId,
         sourceType: ItemSourceType.PHARMACY,
         sourceRefId: dispenseItemId,
         serviceId: null,

@@ -2,6 +2,7 @@ import {
   LabItemStatus,
   LabOrderStatus,
   PrismaClient,
+  Prisma,
   type LabOrder,
   type LabOrderItem,
   type LabResult,
@@ -23,6 +24,7 @@ type ListLabOrderFilters = {
 
 export async function createLabOrder(
   doctorId: string,
+  tenantId: string,
   payload: CreateLabOrderInput,
 ): Promise<LabOrderWithItems> {
   const order = await prisma.labOrder.create({
@@ -30,6 +32,7 @@ export async function createLabOrder(
       visitId: payload.visitId,
       patientId: payload.patientId,
       doctorId,
+      tenantId,
       priority: payload.priority ?? null,
       notes: payload.notes ?? null,
       items: {
@@ -47,8 +50,8 @@ export async function createLabOrder(
   return order;
 }
 
-export async function listLabOrders(filters: ListLabOrderFilters) {
-  const where: Record<string, unknown> = {};
+export async function listLabOrders(filters: ListLabOrderFilters, tenantId: string) {
+  const where: Prisma.LabOrderWhereInput = { tenantId };
   if (filters.patientId) {
     where.patientId = filters.patientId;
   }
@@ -58,7 +61,7 @@ export async function listLabOrders(filters: ListLabOrderFilters) {
   if (filters.status) {
     const normalized = filters.status.trim().toUpperCase();
     if (normalized && Object.values(LabOrderStatus).includes(normalized as LabOrderStatus)) {
-      where.status = normalized;
+      where.status = normalized as LabOrderStatus;
     }
   }
 
@@ -94,7 +97,7 @@ export function computeAbnormal(
 async function resolvePatientId(
   labOrderItemId: string,
   fallbackPatientId?: string,
-): Promise<{ labOrderId: string; patientId: string }> {
+): Promise<{ labOrderId: string; patientId: string; tenantId: string }> {
   const item = await prisma.labOrderItem.findUnique({
     where: { labOrderItemId },
     include: { LabOrder: true },
@@ -108,6 +111,7 @@ async function resolvePatientId(
   return {
     labOrderId: item.labOrderId,
     patientId: fallbackPatientId ?? item.LabOrder.patientId,
+    tenantId: item.LabOrder.tenantId,
   };
 }
 
@@ -127,7 +131,7 @@ export async function enterLabResult(
   labTechUserId: string,
   payload: EnterLabResultInput,
 ): Promise<LabResult> {
-  const { labOrderId, patientId } = await resolvePatientId(
+  const { labOrderId, patientId, tenantId } = await resolvePatientId(
     payload.labOrderItemId,
     payload.patientId,
   );
@@ -164,6 +168,7 @@ export async function enterLabResult(
         labOrderId,
         labOrderItemId: payload.labOrderItemId,
         patientId,
+        tenantId,
         resultValue: payload.resultValue ?? null,
         resultValueNum: payload.resultValueNum ?? null,
         unit,
@@ -207,9 +212,9 @@ export async function enterLabResult(
   return result;
 }
 
-export async function getLabOrderDetail(labOrderId: string) {
-  return prisma.labOrder.findUnique({
-    where: { labOrderId },
+export async function getLabOrderDetail(labOrderId: string, tenantId: string) {
+  return prisma.labOrder.findFirst({
+    where: { labOrderId, tenantId },
     include: {
       items: {
         include: { results: { orderBy: { resultedAt: 'desc' } } },

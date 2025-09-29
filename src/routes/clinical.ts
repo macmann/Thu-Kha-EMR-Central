@@ -11,6 +11,7 @@ import {
 import * as vitals from '../services/vitalsService.js';
 import * as problems from '../services/problemService.js';
 import * as labs from '../services/labService.js';
+import { resolveTenant } from '../middleware/tenant.js';
 
 const router = Router();
 
@@ -18,12 +19,17 @@ const router = Router();
 router.post(
   '/vitals',
   requireAuth,
+  resolveTenant,
   requireRole('Nurse', 'Doctor', 'ITAdmin'),
   validate({ body: CreateVitalsSchema }),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const user = req.user!;
-      const data = await vitals.createVitals(user.userId, req.body);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const data = await vitals.createVitals(user.userId, tenantId, req.body);
       res.json(data);
     } catch (error) {
       next(error);
@@ -34,13 +40,22 @@ router.post(
 router.get(
   '/patients/:patientId/vitals',
   requireAuth,
+  resolveTenant,
   requireRole('Nurse', 'Doctor', 'ITAdmin'),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const limit = Number.parseInt(String(req.query.limit ?? '50'), 10);
-      const data = await vitals.listVitals(req.params.patientId, {
-        limit: Number.isFinite(limit) ? limit : 50,
-      });
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const data = await vitals.listVitals(
+        req.params.patientId,
+        tenantId,
+        {
+          limit: Number.isFinite(limit) ? limit : 50,
+        },
+      );
       res.json({ data });
     } catch (error) {
       next(error);
@@ -52,12 +67,17 @@ router.get(
 router.post(
   '/problems',
   requireAuth,
+  resolveTenant,
   requireRole('Doctor', 'ITAdmin'),
   validate({ body: CreateProblemSchema }),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const user = req.user!;
-      const data = await problems.addProblem(user.userId, req.body);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const data = await problems.addProblem(user.userId, tenantId, req.body);
       res.json(data);
     } catch (error) {
       next(error);
@@ -68,11 +88,16 @@ router.post(
 router.get(
   '/patients/:patientId/problems',
   requireAuth,
+  resolveTenant,
   requireRole('Nurse', 'Doctor', 'ITAdmin'),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const statusParam = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const data = await problems.listProblems(req.params.patientId, statusParam);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const data = await problems.listProblems(req.params.patientId, tenantId, statusParam);
       res.json({ data });
     } catch (error) {
       next(error);
@@ -83,12 +108,18 @@ router.get(
 router.patch(
   '/problems/:problemId/status',
   requireAuth,
+  resolveTenant,
   requireRole('Doctor', 'ITAdmin'),
   validate({ body: UpdateProblemStatusSchema }),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
       const data = await problems.updateProblemStatus(
         req.params.problemId,
+        tenantId,
         req.body.status,
         req.body.resolvedDate,
       );
@@ -103,12 +134,17 @@ router.patch(
 router.post(
   '/lab-orders',
   requireAuth,
+  resolveTenant,
   requireRole('Doctor', 'ITAdmin'),
   validate({ body: CreateLabOrderSchema }),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const user = req.user!;
-      const data = await labs.createLabOrder(user.userId, req.body);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const data = await labs.createLabOrder(user.userId, tenantId, req.body);
       res.json(data);
     } catch (error) {
       next(error);
@@ -119,6 +155,7 @@ router.post(
 router.get(
   '/lab-orders',
   requireAuth,
+  resolveTenant,
   requireRole('LabTech', 'Doctor', 'ITAdmin'),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -133,7 +170,11 @@ router.get(
           ? req.query.status
           : undefined,
       };
-      const data = await labs.listLabOrders(filters);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const data = await labs.listLabOrders(filters, tenantId);
       res.json({ data });
     } catch (error) {
       next(error);
@@ -144,10 +185,15 @@ router.get(
 router.get(
   '/lab-orders/:labOrderId',
   requireAuth,
+  resolveTenant,
   requireRole('LabTech', 'Doctor', 'ITAdmin'),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const data = await labs.getLabOrderDetail(req.params.labOrderId);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const data = await labs.getLabOrderDetail(req.params.labOrderId, tenantId);
       res.json(data);
     } catch (error) {
       next(error);
@@ -158,6 +204,7 @@ router.get(
 router.post(
   '/lab-results',
   requireAuth,
+  resolveTenant,
   requireRole('LabTech', 'ITAdmin'),
   validate({ body: EnterLabResultSchema }),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -174,6 +221,7 @@ router.post(
 router.get(
   '/lab-orders/:labOrderId/report.pdf',
   requireAuth,
+  resolveTenant,
   requireRole('Doctor', 'LabTech', 'ITAdmin'),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
