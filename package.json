@@ -22,6 +22,7 @@
     "prisma:migrate": "prisma migrate dev --name pharmacy_mvp",
     "prisma:seed": "tsx prisma/seed.mts",
     "seed": "prisma db seed",
+    "tenant:create": "tsx scripts/createTenant.ts",
     "reset:db": "prisma migrate reset --force",
     "studio": "prisma studio"
   },
