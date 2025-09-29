@@ -88,13 +88,14 @@ export async function createPrescription(
   return { prescription, allergyHits };
 }
 
-export async function receiveStock(items: ReceiveStockInput) {
+export async function receiveStock(tenantId: string, items: ReceiveStockInput) {
   return prisma.$transaction((tx) =>
     Promise.all(
       items.map((item) =>
         tx.stockItem.create({
           data: {
             drugId: item.drugId,
+            tenantId,
             batchNo: item.batchNo ?? null,
             expiryDate: item.expiryDate ? new Date(item.expiryDate) : null,
             location: item.location,
@@ -107,9 +108,9 @@ export async function receiveStock(items: ReceiveStockInput) {
   );
 }
 
-export async function listStockItems(drugId: string) {
+export async function listStockItems(drugId: string, tenantId: string) {
   return prisma.stockItem.findMany({
-    where: { drugId },
+    where: { drugId, tenantId },
     orderBy: [{ expiryDate: 'asc' }, { createdAt: 'asc' }],
   });
 }
@@ -179,11 +180,12 @@ export async function getPharmacyQueue(
   });
 }
 
-export async function startDispense(prescriptionId: string, pharmacistId: string) {
+export async function startDispense(prescriptionId: string, pharmacistId: string, tenantId: string) {
   return prisma.dispense.create({
     data: {
       prescriptionId,
       pharmacistId,
+      tenantId,
       status: 'READY',
     },
   });

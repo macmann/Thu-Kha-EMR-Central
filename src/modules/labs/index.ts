@@ -1,8 +1,9 @@
-import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Router, Response } from 'express';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { requireAuth, requireRole, type AuthRequest } from '../auth/index.js';
 import { logDataChange } from '../audit/index.js';
+import { resolveTenant } from '../../middleware/tenant.js';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -15,7 +16,12 @@ const labSchema = z.object({
   testDate: z.coerce.date().optional(),
 });
 
-router.post('/visits/:id/labs', requireAuth, requireRole('Doctor'), async (req: AuthRequest, res: Response) => {
+router.post(
+  '/visits/:id/labs',
+  requireAuth,
+  resolveTenant,
+  requireRole('Doctor'),
+  async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   try {
     z.string().uuid().parse(id);
@@ -26,12 +32,19 @@ router.post('/visits/:id/labs', requireAuth, requireRole('Doctor'), async (req: 
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
-  const lab = await prisma.visitLabResult.create({ data: { visitId: id, ...parsed.data } });
+  const tenantId = req.tenantId;
+  if (!tenantId) {
+    return res.status(400).json({ error: 'Tenant context missing' });
+  }
+  const lab = await prisma.visitLabResult.create({
+    data: { visitId: id, tenantId, ...parsed.data },
+  });
   await logDataChange(req.user!.userId, 'lab', lab.labId, undefined, lab);
   res.status(201).json(lab);
-});
+  },
+);
 
-router.get('/', requireAuth, requireRole('Doctor'), async (req: Request, res: Response) => {
+router.get('/', requireAuth, resolveTenant, requireRole('Doctor'), async (req: AuthRequest, res: Response) => {
   const querySchema = z.object({
     patient_id: z.string().uuid().optional(),
     test_name: z.string().optional(),
@@ -47,7 +60,11 @@ router.get('/', requireAuth, requireRole('Doctor'), async (req: Request, res: Re
     return res.status(400).json({ error: parsed.error.flatten() });
   }
   const { patient_id, test_name, min, max, from, to, limit = 20, offset = 0 } = parsed.data;
-  const where: any = {};
+  const tenantId = req.tenantId;
+  if (!tenantId) {
+    return res.status(400).json({ error: 'Tenant context missing' });
+  }
+  const where: Prisma.VisitLabResultWhereInput = { tenantId };
   if (patient_id) {
     where.visit = { patientId: patient_id };
   }

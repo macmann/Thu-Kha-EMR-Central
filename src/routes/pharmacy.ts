@@ -91,7 +91,11 @@ router.post(
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const payload = req.body as z.infer<typeof ReceiveStockSchema>;
-      const created = await receiveStock(payload.items);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const created = await receiveStock(tenantId, payload.items);
       res.status(201).json({ items: created });
     } catch (error) {
       next(error);
@@ -131,8 +135,12 @@ router.get(
       if (!parsed.success) {
         return res.status(400).json({ error: parsed.error.flatten() });
       }
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
 
-      const items = await listStockItems(parsed.data.drugId);
+      const items = await listStockItems(parsed.data.drugId, tenantId);
       res.json({ data: items });
     } catch (error) {
       next(error);
@@ -310,7 +318,11 @@ router.post(
       if (!req.user) {
         return res.status(401).json({ error: 'Unauthorized' });
       }
-      const dispense = await startDispense(req.params.prescriptionId, req.user.userId);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const dispense = await startDispense(req.params.prescriptionId, req.user.userId, tenantId);
       res.status(201).json(dispense);
     } catch (error) {
       next(error);

@@ -18,7 +18,11 @@ function calculateBmi(weightKg?: number | null, heightCm?: number | null): numbe
   return Number(bmi.toFixed(2));
 }
 
-export async function createVitals(userId: string, payload: CreateVitalsInput): Promise<Vitals> {
+export async function createVitals(
+  userId: string,
+  tenantId: string,
+  payload: CreateVitalsInput,
+): Promise<Vitals> {
   const bmi = calculateBmi(payload.weightKg ?? null, payload.heightCm ?? null);
 
   return prisma.vitals.create({
@@ -26,6 +30,7 @@ export async function createVitals(userId: string, payload: CreateVitalsInput): 
       visitId: payload.visitId,
       patientId: payload.patientId,
       recordedBy: userId,
+      tenantId,
       systolic: payload.systolic ?? null,
       diastolic: payload.diastolic ?? null,
       heartRate: payload.heartRate ?? null,
@@ -41,10 +46,11 @@ export async function createVitals(userId: string, payload: CreateVitalsInput): 
 
 export async function listVitals(
   patientId: string,
+  tenantId: string,
   opts: { limit?: number } = {},
 ): Promise<Vitals[]> {
   return prisma.vitals.findMany({
-    where: { patientId },
+    where: { patientId, tenantId },
     orderBy: { recordedAt: 'desc' },
     take: opts.limit ?? 50,
   });

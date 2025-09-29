@@ -31,6 +31,12 @@ function readCsv(filename: string): Row[] {
 }
 
 async function main() {
+  const tenant = await prisma.tenant.findFirst({ orderBy: { createdAt: 'asc' } });
+  if (!tenant) {
+    throw new Error('At least one tenant must exist before loading CSV data');
+  }
+  const tenantId = tenant.tenantId;
+
   const patientMap = new Map<number, string>();
   const doctorMap = new Map<number, string>();
   const visitMap = new Map<number, string>();
@@ -104,6 +110,7 @@ async function main() {
         data: {
           patientId,
           doctorId,
+          tenantId,
           visitDate,
           department: row.department,
           reason: row.reason || null,
@@ -169,6 +176,7 @@ async function main() {
       await prisma.visitLabResult.create({
         data: {
           visitId,
+          tenantId,
           testName,
           resultValue: row.result_value ? parseFloat(row.result_value) : null,
           unit: row.unit || null,
