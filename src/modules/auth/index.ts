@@ -4,7 +4,7 @@ import type { Request } from 'express';
 import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 
-type RoleName =
+export type RoleName =
   | 'Doctor'
   | 'AdminAssistant'
   | 'Cashier'
@@ -24,6 +24,8 @@ export interface AuthUser {
 
 export interface AuthRequest extends Request {
   user?: AuthUser;
+  tenantId?: string;
+  tenantRole?: RoleName;
 }
 
 const prisma = new PrismaClient();
