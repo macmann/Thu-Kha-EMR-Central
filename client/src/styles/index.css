@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply h-full scroll-smooth;
+  }
+
+  body {
+    @apply min-h-full bg-gray-50 text-gray-900 antialiased;
+  }
+
+  #root {
+    @apply min-h-full;
+  }
+}

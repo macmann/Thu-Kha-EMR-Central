@@ -1,0 +1,162 @@
+key,en,my
+Search patients...,Search patients...,လူနာများကို ရှာဖွေပါ...
+EMR System,EMR System,EMR စနစ်
+Dashboard,Dashboard,ဒက်ဘုတ်
+Patients,Patients,လူနာများ
+Appointments,Appointments,ချိန်းစာရင်းများ
+Reports,Reports,အစီရင်ခံစာများ
+Settings,Settings,ချိန်ညှိမှုများ
+Team Member,Team Member,အသင်းဝင်
+Signed-in user,Signed-in user,ဝင်ရောက်ထားသောအသုံးပြုသူ
+Doctor,Doctor,ဆရာဝန်
+Administrative Assistant,Administrative Assistant,စီမံရေးကူညီသူ
+IT Administrator,IT Administrator,IT အုပ်ချုပ်ရေးမှူး
+Sign in to your account,Sign in to your account,သင့်အကောင့်သို့ ဝင်ရောက်ပါ
+Username or Email,Username or Email,အသုံးပြုသူအမည် သို့မဟုတ် အီးမေးလ်
+Password,Password,စကားဝှက်
+Remember me,Remember me,ကျွနော့်ကို မှတ်ထားပါ
+Forgot your password?,Forgot your password?,စကားဝှက်မေ့သွားပါသလား။
+Login,Login,စနစ်သို့ ဝင်ရောက်ပါ
+Login successful,Login successful,ဝင်ရောက်မှု အောင်မြင်ပါသည်
+Application Name,Application Name,အက်ပလီကေးရှင်းအမည်
+Logo,Logo,လိုဂို
+"PNG, JPG or SVG up to 1MB.","PNG, JPG or SVG up to 1MB.",PNG၊ JPG သို့မဟုတ် SVG (၁MB ထိ)
+Interface Language,Interface Language,စနစ်အသုံးပြု ဘာသာစကား
+English,English,အင်္ဂလိပ်
+Choose the language used across the staff experience.,Choose the language used across the staff experience.,ဝန်ထမ်းအသုံးပြုမှုအတွက် ဘာသာစကားကို ရွေးချယ်ပါ။
+Widget {status},Widget {status},ဝီဂျက် {status}
+Enabled,Enabled,ဖွင့်ထားသည်
+Disabled,Disabled,ပိတ်ထားသည်
+Portal name synced as {name},Portal name synced as {name},ပေါ်တယ်အမည်ကို {name} ဟုသတ်မှတ်ထားသည်
+Organization Settings,Organization Settings,အဖွဲ့အစည်း ချိန်ညှိမှုများ
+"Manage branding, staff accounts, and patient-facing tools.","Manage branding, staff accounts, and patient-facing tools.",အသင်းအမှတ်တံဆိပ်၊ ဝန်ထမ်းအကောင့်များနှင့် လူနာဆိုင်ရာ ကိရိယာများကို စီမံပါ။
+Review lab results for A. Jones,Review lab results for A. Jones,A. Jones ၏ သွေးစမ်းသပ်ရလဒ်များကို ပြန်လည်သုံးသပ်ပါ
+Follow up with Dr. Davis,Follow up with Dr. Davis,ဆရာဝန် Davis နှင့် ဆက်လက် ဆွေးနွေးလုပ်ဆောင်ပါ
+General Checkup,General Checkup,အထွေထွေ စစ်ဆေးမှု
+Medication Review,Medication Review,ဆေးဝါး ပြန်လည်သုံးသပ်ခြင်း
+Team Dashboard,Team Dashboard,အသင်း ဒက်ရှ်ဘုတ်
+Monitor appointments and keep patients informed.,Monitor appointments and keep patients informed.,ချိန်းစာရင်းများကို စောင့်ကြည့်ပြီး လူနာများကို သတင်းပေးထားပါ။
+Track clinic activity and coordinate care.,Track clinic activity and coordinate care.,ဆေးခန်း လှုပ်ရှားမှုများကို စောင့်ကြည့်ပြီး ပြုပြင်စောင့်ရှောက်မှုကို ကိုဩဒိနိတ်လုပ်ဆောင်ပါ။
+Register New Patient,Register New Patient,လူနာအသစ်ကို စာရင်းသွင်းပါ
+Capture demographics and intake information for walk-in patients.,Capture demographics and intake information for walk-in patients.,အလိုလို ဝင်ရောက်လာသော လူနာများအတွက် လူမျိုးရေးနှင့် ဝင်ရောက် အသေးစိတ် အချက်အလက်များကို သိမ်းဆည်းပါ။
+Register Patient,Register Patient,လူနာကို စာရင်းသွင်းပါ
+Search Patient Records,Search Patient Records,လူနာမှတ်တမ်းများကို ရှာဖွေပါ
+"Look up patients to confirm coverage, history, and contact details.","Look up patients to confirm coverage, history, and contact details.",လူနာများ၏ အာမခံ၊ မှတ်တမ်းနှင့် ဆက်သွယ်ရန် အချက်အလက်များကို အတည်ပြုရန် ရှာဖွေပါ။
+Search Patient,Search Patient,လူနာကို ရှာဖွေပါ
+Patients Today,Patients Today,ယနေ့ လူနာများ
+Scheduled visits and walk-ins awaiting triage.,Scheduled visits and walk-ins awaiting triage.,ချိန်းထားပြီး နှင့် စောင့်ဆိုင်းနေသော လည်ပတ်မှုများ။
+New Messages,New Messages,မက်ဆေ့ဂျ် အသစ်များ
+Updates from labs and internal teams.,Updates from labs and internal teams.,လက်တင်များနှင့် အတွင်းရေးအသင်းများထံမှ အပ်ဒိတ်များ။
+Upcoming Appointments,Upcoming Appointments,မကြာမီလာမည့် ချိန်းများ
+View schedule,View schedule,အချိန်ဇယားကို ကြည့်ပါ
+Task Reminders,Task Reminders,တာဝန် သတိပေးချက်များ
+Unable to load queue.,Unable to load queue.,စာရင်းစဉ်ကို တင်မရပါ။
+Unable to load doctors.,Unable to load doctors.,ဆရာဝန်စာရင်းကို တင်မရပါ။
+Unable to load existing visit details.,Unable to load existing visit details.,ရှိပြီးသား လည်ပတ်အသေးစိတ်ကို တင်မရပါ။
+Invited {name} to the consultation room.,Invited {name} to the consultation room.,{name} ကို အကဲဖြတ်ခန်းသို့ ဖိတ်ခေါ်ခဲ့ပါသည်။
+Unable to update appointment status.,Unable to update appointment status.,ချိန်းစာရင်း အခြေအနေကို ပြင်ဆင်မရပါ။
+Select an appointment before saving visit details.,Select an appointment before saving visit details.,လည်ပတ်အသေးစိတ်ကို သိမ်းဆည်းရန်မီ ချိန်းစာရင်းကို ရွေးချယ်ပါ။
+A doctor must be selected for the visit.,A doctor must be selected for the visit.,ဤလည်ပတ်မှုအတွက် ဆရာဝန်တစ်ဦးကို ရွေးချယ်ရမည်။
+Visit details updated.,Visit details updated.,လည်ပတ်အသေးစိတ်ကို ပြင်ဆင်ပြီးပါပြီ။
+Visit saved and appointment completed.,Visit saved and appointment completed.,လည်ပတ်မှုကို သိမ်းပြီး ချိန်းကို ပြီးမြောက်စေခဲ့ပါသည်။
+Unable to save visit details.,Unable to save visit details.,လည်ပတ်အသေးစိတ်ကို သိမ်းဆည်းမရပါ။
+Today's Queue,Today's Queue,ယနေ့ စာရင်းစဉ်
+"Invite your next patient, capture notes, and wrap up the visit.","Invite your next patient, capture notes, and wrap up the visit.",လာမည့် လူနာကို ဖိတ်ခေါ်ပြီး မှတ်ချက်များကို မှတ်တမ်းတင်ကာ လည်ပတ်မှုကို ပြီးမြောက်စေပါ။
+Refresh Queue,Refresh Queue,စာရင်းစဉ်ကို ပြန်စတင်ပါ
+Loading your appointments...,Loading your appointments...,ချိန်းစာရင်းများကို တင်နေပါသည်...
+Upcoming patients,Upcoming patients,မကြာမီလာမည့် လူနာများ
+{count} in queue,{count} in queue,စာရင်းစဉ်တွင် {count} ယောက်
+No patients waiting. Enjoy a short break!,No patients waiting. Enjoy a short break!,စောင့်နေသော လူနာများ မရှိပါ။ ခဏအနားယူပါ။
+AI Summary,AI Summary,AI အကျဉ်းချုံး
+AI-generated patient overview,AI-generated patient overview,AI ဖန်တီးသည့် လူနာအချက်အလက် အကျဉ်းချုံး
+Loading AI summary...,Loading AI summary...,AI အကျဉ်းချုံးကို ဖန်တီးနေပါသည်...
+Unable to generate AI summary.,Unable to generate AI summary.,AI အကျဉ်းချုံးကို မဖန်တီးနိုင်ပါ။
+Refresh summary,Refresh summary,အကျဉ်းချုံးကို ပြန်လည်ဖန်တီးပါ
+Generated using GPT-5 mini.,Generated using GPT-5 mini.,GPT-5 mini ဖြင့် ဖန်တီးထားသည်။
+No AI summary is available.,No AI summary is available.,AI အကျဉ်းချုံး မရှိသေးပါ။
+Current patient,Current patient,လက်ရှိ လူနာ
+No visit reason recorded.,No visit reason recorded.,လည်ပတ်ရသည့် အကြောင်းရင်း မမှတ်တမ်းတင်ထားပါ။
+Room assignment pending,Room assignment pending,အခန်းခွဲ ထုတ်ပြန်ရန် စောင့်ဆိုင်းဆဲ
+Scheduled time,Scheduled time,ချိန်းချိန်
+Status,Status,အခြေအနေ
+Visit documentation,Visit documentation,လည်ပတ် မှတ်တမ်းရေးရာ
+Update Visit,Update Visit,လည်ပတ်မှုကို အသစ်ပြင်ပါ
+Save Visit & Complete,Save Visit & Complete,လည်ပတ်မှုကို သိမ်းပြီး ပြီးမြောက်စေပါ
+Inviting...,Inviting...,ဖိတ်ခေါ်နေသည်...
+Invite Patient,Invite Patient,လူနာကို ဖိတ်ခေါ်ပါ
+Loading visit form...,Loading visit form...,လည်ပတ် ဖောင်ကို တင်နေပါသည်...
+Select a patient from the queue to begin charting their visit.,Select a patient from the queue to begin charting their visit.,လည်ပတ် မှတ်တမ်းရေးခြင်းစတင်ရန် စာရင်းစဉ်မှ လူနာတစ်ဦးကို ရွေးချယ်ပါ။
+Scheduled,Scheduled,ချိန်းထားပြီး
+Checked-in,Checked-in,ဖိတ်ဆိုင်းပြီး
+In progress,In progress,လုပ်ဆောင်နေသည်
+Completed,Completed,ပြီးမြောက်ခဲ့သည်
+Cancelled,Cancelled,ပယ်ဖျက်ခဲ့သည်
+Recently Registered,Recently Registered,မကြာသေးမီက စာရင်းသွင်းထားသည်
+Medicare Coverage,Medicare Coverage,Medicare အာမခံ
+Hypertension,Hypertension,သွေးတိုးရောဂါ
+Diabetes,Diabetes,ဆီးချိုရောဂါ
+"Search patients by name, ID, or insurance...","Search patients by name, ID, or insurance...",လူနာများကို အမည်၊ ID သို့မဟုတ် အာမခံဖြင့် ရှာဖွေပါ...
+Patient Directory,Patient Directory,လူနာ လမ်းညွှန်စာရင်း
+Find and manage patient records across the organization.,Find and manage patient records across the organization.,အဖွဲ့အစည်းတစ်ရပ်လုံးရှိ လူနာမှတ်တမ်းများကို ရှာဖွေစီမံပါ။
+Search Results,Search Results,ရှာဖွေမှု ရလဒ်များ
+Showing {count} matching {recordLabel}.,Showing {count} matching {recordLabel}.,{count} ခုနှင့် ကိုက်ညီသော {recordLabel} များကို ပြပါသည်။
+Start typing to explore the patient directory.,Start typing to explore the patient directory.,လူနာ လမ်းညွှန်စာရင်းကို ရှာဖွေရန် စာရိုက်ခြင်းစတင်ပါ။
+record,record,မှတ်တမ်း
+records,records,မှတ်တမ်းများ
+{count} match,{count} match,{count} ခု ကိုက်ညီပါသည်
+{count} matches,{count} matches,{count} ခု ကိုက်ညီပါသည်
+Searching for matching patients...,Searching for matching patients...,ကိုက်ညီသော လူနာများကို ရှာဖွေနေသည်...
+Hang tight while we gather the latest records.,Hang tight while we gather the latest records.,အသစ်ဆုံး မှတ်တမ်းများကို စုစည်းနေသဖြင့် ခဏစောင့်ပါ။
+Patient,Patient,လူနာ
+Date of Birth,Date of Birth,မွေးသက္ကရာဇ်
+Insurance,Insurance,အာမခံ
+Actions,Actions,လုပ်ဆောင်ချက်များ
+Self-pay,Self-pay,ကိုယ်တိုင်ပေးချေ
+View Profile,View Profile,ပရိုဖိုင်ကို ကြည့်ပါ
+No patients match your search just yet.,No patients match your search just yet.,သင့်ရှာဖွေမှုနှင့် ကိုက်ညီသော လူနာများ မရှိသေးပါ။
+"Search for patients by name, patient ID, or insurance provider.","Search for patients by name, patient ID, or insurance provider.",လူနာများကို အမည်၊ လူနာ ID သို့မဟုတ် အာမခံပံ့ပိုးသူဖြင့် ရှာဖွေပါ။
+
+"Try ""Jane"" or ""Medicare"" to explore the directory.","Try ""Jane"" or ""Medicare"" to explore the directory.","လမ်းညွှန်စာရင်းကို ရှာဖွေရန် ""Jane"" သို့မဟုတ် ""Medicare"" ကို စမ်းကြည့်ပါ။"
+Quick Filters,Quick Filters, ရွေးချယ်ချက်များ
+Jump into commonly referenced patient segments.,Jump into commonly referenced patient segments.,အများဆုံး ကိုးကားသော လူနာအဖွဲ့အစည်းများသို့ ချက်ချင်း ဝင်ရောက်ပါ။
+Need to add someone?,Need to add someone?,တစ်ယောက် ထပ်ထည့်လိုပါသလား။
+Can't find the patient you're looking for? Create a new record in just a few steps.,Can't find the patient you're looking for? Create a new record in just a few steps.,ရှာဖွေနေသော လူနာကို မတွေ့ဘူးလား။ အဆင့်အနည်းငယ်သာဖြင့် မှတ်တမ်းအသစ်တစ်ခု ဖန်တီးနိုင်ပါသည်။
+IT Administrator Dashboard,IT Administrator Dashboard,IT အုပ်ချုပ်ရေးမှူး ဒက်ရှ်ဘုတ်
+Monitor user accounts, system access, and staff setup.,Monitor user accounts, system access, and staff setup.,အသုံးပြုသူအကောင့်များ၊ စနစ်ဝင်ရောက်ခွင့်နှင့် ဝန်ထမ်း စနစ်သတ်မှတ်ခြင်းကို စောင့်ကြည့်ပါ။
+Staff Accounts,Staff Accounts,ဝန်ထမ်းအကောင့်များ
+Active Accounts,Active Accounts,လှုပ်ရှားနေသော အကောင့်များ
+Inactive Accounts,Inactive Accounts,ပိတ်ထားသော အကောင့်များ
+Doctor Accounts,Doctor Accounts,ဆရာဝန်အကောင့်များ
+Unassigned Doctors: {count},Unassigned Doctors: {count},ဆရာဝန် မချိတ်ဆက်ရသေးသူများ {count} ယောက်
+No data available.,No data available.,ဒေတာ မရှိပါ။
+Unable to load user accounts.,Unable to load user accounts.,အသုံးပြုသူအကောင့်များကို တင်မရပါ။
+Loading user accounts...,Loading user accounts...,အသုံးပြုသူအကောင့်များကို တင်နေပါသည်...
+Latest User Accounts,Latest User Accounts,အသုံးပြုသူအကောင့် အသစ်များ
+No user accounts available.,No user accounts available.,အသုံးပြုသူအကောင့်များ မရှိသေးပါ။
+Created,Created,ဖန်တီးခဲ့သော
+Doctor Assignment,Doctor Assignment,ဆရာဝန် သတ်မှတ်ချက်
+Not assigned,Not assigned,မသတ်မှတ်ရသေးပါ
+Active,Active,လုပ်ဆောင်နေသည်
+Inactive,Inactive,ပိတ်ထားသည်
+Doctor Coverage,Doctor Coverage,ဆရာဝန် ဝင်ရောက်မှု အခြေအနေ
+Loading doctor data...,Loading doctor data...,ဆရာဝန် ဒေတာများကို တင်နေပါသည်...
+Unable to load doctor data.,Unable to load doctor data.,ဆရာဝန် ဒေတာကို တင်မရပါ။
+All doctors have user accounts.,All doctors have user accounts.,ဆရာဝန်အားလုံးတွင် အသုံးပြုသူအကောင့်များ ရှိပြီးဖြစ်သည်။
+Appointments Today,Appointments Today,Appointments Today
+Checked-in Patients,Checked-in Patients,Checked-in Patients
+{upcoming} upcoming · {completed} completed,{upcoming} upcoming · {completed} completed,{upcoming} upcoming · {completed} completed
+No appointments scheduled today.,No appointments scheduled today.,No appointments scheduled today.
+Unable to load schedule.,Unable to load schedule.,Unable to load schedule.
+Loading appointments...,Loading appointments...,Loading appointments...
+No upcoming appointments.,No upcoming appointments.,No upcoming appointments.
+Check in {count} scheduled patients.,Check in {count} scheduled patients.,Check in {count} scheduled patients.
+Prepare rooms for {count} checked-in patients.,Prepare rooms for {count} checked-in patients.,Prepare rooms for {count} checked-in patients.
+Follow up on {count} appointments past their start time.,Follow up on {count} appointments past their start time.,Follow up on {count} appointments past their start time.
+{count} patients ready for their visit.,{count} patients ready for their visit.,{count} patients ready for their visit.
+{count} patients waiting to check in.,{count} patients waiting to check in.,{count} patients waiting to check in.
+No patients have checked in yet.,No patients have checked in yet.,No patients have checked in yet.
+No pending tasks for today.,No pending tasks for today.,No pending tasks for today.
+Drug allergies,Drug allergies,ဆေးအလွန်မတုံ့ပြန်မှုများ
+No known allergies,No known allergies,မသိရှိရသေးသော အလွန်မတုံ့ပြန်မှုများ
+Document medications to avoid during care.,Document medications to avoid during care.,ကုသမှုတွင် မသုံးသင့်သော ဆေးဝါးများကို မှတ်တမ်းတင်ပါ။
+e.g. Penicillin, Ibuprofen,e.g. Penicillin, Ibuprofen,ဥပမာ- ပီနစ်ဆီလင်း၊ အိုင်ဘူပရိုဖင်
