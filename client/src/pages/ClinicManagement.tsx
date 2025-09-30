@@ -308,9 +308,12 @@ export default function ClinicManagement() {
                 const availableItAdmins = users.filter(
                   (user) => user.role === 'ITAdmin' && !assignedUserIds.has(user.userId),
                 );
-                const availableStaff = users.filter(
-                  (user) => staffRoleSet.has(user.role) && user.role !== 'ITAdmin' && !assignedUserIds.has(user.userId),
-                );
+                  const availableStaff = users.filter(
+                    (user) =>
+                      user.role !== 'ITAdmin' &&
+                      staffRoleSet.has(user.role) &&
+                      !assignedUserIds.has(user.userId),
+                  );
                 const itMembers = tenant.members.filter((member) => member.tenantRole === 'ITAdmin');
                 const staffMembers = tenant.members.filter(
                   (member) =>
