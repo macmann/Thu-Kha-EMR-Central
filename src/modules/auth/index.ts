@@ -32,11 +32,53 @@ export interface AuthRequest extends Request {
 const prisma = new PrismaClient();
 const PASSWORD_MIN_LENGTH = 8;
 
+const SYSTEM_ADMIN_EMAIL = (process.env.SYSTEM_ADMIN_EMAIL ?? 'sysadmin@example.com').toLowerCase();
+const SYSTEM_ADMIN_PASSWORD = process.env.SYSTEM_ADMIN_PASSWORD ?? 'SysAdminPass123!';
+const DEFAULT_TENANT_CODE = process.env.DEFAULT_TENANT_CODE ?? 'default';
+
 function parseBearerToken(header: string | undefined): string | null {
   if (!header) return null;
   const [scheme, value] = header.split(' ');
   if (!scheme || scheme.toLowerCase() !== 'bearer') return null;
   return value?.trim() || null;
+}
+
+async function ensureSystemAdminUser() {
+  const existingUser = await prisma.user.findFirst({
+    where: {
+      email: { equals: SYSTEM_ADMIN_EMAIL, mode: 'insensitive' },
+    },
+  });
+
+  if (existingUser) {
+    return existingUser;
+  }
+
+  const passwordHash = await bcrypt.hash(SYSTEM_ADMIN_PASSWORD, 10);
+
+  const createdUser = await prisma.user.create({
+    data: {
+      email: SYSTEM_ADMIN_EMAIL,
+      passwordHash,
+      role: 'SystemAdmin',
+      status: 'active',
+    },
+  });
+
+  const tenant = await prisma.tenant.findFirst({
+    where: { code: DEFAULT_TENANT_CODE },
+    select: { tenantId: true },
+  });
+
+  if (tenant) {
+    await prisma.userTenant.upsert({
+      where: { tenantId_userId: { tenantId: tenant.tenantId, userId: createdUser.userId } },
+      update: { role: 'SystemAdmin' },
+      create: { tenantId: tenant.tenantId, userId: createdUser.userId, role: 'SystemAdmin' },
+    });
+  }
+
+  return createdUser;
 }
 
 function decodeToken(token: string): {
@@ -285,16 +327,25 @@ router.post('/login', async (req: Request, res: Response) => {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const normalizedEmail = email.trim();
+  const normalizedEmail = email.trim().toLowerCase();
   if (!normalizedEmail || password.trim().length === 0) {
     return res.status(400).json({ error: 'Email and password are required' });
   }
 
-  const user = await prisma.user.findFirst({
+  let user = await prisma.user.findFirst({
     where: {
       email: { equals: normalizedEmail, mode: 'insensitive' },
     },
   });
+
+  if (!user && normalizedEmail === SYSTEM_ADMIN_EMAIL) {
+    await ensureSystemAdminUser();
+    user = await prisma.user.findFirst({
+      where: {
+        email: { equals: normalizedEmail, mode: 'insensitive' },
+      },
+    });
+  }
 
   if (!user || user.status !== 'active') {
     return res.status(401).json({ error: 'Invalid email or password' });
