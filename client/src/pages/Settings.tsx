@@ -10,6 +10,7 @@ import {
   type Role,
 } from '../api/client';
 import { useAuth } from '../context/AuthProvider';
+import { ROLE_LABELS } from '../constants/roles';
 
 type DoctorFormState = {
   name: string;
@@ -20,19 +21,6 @@ type UserDraft = {
   role: Role;
   status: 'active' | 'inactive';
   doctorId: string | null;
-};
-
-const ROLE_LABELS: Record<Role, string> = {
-  Doctor: 'Doctor',
-  AdminAssistant: 'Administrative Assistant',
-  Cashier: 'Cashier',
-  ITAdmin: 'IT Administrator',
-  SystemAdmin: 'System Administrator',
-  Pharmacist: 'Pharmacist',
-  PharmacyTech: 'Pharmacy Technician',
-  InventoryManager: 'Inventory Manager',
-  Nurse: 'Nurse',
-  LabTech: 'Laboratory Technician',
 };
 
 const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [

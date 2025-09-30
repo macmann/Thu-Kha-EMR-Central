@@ -8,6 +8,7 @@ import TenantPicker from './TenantPicker';
 import GlobalSearch from './GlobalSearch';
 import { AvatarIcon, ChevronDownIcon, MenuIcon } from './icons';
 import { useTranslation } from '../hooks/useTranslation';
+import { ROLE_LABELS } from '../constants/roles';
 
 interface AppHeaderProps {
   title: string;
@@ -16,19 +17,6 @@ interface AppHeaderProps {
   onOpenMobileNav?: () => void;
   isMobileNavOpen?: boolean;
 }
-
-const ROLE_LABELS: Record<string, string> = {
-  Doctor: 'Doctor',
-  AdminAssistant: 'Administrative Assistant',
-  Cashier: 'Cashier',
-  ITAdmin: 'IT Administrator',
-  SystemAdmin: 'System Administrator',
-  Pharmacist: 'Pharmacist',
-  PharmacyTech: 'Pharmacy Technician',
-  InventoryManager: 'Inventory Manager',
-  Nurse: 'Nurse',
-  LabTech: 'Laboratory Technician',
-};
 
 const placeholderLogo = (name: string) =>
   name

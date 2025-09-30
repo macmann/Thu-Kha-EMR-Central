@@ -24,6 +24,7 @@ import SettingsServices from './pages/SettingsServices';
 import ProblemList from './pages/ProblemList';
 import LabOrdersPage from './pages/LabOrders';
 import LabOrderDetailPage from './pages/LabOrderDetail';
+import ClinicManagement from './pages/ClinicManagement';
 import './styles/App.css';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
 import TenantPicker from './components/TenantPicker';
@@ -239,6 +240,14 @@ function AppContent() {
           element={
             <RouteGuard allowedRoles={['ITAdmin', 'SystemAdmin']}>
               <Settings />
+            </RouteGuard>
+          }
+        />
+        <Route
+          path="/clinics"
+          element={
+            <RouteGuard allowedRoles={['SystemAdmin']}>
+              <ClinicManagement />
             </RouteGuard>
           }
         />

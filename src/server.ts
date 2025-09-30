@@ -21,6 +21,7 @@ import meRouter from './routes/me.js';
 import patientTenantsRouter from './routes/patientTenants.js';
 import searchRouter from './routes/search.js';
 import settingsRouter from './modules/settings/index.js';
+import adminTenantsRouter from './modules/tenants/index.js';
 
 export const apiRouter = Router();
 
@@ -47,6 +48,7 @@ apiRouter.use('/me', meRouter);
 apiRouter.use(patientTenantsRouter);
 apiRouter.use('/search', searchRouter);
 apiRouter.use('/settings', settingsRouter);
+apiRouter.use('/admin/tenants', adminTenantsRouter);
 apiRouter.use(docsRouter);
 
 export default apiRouter;
