@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { useTranslation } from '../hooks/useTranslation';
 import {
@@ -12,6 +13,7 @@ import {
   type UserAccount,
 } from '../api/client';
 import { CLINICALLY_GLOBAL_ROLES, ROLE_LABELS, STAFF_ROLES } from '../constants/roles';
+import { useTenant } from '../contexts/TenantContext';
 
 interface FlashMessage {
   type: 'success' | 'error';
@@ -61,6 +63,10 @@ export default function ClinicManagement() {
   const [selection, setSelection] = useState<SelectionState>({});
   const [assigningKey, setAssigningKey] = useState<string | null>(null);
   const [removingKey, setRemovingKey] = useState<string | null>(null);
+  const [configuringTenant, setConfiguringTenant] = useState<string | null>(null);
+
+  const { setActiveTenant, isSwitching } = useTenant();
+  const navigate = useNavigate();
 
   const staffRoleSet = useMemo(() => new Set(STAFF_ASSIGNABLE_ROLES), []);
 
@@ -174,6 +180,22 @@ export default function ClinicManagement() {
       setFlash({ type: 'error', message: getErrorMessage(error, t('Unable to update clinic staff.')) });
     } finally {
       setRemovingKey(null);
+    }
+  };
+
+  const handleConfigureClinic = async (tenant: TenantAdminSummary) => {
+    setFlash(null);
+    setConfiguringTenant(tenant.tenantId);
+    try {
+      await setActiveTenant(tenant.tenantId);
+      navigate('/settings');
+    } catch (error) {
+      setFlash({
+        type: 'error',
+        message: getErrorMessage(error, t('Unable to open clinic settings.')),
+      });
+    } finally {
+      setConfiguringTenant(null);
     }
   };
 
@@ -328,19 +350,31 @@ export default function ClinicManagement() {
 
                 return (
                   <div key={tenant.tenantId} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-                    <div className="flex flex-col gap-2 border-b border-gray-200 pb-4 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <h3 className="text-base font-semibold text-gray-900">{tenant.name}</h3>
-                        <p className="text-xs uppercase tracking-wide text-gray-500">
-                          {t('Clinic code')}: {tenant.code || t('Not set')}
-                        </p>
-                      </div>
-                      <p className="text-xs text-gray-500">
+                  <div className="flex flex-col gap-4 border-b border-gray-200 pb-4 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900">{tenant.name}</h3>
+                      <p className="text-xs uppercase tracking-wide text-gray-500">
+                        {t('Clinic code')}: {tenant.code || t('Not set')}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-start gap-2 text-xs text-gray-500 md:items-end">
+                      <p>
                         {t('Created on {date}', {
                           date: new Date(tenant.createdAt).toLocaleDateString(),
                         })}
                       </p>
+                      <button
+                        type="button"
+                        onClick={() => handleConfigureClinic(tenant)}
+                        disabled={isSwitching || configuringTenant === tenant.tenantId}
+                        className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-4 py-1.5 font-semibold text-blue-600 transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {configuringTenant === tenant.tenantId || isSwitching
+                          ? t('Opening settings…')
+                          : t('Configure clinic experience')}
+                      </button>
                     </div>
+                  </div>
 
                     <div className="mt-4 grid gap-6 md:grid-cols-2">
                       <div>
