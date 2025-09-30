@@ -36,7 +36,7 @@ Thu Kha (သုခ) EMR is a reference implementation of an electronic medical r
 3. **Provision the database** – Ensure the target PostgreSQL instance is running and reachable from your development machine.
 4. **Apply migrations and seed demo data**
    ```bash
-   npm run prisma:migrate
+   npm run migrate:deploy
    npm run seed:csv
    ```
 5. **Start the development servers**
@@ -66,9 +66,15 @@ CREATE EXTENSION IF NOT EXISTS btree_gin;
 ## Migrations & Seeding
 Run the database migrations and load the demo CSV data any time you need to refresh your environment:
 ```bash
-npm run prisma:migrate
+npm run migrate:deploy
 npm run seed:csv
 ```
+
+> [!NOTE]
+> The custom `migrate:deploy` script automatically clears a previously failed
+> `20250501000000_system_admin_role` migration (Prisma error `P3009`) before
+> reapplying migrations. This ensures environments that encountered the earlier
+> failure can recover without manual `prisma migrate resolve` commands.
 
 ## Staff Walkthrough
 Try the scheduling workflow after seeding demo data:
