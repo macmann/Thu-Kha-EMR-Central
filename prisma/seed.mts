@@ -41,12 +41,10 @@ async function assignAdminsToTenant(tenantId: string) {
   );
 }
 
-async function seedPharmacyReference() {
-  const drugs = await prisma.$transaction([
-    prisma.drug.upsert({
-      where: { drugId: '00000000-0000-0000-0000-000000000001' },
-      update: {},
-      create: {
+async function seedPharmacyReference(tenantId: string) {
+  const entries = [
+    {
+      drug: {
         drugId: '00000000-0000-0000-0000-000000000001',
         name: 'Amoxicillin',
         genericName: 'amoxicillin',
@@ -54,11 +52,13 @@ async function seedPharmacyReference() {
         strength: '500 mg',
         routeDefault: 'PO',
       },
-    }),
-    prisma.drug.upsert({
-      where: { drugId: '00000000-0000-0000-0000-000000000002' },
-      update: {},
-      create: {
+      stock: {
+        stockItemId: '11111111-0000-0000-0000-000000000001',
+        batchNo: 'BATCH-0001',
+      },
+    },
+    {
+      drug: {
         drugId: '00000000-0000-0000-0000-000000000002',
         name: 'Paracetamol',
         genericName: 'acetaminophen',
@@ -66,11 +66,13 @@ async function seedPharmacyReference() {
         strength: '500 mg',
         routeDefault: 'PO',
       },
-    }),
-    prisma.drug.upsert({
-      where: { drugId: '00000000-0000-0000-0000-000000000003' },
-      update: {},
-      create: {
+      stock: {
+        stockItemId: '11111111-0000-0000-0000-000000000002',
+        batchNo: 'BATCH-0002',
+      },
+    },
+    {
+      drug: {
         drugId: '00000000-0000-0000-0000-000000000003',
         name: 'Ibuprofen',
         genericName: 'ibuprofen',
@@ -78,14 +80,31 @@ async function seedPharmacyReference() {
         strength: '200 mg',
         routeDefault: 'PO',
       },
-    }),
-  ]);
+      stock: {
+        stockItemId: '11111111-0000-0000-0000-000000000003',
+        batchNo: 'BATCH-0003',
+      },
+    },
+  ];
 
-  for (const drug of drugs) {
-    await prisma.stockItem.create({
-      data: {
+  for (const entry of entries) {
+    const drug = await prisma.drug.upsert({
+      where: { drugId: entry.drug.drugId },
+      update: entry.drug,
+      create: entry.drug,
+    });
+
+    await prisma.stockItem.upsert({
+      where: { stockItemId: entry.stock.stockItemId },
+      update: {
         drugId: drug.drugId,
-        batchNo: `BATCH-${drug.drugId.slice(-4)}`,
+        tenantId,
+      },
+      create: {
+        stockItemId: entry.stock.stockItemId,
+        drugId: drug.drugId,
+        tenantId,
+        batchNo: entry.stock.batchNo,
         expiryDate: new Date('2026-12-31'),
         location: 'COUNTER_A',
         qtyOnHand: 200,
@@ -210,8 +229,8 @@ async function main() {
       defaultPrice: new Prisma.Decimal(3000),
     },
   });
-  await seedPharmacyReference();
   const tenant = await ensureDefaultTenant();
+  await seedPharmacyReference(tenant.tenantId);
   await assignAdminsToTenant(tenant.tenantId);
   await seedLabCatalog();
 }

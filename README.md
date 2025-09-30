@@ -95,6 +95,8 @@ The OpenAPI specification is served at `/api/docs/openapi.json`.
    - `RATE_LIMIT_MAX`
 3. Build command: `npm install && npm run build`
 4. Start command: `npm start`
+5. The start command now runs the Prisma seed automatically, so the default
+   `sysadmin@example.com` user (and baseline data) is provisioned on first boot.
 
 ## Security Notes
 - TLS is enforced by using `sslmode=require` for database connections.
