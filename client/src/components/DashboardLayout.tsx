@@ -1,11 +1,22 @@
 import { useState, type ComponentType, type ReactNode, type SVGProps } from 'react';
 import { Link } from 'react-router-dom';
-import { AvatarIcon, CalendarIcon, CloseIcon, DashboardIcon, PatientsIcon, PharmacyIcon, ReportsIcon, SettingsIcon } from './icons';
+import {
+  AvatarIcon,
+  CalendarIcon,
+  ClinicIcon,
+  CloseIcon,
+  DashboardIcon,
+  PatientsIcon,
+  PharmacyIcon,
+  ReportsIcon,
+  SettingsIcon,
+} from './icons';
 import { useAuth } from '../context/AuthProvider';
 import { useSettings } from '../context/SettingsProvider';
 import { useTranslation } from '../hooks/useTranslation';
 import AppHeader from './AppHeader';
 import LogoutButton from './LogoutButton';
+import { ROLE_LABELS } from '../constants/roles';
 
 type NavigationKey =
   | 'dashboard'
@@ -15,6 +26,7 @@ type NavigationKey =
   | 'pharmacy'
   | 'lab'
   | 'reports'
+  | 'clinics'
   | 'settings';
 
 type NavigationItem = {
@@ -32,6 +44,7 @@ const navigation: NavigationItem[] = [
   { key: 'pharmacy', name: 'Pharmacy', icon: PharmacyIcon, to: '/pharmacy/queue' },
   { key: 'lab', name: 'Lab Orders', icon: ReportsIcon, to: '/lab-orders' },
   { key: 'reports', name: 'Reports', icon: ReportsIcon, to: '/reports' },
+  { key: 'clinics', name: 'Clinics', icon: ClinicIcon, to: '/clinics' },
   { key: 'settings', name: 'Settings', icon: SettingsIcon, to: '/settings' },
 ];
 
@@ -55,6 +68,9 @@ export default function DashboardLayout({
   const { t } = useTranslation();
   const roleLabel = user ? t(ROLE_LABELS[user.role] ?? 'Team Member') : t('Team Member');
   const navItems = navigation.filter((item) => {
+    if (item.key === 'clinics') {
+      return user?.role === 'SystemAdmin';
+    }
     if (item.key === 'settings') {
       return user?.role === 'ITAdmin' || user?.role === 'SystemAdmin';
     }
@@ -205,16 +221,3 @@ export default function DashboardLayout({
 }
 
 export type { NavigationKey };
-
-const ROLE_LABELS: Record<string, string> = {
-  Doctor: 'Doctor',
-  AdminAssistant: 'Administrative Assistant',
-  Cashier: 'Cashier',
-  ITAdmin: 'IT Administrator',
-  SystemAdmin: 'System Administrator',
-  Pharmacist: 'Pharmacist',
-  PharmacyTech: 'Pharmacy Technician',
-  InventoryManager: 'Inventory Manager',
-  Nurse: 'Nurse',
-  LabTech: 'Laboratory Technician',
-};

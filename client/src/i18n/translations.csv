@@ -251,3 +251,37 @@ Inventory updated.,Inventory updated.,စတော့ကို ပြင်ဆ�
 Updating…,Updating…,အပ်ဒိတ်လုပ်နေပါသည်...
 Apply adjustments,Apply adjustments,ပြင်ဆင်မှုများကို အတည်ပြုပါ
 Select a medication to begin managing inventory.,Select a medication to begin managing inventory.,စတော့စီမံမှု စတင်ရန် ဆေးဝါးတစ်မျိုးကို ရွေးချယ်ပါ။
+Clinic management,Clinic management,Clinic management
+Create clinics and assign administrative staff.,Create clinics and assign administrative staff.,Create clinics and assign administrative staff.
+Create a new clinic,Create a new clinic,Create a new clinic
+Add a clinic to begin assigning IT administrators and support staff.,Add a clinic to begin assigning IT administrators and support staff.,Add a clinic to begin assigning IT administrators and support staff.
+Clinic name,Clinic name,Clinic name
+e.g., Downtown Health Clinic,e.g., Downtown Health Clinic,e.g., Downtown Health Clinic
+Clinic code (optional),Clinic code (optional),Clinic code (optional)
+Short identifier for reports,Short identifier for reports,Short identifier for reports
+Creating…,Creating…,Creating…
+Create clinic,Create clinic,Create clinic
+Manage clinic teams,Manage clinic teams,Manage clinic teams
+No clinics have been created yet.,No clinics have been created yet.,No clinics have been created yet.
+Unable to load clinics.,Unable to load clinics.,Unable to load clinics.
+Clinic name is required.,Clinic name is required.,Clinic name is required.
+Clinic created successfully.,Clinic created successfully.,Clinic created successfully.
+Unable to create clinic.,Unable to create clinic.,Unable to create clinic.
+Clinic team updated successfully.,Clinic team updated successfully.,Clinic team updated successfully.
+Unable to update clinic staff.,Unable to update clinic staff.,Unable to update clinic staff.
+Clinic code,Clinic code,Clinic code
+Not set,Not set,Not set
+Created on {date},Created on {date},Created on {date}
+IT Administrators,IT Administrators,IT Administrators
+Assign at least one IT administrator to manage clinic access and settings.,Assign at least one IT administrator to manage clinic access and settings.,Assign at least one IT administrator to manage clinic access and settings.
+No IT administrators assigned yet.,No IT administrators assigned yet.,No IT administrators assigned yet.
+Select an IT administrator,Select an IT administrator,Select an IT administrator
+Assigning…,Assigning…,Assigning…
+Assign,Assign,Assign
+Clinic staff,Clinic staff,Clinic staff
+Add operational roles like front desk, billing, pharmacy, and nursing teams.,Add operational roles like front desk, billing, pharmacy, and nursing teams.,Add operational roles like front desk, billing, pharmacy, and nursing teams.
+No staff assigned yet.,No staff assigned yet.,No staff assigned yet.
+Select a staff member,Select a staff member,Select a staff member
+Removing…,Removing…,Removing…
+Remove,Remove,Remove
+Global roles linked to this clinic,Global roles linked to this clinic,Global roles linked to this clinic

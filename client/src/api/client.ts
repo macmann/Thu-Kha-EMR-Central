@@ -25,6 +25,28 @@ export interface UpdateClinicConfigurationPayload {
   widgetEnabled?: boolean;
 }
 
+export interface TenantMemberSummary {
+  userId: string;
+  email: string;
+  role: Role;
+  status: 'active' | 'inactive';
+  tenantRole: Role;
+}
+
+export interface TenantAdminSummary {
+  tenantId: string;
+  name: string;
+  code: string | null;
+  createdAt: string;
+  updatedAt: string;
+  members: TenantMemberSummary[];
+}
+
+export interface CreateTenantPayload {
+  name: string;
+  code?: string | null;
+}
+
 export function getClinicConfiguration(): Promise<ClinicConfiguration> {
   return fetchJSON('/settings/clinic');
 }
@@ -37,6 +59,35 @@ export function updateClinicConfiguration(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+}
+
+export function listAdminTenants(): Promise<TenantAdminSummary[]> {
+  return fetchJSON('/admin/tenants').then((data) => data.tenants as TenantAdminSummary[]);
+}
+
+export function createTenant(payload: CreateTenantPayload): Promise<TenantAdminSummary> {
+  return fetchJSON('/admin/tenants', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then((data) => data.tenant as TenantAdminSummary);
+}
+
+export function addTenantMember(
+  tenantId: string,
+  payload: { userId: string },
+): Promise<TenantMemberSummary> {
+  return fetchJSON(`/admin/tenants/${tenantId}/members`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).then((data) => data.member as TenantMemberSummary);
+}
+
+export function removeTenantMember(tenantId: string, userId: string): Promise<void> {
+  return fetchJSON(`/admin/tenants/${tenantId}/members/${userId}`, {
+    method: 'DELETE',
+  }).then(() => undefined);
 }
 
 export interface Patient {

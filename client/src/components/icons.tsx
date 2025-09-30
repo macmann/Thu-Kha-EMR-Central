@@ -24,6 +24,20 @@ export function PatientsIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+export function ClinicIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} {...props}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M5.25 21.75a.75.75 0 01-.75-.75V9.75L12 3l7.5 6.75V21a.75.75 0 01-.75.75z"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21.75V15a.75.75 0 01.75-.75h6a.75.75 0 01.75.75v6.75" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 13.5h3M12 12v3" />
+    </svg>
+  );
+}
+
 export function CalendarIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} {...props}>
