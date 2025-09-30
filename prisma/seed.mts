@@ -1,9 +1,59 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 const DEFAULT_TENANT_CODE = process.env.DEFAULT_TENANT_CODE ?? 'default';
 const DEFAULT_TENANT_NAME = process.env.DEFAULT_TENANT_NAME ?? 'Primary Clinic';
+const SYSTEM_ADMIN_EMAIL = process.env.SYSTEM_ADMIN_EMAIL ?? 'sysadmin@example.com';
+const SYSTEM_ADMIN_PASSWORD = process.env.SYSTEM_ADMIN_PASSWORD ?? 'SysAdminPass123!';
+
+async function ensureSystemAdminRole() {
+  const result = await prisma.$queryRaw<{ exists: boolean }[]>`
+    SELECT EXISTS (
+      SELECT 1
+      FROM pg_enum e
+      JOIN pg_type t ON t.oid = e.enumtypid
+      WHERE t.typname = 'Role' AND e.enumlabel = 'SystemAdmin'
+    ) AS "exists";
+  `;
+
+  const hasRole = result[0]?.exists ?? false;
+
+  if (!hasRole) {
+    await prisma.$executeRawUnsafe(`ALTER TYPE "Role" ADD VALUE 'SystemAdmin'`);
+    console.log('✅ Added SystemAdmin role to enum');
+  }
+}
+
+async function ensureSystemAdminUser(tenantId: string) {
+  const passwordHash = await bcrypt.hash(SYSTEM_ADMIN_PASSWORD, 10);
+
+  const user = await prisma.user.upsert({
+    where: { email: SYSTEM_ADMIN_EMAIL },
+    update: {
+      passwordHash,
+      role: 'SystemAdmin',
+      status: 'active',
+      doctorId: null,
+    },
+    create: {
+      email: SYSTEM_ADMIN_EMAIL,
+      passwordHash,
+      role: 'SystemAdmin',
+      status: 'active',
+      doctorId: null,
+    },
+  });
+
+  await prisma.userTenant.upsert({
+    where: { tenantId_userId: { tenantId, userId: user.userId } },
+    update: { role: 'SystemAdmin' },
+    create: { tenantId, userId: user.userId, role: 'SystemAdmin' },
+  });
+
+  console.log(`✅ Ensured system admin user ${SYSTEM_ADMIN_EMAIL}`);
+}
 
 async function ensureDefaultTenant() {
   const tenant = await prisma.tenant.upsert({
@@ -201,6 +251,7 @@ async function seedLabCatalog() {
 
 async function main() {
   // Run legacy seed first to ensure baseline data remains available.
+  await ensureSystemAdminRole();
   await import('./seed.mjs');
   await prisma.serviceCatalog.upsert({
     where: { code: 'CONSULT_OPD' },
@@ -231,6 +282,7 @@ async function main() {
   });
   const tenant = await ensureDefaultTenant();
   await seedPharmacyReference(tenant.tenantId);
+  await ensureSystemAdminUser(tenant.tenantId);
   await assignAdminsToTenant(tenant.tenantId);
   await seedLabCatalog();
 }
