@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Link } from 'react-router-dom';
 import Login from './pages/Login';
 import RouteGuard from './components/RouteGuard';
 import Patients from './pages/Patients';
@@ -37,6 +37,7 @@ function TenantOverlays() {
   const { user } = useAuth();
 
   const isSuperAdmin = user?.role === 'SuperAdmin';
+  const isSystemAdmin = user?.role === 'SystemAdmin';
 
   const isLoginRoute = location.pathname === '/login';
   const showLoading = isLoading && !isLoginRoute;
@@ -67,7 +68,17 @@ function TenantOverlays() {
           <div className="max-w-md rounded-2xl bg-white px-8 py-10 shadow-xl">
             <h2 className="text-lg font-semibold text-slate-900">No clinics available</h2>
             <p className="mt-3 text-sm text-slate-500">
-              Your account does not have any clinic memberships yet. Please contact your administrator to request access.
+              Your account does not have any clinic memberships yet.
+              {isSystemAdmin ? (
+                <>
+                  {' '}
+                  <Link to="/clinics" className="font-medium text-sky-600 hover:text-sky-500">
+                    Create a clinic to get started.
+                  </Link>
+                </>
+              ) : (
+                ' Please contact your administrator to request access.'
+              )}
             </p>
           </div>
         </div>
