@@ -6,6 +6,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   Cashier: 'Cashier',
   ITAdmin: 'IT Administrator',
   SystemAdmin: 'System Administrator',
+  SuperAdmin: 'Super Administrator',
   Pharmacist: 'Pharmacist',
   PharmacyTech: 'Pharmacy Technician',
   InventoryManager: 'Inventory Manager',
@@ -24,4 +25,4 @@ export const STAFF_ROLES: Role[] = [
   'LabTech',
 ];
 
-export const CLINICALLY_GLOBAL_ROLES: Role[] = ['Doctor', 'SystemAdmin'];
+export const CLINICALLY_GLOBAL_ROLES: Role[] = ['Doctor', 'SystemAdmin', 'SuperAdmin'];

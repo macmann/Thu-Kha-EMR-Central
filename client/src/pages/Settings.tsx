@@ -29,6 +29,7 @@ const ROLE_OPTIONS: Array<{ value: Role; label: string }> = [
   { value: 'Cashier', label: ROLE_LABELS.Cashier },
   { value: 'ITAdmin', label: ROLE_LABELS.ITAdmin },
   { value: 'SystemAdmin', label: ROLE_LABELS.SystemAdmin },
+  { value: 'SuperAdmin', label: ROLE_LABELS.SuperAdmin },
   { value: 'Pharmacist', label: ROLE_LABELS.Pharmacist },
   { value: 'PharmacyTech', label: ROLE_LABELS.PharmacyTech },
   { value: 'InventoryManager', label: ROLE_LABELS.InventoryManager },
@@ -130,7 +131,7 @@ export default function Settings() {
   const totalDoctors = doctors.length;
   const latestDoctor = totalDoctors > 0 ? doctors[totalDoctors - 1] : undefined;
   const latestUser = totalUsers > 0 ? users[totalUsers - 1] : undefined;
-  const isSystemAdmin = user?.role === 'SystemAdmin';
+  const isSystemAdmin = user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin';
 
   useEffect(() => {
     if (!doctors.length) {

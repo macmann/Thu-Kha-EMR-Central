@@ -55,7 +55,7 @@ export default function Home() {
     return <DoctorQueueDashboard />;
   }
 
-  if (user?.role === 'ITAdmin' || user?.role === 'SystemAdmin') {
+  if (user?.role === 'ITAdmin' || user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin') {
     return <ITAdminDashboard role={user.role} />;
   }
 
@@ -70,7 +70,7 @@ export default function Home() {
   return <TeamDashboard role={user?.role} />;
 }
 
-function ITAdminDashboard({ role = 'ITAdmin' }: { role?: 'ITAdmin' | 'SystemAdmin' }) {
+function ITAdminDashboard({ role = 'ITAdmin' }: { role?: 'ITAdmin' | 'SystemAdmin' | 'SuperAdmin' }) {
   const { accessToken } = useAuth();
   const { t } = useTranslation();
   const [usersData, setUsersData] = useState<UserAccount[] | null>(null);
@@ -208,7 +208,13 @@ function ITAdminDashboard({ role = 'ITAdmin' }: { role?: 'ITAdmin' | 'SystemAdmi
 
   return (
     <DashboardLayout
-      title={t(role === 'SystemAdmin' ? 'System Administrator Dashboard' : 'IT Administrator Dashboard')}
+      title={t(
+        role === 'SuperAdmin'
+          ? 'Super Administrator Dashboard'
+          : role === 'SystemAdmin'
+            ? 'System Administrator Dashboard'
+            : 'IT Administrator Dashboard',
+      )}
       subtitle={t('Monitor user accounts, system access, and staff setup.')}
       activeItem="dashboard"
     >
@@ -341,6 +347,7 @@ const ACCOUNT_ROLE_LABELS: Record<UserAccount['role'], string> = {
   AdminAssistant: 'Administrative Assistant',
   ITAdmin: 'IT Administrator',
   SystemAdmin: 'System Administrator',
+  SuperAdmin: 'Super Administrator',
   Pharmacist: 'Pharmacist',
   PharmacyTech: 'Pharmacy Technician',
   InventoryManager: 'Inventory Manager',

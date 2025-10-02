@@ -50,7 +50,8 @@ export default function AppHeader({
   const userRoleLabel = user ? ROLE_LABELS[user.role] ?? user.role : t('Team Member');
   const userEmail = user?.email ?? t('Signed-in user');
   const searchArea = toolbarContent ?? <GlobalSearch />;
-  const showSettings = user?.role === 'ITAdmin' || user?.role === 'SystemAdmin';
+  const showSettings =
+    user?.role === 'ITAdmin' || user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin';
 
   const handleOpenTenantPicker = () => {
     if (tenants.length <= 1) {

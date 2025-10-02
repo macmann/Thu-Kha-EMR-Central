@@ -341,7 +341,8 @@ router.patch(
         (targetStatus === 'InProgress' || targetStatus === 'Completed') &&
         user.role !== 'Doctor' &&
         user.role !== 'ITAdmin' &&
-        user.role !== 'SystemAdmin'
+        user.role !== 'SystemAdmin' &&
+        user.role !== 'SuperAdmin'
       ) {
         throw new ForbiddenError('Only doctors can start or complete visits');
       }

@@ -1,5 +1,5 @@
 import { Router, type Response, type NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, type Role } from '@prisma/client';
 import { z } from 'zod';
 
 import type { AuthRequest } from '../modules/auth/index.js';
@@ -48,8 +48,38 @@ router.post('/switch-tenant', async (req: AuthRequest, res: Response, next: Next
       },
     });
 
-    if (!membership) {
+    let tenantRole: Role;
+    let tenantDetails: { tenantId: string; name: string; code: string | null } | null = null;
+
+    if (membership) {
+      tenantRole = membership.role;
+      tenantDetails = {
+        tenantId: membership.tenant.tenantId,
+        name: membership.tenant.name,
+        code: membership.tenant.code ?? null,
+      };
+    } else if (user.role === 'SuperAdmin') {
+      const tenant = await prisma.tenant.findUnique({
+        where: { tenantId },
+        select: { tenantId: true, name: true, code: true },
+      });
+
+      if (!tenant) {
+        return res.status(404).json({ error: 'Tenant not found' });
+      }
+
+      tenantRole = 'SuperAdmin';
+      tenantDetails = {
+        tenantId: tenant.tenantId,
+        name: tenant.name,
+        code: tenant.code ?? null,
+      };
+    } else {
       return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    if (!tenantDetails) {
+      throw new Error('Tenant details missing');
     }
 
     const header = Buffer.from(
@@ -69,10 +99,10 @@ router.post('/switch-tenant', async (req: AuthRequest, res: Response, next: Next
     res.json({
       accessToken,
       tenant: {
-        tenantId: membership.tenant.tenantId,
-        name: membership.tenant.name,
-        code: membership.tenant.code,
-        role: membership.role,
+        tenantId: tenantDetails.tenantId,
+        name: tenantDetails.name,
+        code: tenantDetails.code,
+        role: tenantRole,
       },
     });
   } catch (error) {

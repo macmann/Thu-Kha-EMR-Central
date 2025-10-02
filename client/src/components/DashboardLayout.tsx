@@ -69,26 +69,37 @@ export default function DashboardLayout({
   const roleLabel = user ? t(ROLE_LABELS[user.role] ?? 'Team Member') : t('Team Member');
   const navItems = navigation.filter((item) => {
     if (item.key === 'clinics') {
-      return user?.role === 'SystemAdmin';
+      return user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin';
     }
     if (item.key === 'settings') {
-      return user?.role === 'ITAdmin' || user?.role === 'SystemAdmin';
+      return (
+        user?.role === 'ITAdmin' || user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin'
+      );
     }
     if (item.key === 'billing') {
-      return user && ['Cashier', 'ITAdmin', 'SystemAdmin', 'Doctor', 'Pharmacist'].includes(user.role);
+      return (
+        user &&
+        ['Cashier', 'ITAdmin', 'SystemAdmin', 'SuperAdmin', 'Doctor', 'Pharmacist'].includes(user.role)
+      );
     }
     if (item.key === 'pharmacy') {
       return (
-        user && ['Pharmacist', 'PharmacyTech', 'InventoryManager', 'ITAdmin', 'SystemAdmin'].includes(user.role)
+        user &&
+        ['Pharmacist', 'PharmacyTech', 'InventoryManager', 'ITAdmin', 'SystemAdmin', 'SuperAdmin'].includes(
+          user.role,
+        )
       );
     }
     if (item.key === 'lab') {
-      return user && ['Doctor', 'LabTech', 'ITAdmin', 'SystemAdmin'].includes(user.role);
+      return (
+        user && ['Doctor', 'LabTech', 'ITAdmin', 'SystemAdmin', 'SuperAdmin'].includes(user.role)
+      );
     }
     return true;
   });
   const displayName = appName || t('EMR System');
-  const showSettings = user?.role === 'ITAdmin' || user?.role === 'SystemAdmin';
+  const showSettings =
+    user?.role === 'ITAdmin' || user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin';
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const userEmail = user?.email ?? t('Signed-in user');
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTenant } from '../contexts/TenantContext';
+import { ROLE_LABELS } from '../constants/roles';
 
 const placeholderLogo = (name: string) =>
   name
@@ -84,10 +85,10 @@ const TenantPicker: React.FC<TenantPickerProps> = ({ forceOpen = false, onClose 
                     {tenant.name}
                   </span>
                   <span className="mt-1 block text-sm text-slate-500">
-                    Role: {tenant.role}
+                    Role: {ROLE_LABELS[tenant.role] ?? tenant.role}
                   </span>
                   <span className="mt-1 block text-xs uppercase tracking-wide text-slate-400">
-                    {tenant.code}
+                    {tenant.code || '—'}
                   </span>
                 </span>
                 <span className="text-sm font-medium text-indigo-600">

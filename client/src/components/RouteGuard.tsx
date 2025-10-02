@@ -23,7 +23,8 @@ export default function RouteGuard({ children, allowedRoles }: Props) {
     allowedRoles &&
     !allowedRoles.includes(user.role) &&
     user.role !== 'ITAdmin' &&
-    user.role !== 'SystemAdmin'
+    user.role !== 'SystemAdmin' &&
+    user.role !== 'SuperAdmin'
   ) {
     return <Navigate to="/" replace />;
   }
