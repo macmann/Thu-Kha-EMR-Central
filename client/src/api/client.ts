@@ -6,6 +6,7 @@ export type Role =
   | 'Cashier'
   | 'ITAdmin'
   | 'SystemAdmin'
+  | 'SuperAdmin'
   | 'Pharmacist'
   | 'PharmacyTech'
   | 'InventoryManager'

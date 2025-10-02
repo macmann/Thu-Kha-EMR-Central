@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { fetchJSON, setAccessToken } from '../api/http';
 import type { Role } from '../api/client';
+import { useAuth } from '../context/AuthProvider';
 
 const STORAGE_KEY = 'activeTenantId';
 
@@ -59,6 +60,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSwitching, setIsSwitching] = useState(false);
   const [initialised, setInitialised] = useState(false);
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === 'SuperAdmin';
 
   const setActiveTenant = useCallback(async (tenantId: string) => {
     setIsSwitching(true);
@@ -82,13 +85,19 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
       setActiveTenantId(nextTenant.tenantId);
       persistTenantId(nextTenant.tenantId);
       setTenants((prev) => {
+        const normalizedTenant: TenantSummary = {
+          tenantId: nextTenant.tenantId,
+          name: nextTenant.name,
+          code: nextTenant.code ?? '',
+          role: nextTenant.role,
+        };
         const exists = prev.some((tenant) => tenant.tenantId === nextTenant.tenantId);
         if (exists) {
           return prev.map((tenant) =>
-            tenant.tenantId === nextTenant.tenantId ? nextTenant : tenant,
+            tenant.tenantId === nextTenant.tenantId ? normalizedTenant : tenant,
           );
         }
-        return [...prev, nextTenant];
+        return [...prev, normalizedTenant];
       });
     } finally {
       setIsSwitching(false);
@@ -105,11 +114,37 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
   const refreshTenants = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetchJSON('/me/tenants');
-      const list = (response?.tenants ?? []) as TenantSummary[];
+      let list: TenantSummary[] = [];
+      if (isSuperAdmin) {
+        const response = await fetchJSON('/admin/tenants');
+        list = ((response?.tenants ?? []) as Array<{
+          tenantId: string;
+          name: string;
+          code?: string | null;
+        }>).map((tenant) => ({
+          tenantId: tenant.tenantId,
+          name: tenant.name,
+          code: tenant.code ?? '',
+          role: 'SuperAdmin' as Role,
+        }));
+      } else {
+        const response = await fetchJSON('/me/tenants');
+        list = ((response?.tenants ?? []) as Array<{
+          tenantId: string;
+          name: string;
+          code?: string | null;
+          role: Role;
+        }>).map((tenant) => ({
+          tenantId: tenant.tenantId,
+          name: tenant.name,
+          code: tenant.code ?? '',
+          role: tenant.role,
+        }));
+      }
+
       setTenants(list);
 
-      if (list.length === 1 && !activeTenantId) {
+      if (!isSuperAdmin && list.length === 1 && !activeTenantId) {
         try {
           await setActiveTenant(list[0].tenantId);
         } catch (error) {
@@ -130,7 +165,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLoading(false);
       setInitialised(true);
     }
-  }, [activeTenantId, setActiveTenant]);
+  }, [activeTenantId, isSuperAdmin, setActiveTenant]);
 
   useEffect(() => {
     void refreshTenants();

@@ -27,7 +27,7 @@ const addMemberSchema = z.object({
 
 router.use(requireAuth);
 router.use((req: AuthRequest, res: Response, next: NextFunction) => {
-  if (req.user?.role !== 'SystemAdmin') {
+  if (req.user?.role !== 'SystemAdmin' && req.user?.role !== 'SuperAdmin') {
     return res.status(403).json({ error: 'Forbidden' });
   }
   return next();

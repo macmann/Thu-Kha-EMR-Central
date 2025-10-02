@@ -26,11 +26,11 @@ export default function LabOrdersPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const canOrder = useMemo(
-    () => user && ['Doctor', 'ITAdmin', 'SystemAdmin'].includes(user.role),
+    () => user && ['Doctor', 'ITAdmin', 'SystemAdmin', 'SuperAdmin'].includes(user.role),
     [user],
   );
   const canView = useMemo(
-    () => user && ['Doctor', 'LabTech', 'ITAdmin', 'SystemAdmin'].includes(user.role),
+    () => user && ['Doctor', 'LabTech', 'ITAdmin', 'SystemAdmin', 'SuperAdmin'].includes(user.role),
     [user],
   );
   const [orders, setOrders] = useState<LabOrderEntry[]>([]);

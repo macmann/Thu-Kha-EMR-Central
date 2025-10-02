@@ -91,6 +91,7 @@ export async function resolveTenant(req: AuthRequest, res: Response, next: NextF
       return next();
     }
 
+    const isSuperAdmin = req.user?.role === 'SuperAdmin';
     const tokenTenantId = await resolveTenantIdFromToken(req);
     if (tokenTenantId) {
       const verifiedTenantId = await ensureTenantExistsById(tokenTenantId);
@@ -118,8 +119,13 @@ export async function resolveTenant(req: AuthRequest, res: Response, next: NextF
       ? await ensureTenantExistsById(DEFAULT_TENANT_ID)
       : await findTenantIdByCode(DEFAULT_TENANT_CODE);
 
-    if (fallbackTenantId && shouldUseDefault) {
+    if (fallbackTenantId && shouldUseDefault && !isSuperAdmin) {
       req.tenantId = fallbackTenantId;
+      return next();
+    }
+
+    if (isSuperAdmin) {
+      req.tenantId = undefined;
       return next();
     }
 

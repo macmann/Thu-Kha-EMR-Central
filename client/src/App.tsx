@@ -28,15 +28,28 @@ import ClinicManagement from './pages/ClinicManagement';
 import './styles/App.css';
 import { TenantProvider, useTenant } from './contexts/TenantContext';
 import TenantPicker from './components/TenantPicker';
+import SuperAdminTenantSetup from './components/SuperAdminTenantSetup';
+import { useAuth } from './context/AuthProvider';
 
 function TenantOverlays() {
   const location = useLocation();
   const { activeTenant, tenants, isLoading } = useTenant();
+  const { user } = useAuth();
+
+  const isSuperAdmin = user?.role === 'SuperAdmin';
 
   const isLoginRoute = location.pathname === '/login';
   const showLoading = isLoading && !isLoginRoute;
-  const showTenantPicker = !isLoginRoute && !isLoading && tenants.length > 1 && !activeTenant;
-  const showNoTenants = !isLoginRoute && !isLoading && tenants.length === 0 && !activeTenant;
+  const showSuperAdminSetup =
+    isSuperAdmin && !isLoginRoute && !isLoading && tenants.length === 0 && !activeTenant;
+  const showTenantPicker =
+    !isLoginRoute &&
+    !isLoading &&
+    tenants.length > 0 &&
+    !activeTenant &&
+    (tenants.length > 1 || isSuperAdmin);
+  const showNoTenants =
+    !isLoginRoute && !isLoading && tenants.length === 0 && !activeTenant && !isSuperAdmin;
 
   return (
     <>
@@ -47,7 +60,8 @@ function TenantOverlays() {
           </div>
         </div>
       )}
-      {showTenantPicker && <TenantPicker />}
+      {showSuperAdminSetup && <SuperAdminTenantSetup />}
+      {showTenantPicker && <TenantPicker forceOpen={isSuperAdmin} />}
       {showNoTenants && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/70 px-6 text-center">
           <div className="max-w-md rounded-2xl bg-white px-8 py-10 shadow-xl">
@@ -86,7 +100,7 @@ function AppContent() {
         <Route
           path="/patients/:patientId/problems"
           element={
-            <RouteGuard allowedRoles={['Doctor', 'Nurse', 'ITAdmin', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['Doctor', 'Nurse', 'ITAdmin', 'SystemAdmin', 'SuperAdmin']}>
               <ProblemList />
             </RouteGuard>
           }
@@ -94,7 +108,7 @@ function AppContent() {
         <Route
           path="/appointments"
           element={
-            <RouteGuard allowedRoles={['Doctor', 'AdminAssistant', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['Doctor', 'AdminAssistant', 'SystemAdmin', 'SuperAdmin']}>
               <AppointmentsPage />
             </RouteGuard>
           }
@@ -110,7 +124,7 @@ function AppContent() {
         <Route
           path="/appointments/:id"
           element={
-            <RouteGuard allowedRoles={['Doctor', 'AdminAssistant', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['Doctor', 'AdminAssistant', 'SystemAdmin', 'SuperAdmin']}>
               <AppointmentDetail />
             </RouteGuard>
           }
@@ -134,7 +148,7 @@ function AppContent() {
         <Route
           path="/register"
           element={
-            <RouteGuard allowedRoles={['AdminAssistant', 'ITAdmin', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['AdminAssistant', 'ITAdmin', 'SystemAdmin', 'SuperAdmin']}>
               <RegisterPatient />
             </RouteGuard>
           }
@@ -166,7 +180,7 @@ function AppContent() {
         <Route
           path="/lab-orders"
           element={
-            <RouteGuard allowedRoles={['Doctor', 'LabTech', 'ITAdmin', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['Doctor', 'LabTech', 'ITAdmin', 'SystemAdmin', 'SuperAdmin']}>
               <LabOrdersPage />
             </RouteGuard>
           }
@@ -174,7 +188,7 @@ function AppContent() {
         <Route
           path="/lab-orders/:labOrderId"
           element={
-            <RouteGuard allowedRoles={['Doctor', 'LabTech', 'ITAdmin', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['Doctor', 'LabTech', 'ITAdmin', 'SystemAdmin', 'SuperAdmin']}>
               <LabOrderDetailPage />
             </RouteGuard>
           }
@@ -182,7 +196,7 @@ function AppContent() {
         <Route
           path="/pharmacy/queue"
           element={
-            <RouteGuard allowedRoles={['Pharmacist', 'PharmacyTech', 'InventoryManager', 'ITAdmin', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['Pharmacist', 'PharmacyTech', 'InventoryManager', 'ITAdmin', 'SystemAdmin', 'SuperAdmin']}>
               <PharmacyQueue />
             </RouteGuard>
           }
@@ -190,7 +204,7 @@ function AppContent() {
         <Route
           path="/pharmacy/inventory"
           element={
-            <RouteGuard allowedRoles={['InventoryManager', 'ITAdmin', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['InventoryManager', 'ITAdmin', 'SystemAdmin', 'SuperAdmin']}>
               <PharmacyInventory />
             </RouteGuard>
           }
@@ -198,7 +212,7 @@ function AppContent() {
         <Route
           path="/pharmacy/drugs/new"
           element={
-            <RouteGuard allowedRoles={['InventoryManager', 'ITAdmin', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['InventoryManager', 'ITAdmin', 'SystemAdmin', 'SuperAdmin']}>
               <AddDrug />
             </RouteGuard>
           }
@@ -206,7 +220,7 @@ function AppContent() {
         <Route
           path="/billing/workspace"
           element={
-            <RouteGuard allowedRoles={['Cashier', 'ITAdmin', 'SystemAdmin', 'Doctor', 'Pharmacist']}>
+            <RouteGuard allowedRoles={['Cashier', 'ITAdmin', 'SystemAdmin', 'SuperAdmin', 'Doctor', 'Pharmacist']}>
               <BillingWorkspace />
             </RouteGuard>
           }
@@ -214,7 +228,7 @@ function AppContent() {
         <Route
           path="/billing/visit/:visitId"
           element={
-            <RouteGuard allowedRoles={['Cashier', 'ITAdmin', 'SystemAdmin', 'Doctor', 'Pharmacist']}>
+            <RouteGuard allowedRoles={['Cashier', 'ITAdmin', 'SystemAdmin', 'SuperAdmin', 'Doctor', 'Pharmacist']}>
               <VisitBilling />
             </RouteGuard>
           }
@@ -222,7 +236,7 @@ function AppContent() {
         <Route
           path="/billing/pos"
           element={
-            <RouteGuard allowedRoles={['Cashier', 'ITAdmin', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['Cashier', 'ITAdmin', 'SystemAdmin', 'SuperAdmin']}>
               <PosList />
             </RouteGuard>
           }
@@ -238,7 +252,7 @@ function AppContent() {
         <Route
           path="/settings"
           element={
-            <RouteGuard allowedRoles={['ITAdmin', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['ITAdmin', 'SystemAdmin', 'SuperAdmin']}>
               <Settings />
             </RouteGuard>
           }
@@ -246,7 +260,7 @@ function AppContent() {
         <Route
           path="/clinics"
           element={
-            <RouteGuard allowedRoles={['SystemAdmin']}>
+            <RouteGuard allowedRoles={['SystemAdmin', 'SuperAdmin']}>
               <ClinicManagement />
             </RouteGuard>
           }
@@ -254,7 +268,7 @@ function AppContent() {
         <Route
           path="/settings/services"
           element={
-            <RouteGuard allowedRoles={['ITAdmin', 'SystemAdmin']}>
+            <RouteGuard allowedRoles={['ITAdmin', 'SystemAdmin', 'SuperAdmin']}>
               <SettingsServices />
             </RouteGuard>
           }

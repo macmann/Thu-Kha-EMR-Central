@@ -29,7 +29,7 @@ export default function LabOrderDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const canEnterResults = useMemo(
-    () => user && ['LabTech', 'ITAdmin', 'SystemAdmin'].includes(user.role),
+    () => user && ['LabTech', 'ITAdmin', 'SystemAdmin', 'SuperAdmin'].includes(user.role),
     [user],
   );
   const [order, setOrder] = useState<LabOrderEntry | null>(null);

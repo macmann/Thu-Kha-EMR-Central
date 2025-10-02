@@ -13,13 +13,20 @@ export function requireTenantRoles(...roles: Role[]) {
       }
 
       const tenantId = req.tenantId;
+      const privilegedRoles: Role[] = ['ITAdmin', 'SystemAdmin', 'SuperAdmin'];
+      const isPrivilegedRole = privilegedRoles.includes(user.role as Role);
+
       if (!tenantId) {
+        if (user.role === 'SuperAdmin') {
+          req.tenantRole = 'SuperAdmin';
+          return next();
+        }
         return res.status(400).json({ error: 'Tenant context missing' });
       }
 
       if (
-        (user.role === 'ITAdmin' || user.role === 'SystemAdmin') &&
-        (roles.length === 0 || roles.includes('ITAdmin') || roles.includes('SystemAdmin'))
+        isPrivilegedRole &&
+        (roles.length === 0 || roles.some((role) => privilegedRoles.includes(role)))
       ) {
         req.tenantRole = user.role as RoleName;
         return next();

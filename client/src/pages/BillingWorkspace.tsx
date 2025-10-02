@@ -111,14 +111,14 @@ export default function BillingWorkspace() {
   const [patientVisitsError, setPatientVisitsError] = useState<string | null>(null);
   const [patientVisits, setPatientVisits] = useState<Visit[]>([]);
   const canCollectPayments = user
-    ? ['Cashier', 'ITAdmin', 'SystemAdmin'].includes(user.role)
+    ? ['Cashier', 'ITAdmin', 'SystemAdmin', 'SuperAdmin'].includes(user.role)
     : false;
   const canTriggerVoid = canCollectPayments;
   const canCreateInvoices = user
-    ? ['Cashier', 'ITAdmin', 'SystemAdmin', 'Doctor'].includes(user.role)
+    ? ['Cashier', 'ITAdmin', 'SystemAdmin', 'SuperAdmin', 'Doctor'].includes(user.role)
     : false;
   const canRepostPharmacy = user
-    ? ['Pharmacist', 'ITAdmin', 'SystemAdmin'].includes(user.role)
+    ? ['Pharmacist', 'ITAdmin', 'SystemAdmin', 'SuperAdmin'].includes(user.role)
     : false;
 
   useEffect(() => {

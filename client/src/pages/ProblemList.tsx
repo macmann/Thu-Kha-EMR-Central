@@ -24,7 +24,7 @@ export default function ProblemList() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const canEdit = useMemo(
-    () => user && ['Doctor', 'ITAdmin', 'SystemAdmin'].includes(user.role),
+    () => user && ['Doctor', 'ITAdmin', 'SystemAdmin', 'SuperAdmin'].includes(user.role),
     [user],
   );
   const canResolve = canEdit;
