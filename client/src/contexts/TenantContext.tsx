@@ -60,7 +60,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSwitching, setIsSwitching] = useState(false);
   const [initialised, setInitialised] = useState(false);
-  const { user } = useAuth();
+  const { user, accessToken } = useAuth();
   const isSuperAdmin = user?.role === 'SuperAdmin';
 
   const setActiveTenant = useCallback(async (tenantId: string) => {
@@ -112,6 +112,15 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
   const role = activeTenant?.role ?? null;
 
   const refreshTenants = useCallback(async () => {
+    if (!accessToken) {
+      setTenants([]);
+      setActiveTenantId(null);
+      persistTenantId(null);
+      setIsLoading(false);
+      setInitialised(false);
+      return;
+    }
+
     setIsLoading(true);
     try {
       let list: TenantSummary[] = [];
@@ -165,7 +174,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsLoading(false);
       setInitialised(true);
     }
-  }, [activeTenantId, isSuperAdmin, setActiveTenant]);
+  }, [accessToken, activeTenantId, isSuperAdmin, setActiveTenant]);
 
   useEffect(() => {
     void refreshTenants();
