@@ -50,7 +50,12 @@ function TenantOverlays() {
     !activeTenant &&
     (tenants.length > 1 || isSuperAdmin);
   const showNoTenants =
-    !isLoginRoute && !isLoading && tenants.length === 0 && !activeTenant && !isSuperAdmin;
+    !isLoginRoute &&
+    !isLoading &&
+    tenants.length === 0 &&
+    !activeTenant &&
+    !isSuperAdmin &&
+    !isSystemAdmin;
 
   return (
     <>
