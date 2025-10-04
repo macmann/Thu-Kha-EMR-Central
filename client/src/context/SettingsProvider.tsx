@@ -3,10 +3,12 @@ import {
   createDoctor,
   createUserAccount,
   getClinicConfiguration,
+  assignUserToActiveTenant,
   listDoctors,
   listUsers,
   updateClinicConfiguration,
   updateUserAccount,
+  removeUserFromActiveTenant,
   type CreateUserPayload,
   type Doctor,
   type UpdateClinicConfigurationPayload,
@@ -27,6 +29,8 @@ interface SettingsContextType {
   addDoctor: (doctor: { name: string; department: string }) => Promise<Doctor>;
   widgetEnabled: boolean;
   setWidgetEnabled: (enabled: boolean) => void;
+  assignExistingUser: (userId: string) => Promise<UserAccount>;
+  removeUserFromClinic: (userId: string) => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -159,6 +163,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return updated;
   };
 
+  const assignExistingUser = async (userId: string) => {
+    const assigned = await assignUserToActiveTenant(userId);
+    setUsers((prev) => [...prev, assigned].sort((a, b) => a.email.localeCompare(b.email)));
+    return assigned;
+  };
+
+  const removeUserFromClinic = async (userId: string) => {
+    await removeUserFromActiveTenant(userId);
+    setUsers((prev) => prev.filter((user) => user.userId !== userId));
+  };
+
   const addDoctor = async (doctor: { name: string; department: string }) => {
     const created = await createDoctor(doctor);
     setDoctors((prev) => [...prev, created]);
@@ -182,6 +197,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         addDoctor,
         widgetEnabled,
         setWidgetEnabled,
+        assignExistingUser,
+        removeUserFromClinic,
       }}
     >
       {children}

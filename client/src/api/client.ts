@@ -697,3 +697,20 @@ export function updateUserAccount(id: string, payload: UpdateUserPayload): Promi
     body: JSON.stringify(payload),
   });
 }
+
+export function listAssignableUsers(): Promise<UserAccount[]> {
+  return fetchJSON('/users/assignable');
+}
+
+export function assignUserToActiveTenant(userId: string): Promise<UserAccount> {
+  return fetchJSON(`/users/${userId}/tenants`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+export function removeUserFromActiveTenant(userId: string): Promise<void> {
+  return fetchJSON(`/users/${userId}/tenants`, {
+    method: 'DELETE',
+  }).then(() => undefined);
+}
