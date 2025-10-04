@@ -141,13 +141,17 @@ export async function resolveTenant(req: AuthRequest, res: Response, next: NextF
 
     const isSuperAdmin = req.user?.role === 'SuperAdmin';
     const isSystemAdmin = req.user?.role === 'SystemAdmin';
+    const isITAdmin = req.user?.role === 'ITAdmin';
 
     if (isRequestMatchingPrefixes(req, TENANT_OPTIONAL_ALL_ROLES_PREFIXES)) {
       req.tenantId = undefined;
       return next();
     }
 
-    if ((isSuperAdmin || isSystemAdmin) && isRequestMatchingPrefixes(req, TENANT_OPTIONAL_PREFIXES)) {
+    if (
+      (isSuperAdmin || isSystemAdmin || isITAdmin) &&
+      isRequestMatchingPrefixes(req, TENANT_OPTIONAL_PREFIXES)
+    ) {
       req.tenantId = undefined;
       return next();
     }
