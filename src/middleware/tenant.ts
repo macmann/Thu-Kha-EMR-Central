@@ -74,9 +74,51 @@ async function ensureTenantExistsById(tenantId: string): Promise<string | null> 
   return tenant?.tenantId ?? null;
 }
 
-function isTenantOptionalPath(path: string): boolean {
-  const optionalPrefixes = ['/admin/tenants', '/users', '/me/tenants'];
-  return optionalPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+const TENANT_OPTIONAL_PREFIXES = ['/admin/tenants', '/users', '/me/tenants'];
+
+function normalizePath(value: string | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const queryIndex = value.indexOf('?');
+  const withoutQuery = queryIndex >= 0 ? value.slice(0, queryIndex) : value;
+  if (!withoutQuery) {
+    return null;
+  }
+
+  return withoutQuery.startsWith('/') ? withoutQuery : `/${withoutQuery}`;
+}
+
+function registerPathVariants(target: Set<string>, rawPath: string | undefined) {
+  const normalized = normalizePath(rawPath);
+  if (!normalized) {
+    return;
+  }
+
+  target.add(normalized);
+  if (normalized.startsWith('/api/')) {
+    target.add(normalized.slice(4) || '/');
+  }
+}
+
+function isTenantOptionalRequest(req: AuthRequest): boolean {
+  const candidates = new Set<string>();
+
+  registerPathVariants(candidates, req.path);
+  registerPathVariants(candidates, req.url);
+  registerPathVariants(candidates, req.originalUrl);
+  if (req.baseUrl) {
+    registerPathVariants(candidates, `${req.baseUrl}${req.path}`);
+  }
+
+  for (const path of candidates) {
+    if (TENANT_OPTIONAL_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 async function findTenantIdByCode(code: string): Promise<string | null> {
@@ -99,7 +141,7 @@ export async function resolveTenant(req: AuthRequest, res: Response, next: NextF
     const isSuperAdmin = req.user?.role === 'SuperAdmin';
     const isSystemAdmin = req.user?.role === 'SystemAdmin';
 
-    if ((isSuperAdmin || isSystemAdmin) && isTenantOptionalPath(req.path)) {
+    if ((isSuperAdmin || isSystemAdmin) && isTenantOptionalRequest(req)) {
       req.tenantId = undefined;
       return next();
     }
