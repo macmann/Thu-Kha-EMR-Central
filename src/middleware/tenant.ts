@@ -74,6 +74,11 @@ async function ensureTenantExistsById(tenantId: string): Promise<string | null> 
   return tenant?.tenantId ?? null;
 }
 
+function isTenantOptionalPath(path: string): boolean {
+  const optionalPrefixes = ['/admin/tenants', '/users', '/me/tenants'];
+  return optionalPrefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
+
 async function findTenantIdByCode(code: string): Promise<string | null> {
   if (!code) {
     return null;
@@ -92,6 +97,13 @@ export async function resolveTenant(req: AuthRequest, res: Response, next: NextF
     }
 
     const isSuperAdmin = req.user?.role === 'SuperAdmin';
+    const isSystemAdmin = req.user?.role === 'SystemAdmin';
+
+    if ((isSuperAdmin || isSystemAdmin) && isTenantOptionalPath(req.path)) {
+      req.tenantId = undefined;
+      return next();
+    }
+
     const tokenTenantId = await resolveTenantIdFromToken(req);
     if (tokenTenantId) {
       const verifiedTenantId = await ensureTenantExistsById(tokenTenantId);

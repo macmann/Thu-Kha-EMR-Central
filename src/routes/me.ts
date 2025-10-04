@@ -2,12 +2,8 @@ import { Router, type Response, type NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 import type { AuthRequest } from '../modules/auth/index.js';
-import { requireTenantRoles } from '../middleware/requireTenantRoles.js';
-
 const prisma = new PrismaClient();
 const router = Router();
-
-router.use(requireTenantRoles());
 
 router.get('/tenants', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

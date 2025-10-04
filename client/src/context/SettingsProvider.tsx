@@ -14,6 +14,7 @@ import {
   type UserAccount,
 } from '../api/client';
 import { useAuth } from './AuthProvider';
+import { useTenant } from '../contexts/TenantContext';
 
 interface SettingsContextType {
   appName: string;
@@ -37,9 +38,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [widgetEnabled, setWidgetEnabledState] = useState<boolean>(false);
   const { accessToken } = useAuth();
+  const { activeTenant } = useTenant();
 
   useEffect(() => {
-    if (!accessToken) {
+    if (!accessToken || !activeTenant) {
       setAppName('EMR System');
       setLogo(null);
       setWidgetEnabledState(false);
@@ -64,10 +66,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return () => {
       active = false;
     };
-  }, [accessToken]);
+  }, [accessToken, activeTenant]);
 
   useEffect(() => {
-    if (!accessToken) {
+    if (!accessToken || !activeTenant) {
       setDoctors([]);
       return;
     }
@@ -86,10 +88,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return () => {
       active = false;
     };
-  }, [accessToken]);
+  }, [accessToken, activeTenant]);
 
   useEffect(() => {
-    if (!accessToken) {
+    if (!accessToken || !activeTenant) {
       setUsers([]);
       return;
     }
@@ -108,7 +110,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return () => {
       active = false;
     };
-  }, [accessToken]);
+  }, [accessToken, activeTenant]);
 
   useEffect(() => {
     if (typeof document !== 'undefined') {
