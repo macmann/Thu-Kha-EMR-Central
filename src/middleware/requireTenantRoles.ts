@@ -17,8 +17,8 @@ export function requireTenantRoles(...roles: Role[]) {
       const isPrivilegedRole = privilegedRoles.includes(user.role as Role);
 
       if (!tenantId) {
-        if (user.role === 'SuperAdmin') {
-          req.tenantRole = 'SuperAdmin';
+        if (isPrivilegedRole) {
+          req.tenantRole = user.role as RoleName;
           return next();
         }
         return res.status(400).json({ error: 'Tenant context missing' });
