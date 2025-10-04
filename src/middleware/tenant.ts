@@ -148,10 +148,7 @@ export async function resolveTenant(req: AuthRequest, res: Response, next: NextF
       return next();
     }
 
-    if (
-      (isSuperAdmin || isSystemAdmin || isITAdmin) &&
-      isRequestMatchingPrefixes(req, TENANT_OPTIONAL_PREFIXES)
-    ) {
+    if ((isSuperAdmin || isSystemAdmin) && isRequestMatchingPrefixes(req, TENANT_OPTIONAL_PREFIXES)) {
       req.tenantId = undefined;
       return next();
     }
