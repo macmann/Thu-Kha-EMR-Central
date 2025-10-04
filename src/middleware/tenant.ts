@@ -160,10 +160,13 @@ export async function resolveTenant(req: AuthRequest, res: Response, next: NextF
     if (slug) {
       const tenantId = await findTenantIdByCode(slug);
       if (!tenantId) {
-        return res.status(404).json({ error: 'Tenant not found' });
+        if (!isSuperAdmin && !isSystemAdmin) {
+          return res.status(404).json({ error: 'Tenant not found' });
+        }
+      } else {
+        req.tenantId = tenantId;
+        return next();
       }
-      req.tenantId = tenantId;
-      return next();
     }
 
     const host = stripPort(req.headers.host);
