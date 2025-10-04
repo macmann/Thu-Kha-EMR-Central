@@ -7,10 +7,12 @@ import {
   DoctorAvailabilitySlot,
   createDoctorAvailability,
   listDoctorAvailability,
+  listAssignableUsers,
   type Role,
+  type UserAccount,
 } from '../api/client';
 import { useAuth } from '../context/AuthProvider';
-import { ROLE_LABELS } from '../constants/roles';
+import { CLINIC_MANAGED_ROLES, ROLE_LABELS } from '../constants/roles';
 
 type DoctorFormState = {
   name: string;
@@ -100,6 +102,8 @@ export default function Settings() {
     addDoctor,
     widgetEnabled,
     setWidgetEnabled,
+    assignExistingUser,
+    removeUserFromClinic,
   } = useSettings();
   const { t, language, setLanguage } = useTranslation();
   const { user } = useAuth();
@@ -126,12 +130,25 @@ export default function Settings() {
   const [brandingSuccess, setBrandingSuccess] = useState<string | null>(null);
   const [brandingSaving, setBrandingSaving] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [assignableUsers, setAssignableUsers] = useState<UserAccount[]>([]);
+  const [assignableLoading, setAssignableLoading] = useState(false);
+  const [assignableError, setAssignableError] = useState<string | null>(null);
+  const [selectedExistingUserId, setSelectedExistingUserId] = useState('');
+  const [assignExistingSaving, setAssignExistingSaving] = useState(false);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
   const totalUsers = users.length;
   const totalDoctors = doctors.length;
   const latestDoctor = totalDoctors > 0 ? doctors[totalDoctors - 1] : undefined;
   const latestUser = totalUsers > 0 ? users[totalUsers - 1] : undefined;
   const isSystemAdmin = user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin';
+  const roleOptions = useMemo(
+    () =>
+      isSystemAdmin
+        ? ROLE_OPTIONS
+        : ROLE_OPTIONS.filter((option) => CLINIC_MANAGED_ROLES.includes(option.value)),
+    [isSystemAdmin],
+  );
 
   useEffect(() => {
     if (!doctors.length) {
@@ -164,6 +181,41 @@ export default function Settings() {
   useEffect(() => {
     setName(appName);
   }, [appName]);
+
+  useEffect(() => {
+    if (isSystemAdmin || user?.role !== 'ITAdmin') {
+      setAssignableUsers([]);
+      setAssignableError(null);
+      setSelectedExistingUserId('');
+      return;
+    }
+
+    let active = true;
+    setAssignableLoading(true);
+    setAssignableError(null);
+
+    listAssignableUsers()
+      .then((data) => {
+        if (!active) return;
+        setAssignableUsers(data);
+        if (data.every((item) => item.userId !== selectedExistingUserId)) {
+          setSelectedExistingUserId('');
+        }
+      })
+      .catch((error) => {
+        if (!active) return;
+        setAssignableUsers([]);
+        setAssignableError(parseErrorMessage(error, 'Unable to load available accounts.'));
+      })
+      .finally(() => {
+        if (!active) return;
+        setAssignableLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isSystemAdmin, user?.role, users, selectedExistingUserId]);
 
   const assignedDoctorIds = useMemo(() => {
     const ids = new Set<string>();
@@ -288,6 +340,11 @@ export default function Settings() {
       return;
     }
 
+    if (!isSystemAdmin && !CLINIC_MANAGED_ROLES.includes(userForm.role)) {
+      setUserError('Role cannot be assigned by clinic administrators.');
+      return;
+    }
+
     setAddingUser(true);
     setUserError(null);
     setUserSuccess(null);
@@ -329,11 +386,57 @@ export default function Settings() {
     });
   }
 
+  async function handleAssignExistingUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedExistingUserId) {
+      setUserError('Select a user to assign.');
+      return;
+    }
+
+    setAssignExistingSaving(true);
+    setUserError(null);
+    setUserSuccess(null);
+    setAssignableError(null);
+    try {
+      const assigned = await assignExistingUser(selectedExistingUserId);
+      setUserSuccess('User assigned to clinic.');
+      setSelectedExistingUserId('');
+      setAssignableUsers((prev) => prev.filter((user) => user.userId !== assigned.userId));
+    } catch (error) {
+      setUserError(parseErrorMessage(error, 'Unable to assign user to clinic.'));
+    } finally {
+      setAssignExistingSaving(false);
+    }
+  }
+
+  async function handleRemoveFromClinic(userAccount: UserAccount) {
+    setRemovingUserId(userAccount.userId);
+    setUserError(null);
+    setUserSuccess(null);
+    try {
+      await removeUserFromClinic(userAccount.userId);
+      setUserSuccess('User removed from clinic.');
+      if (CLINIC_MANAGED_ROLES.includes(userAccount.role)) {
+        setAssignableUsers((prev) =>
+          [...prev, userAccount].sort((a, b) => a.email.localeCompare(b.email)),
+        );
+      }
+    } catch (error) {
+      setUserError(parseErrorMessage(error, 'Unable to remove user from clinic.'));
+    } finally {
+      setRemovingUserId(null);
+    }
+  }
+
   async function handleSaveUser(userId: string) {
     const draft = userDrafts[userId];
     if (!draft) return;
     if (draft.role === 'Doctor' && !draft.doctorId) {
       setUserError('Select a doctor for doctor accounts.');
+      return;
+    }
+    if (!isSystemAdmin && !CLINIC_MANAGED_ROLES.includes(draft.role)) {
+      setUserError('Role cannot be assigned by clinic administrators.');
       return;
     }
     setUserSavingId(userId);
@@ -922,7 +1025,7 @@ export default function Settings() {
                       onChange={(event) => handleUserFormChange('role', event.target.value as Role)}
                       className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     >
-                      {ROLE_OPTIONS.map((option) => (
+                      {roleOptions.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>
@@ -963,6 +1066,52 @@ export default function Settings() {
                   {addingUser ? 'Creating...' : 'Send Invite'}
                 </button>
               </form>
+
+              {!isSystemAdmin && (
+                <div className="mt-6 rounded-xl border border-dashed border-gray-300 bg-white/60 p-4">
+                  <h3 className="text-sm font-semibold text-gray-900">Assign an existing account</h3>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Link an existing doctor or staff account to this clinic so they can access schedules and records.
+                  </p>
+                  <form className="mt-3 flex flex-col gap-3 sm:flex-row" onSubmit={handleAssignExistingUser}>
+                    <label className="sr-only" htmlFor="existing-user">
+                      Existing account
+                    </label>
+                    <select
+                      id="existing-user"
+                      value={selectedExistingUserId}
+                      onChange={(event) => setSelectedExistingUserId(event.target.value)}
+                      disabled={assignableLoading || assignableUsers.length === 0}
+                      className="flex-1 rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <option value="">
+                        {assignableLoading
+                          ? 'Loading accounts…'
+                          : assignableUsers.length === 0
+                            ? 'No available accounts'
+                            : 'Select an account'}
+                      </option>
+                      {assignableUsers.map((candidate) => (
+                        <option key={candidate.userId} value={candidate.userId}>
+                          {candidate.email} · {ROLE_LABELS[candidate.role]}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="submit"
+                      disabled={assignExistingSaving || !selectedExistingUserId}
+                      className={`rounded-full px-4 py-2 text-sm font-semibold text-white shadow transition ${
+                        assignExistingSaving || !selectedExistingUserId
+                          ? 'bg-blue-300 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                    >
+                      {assignExistingSaving ? 'Assigning…' : 'Assign to clinic'}
+                    </button>
+                  </form>
+                  {assignableError && <p className="mt-2 text-xs text-red-600">{assignableError}</p>}
+                </div>
+              )}
 
               <div className="mt-6">
                 <h3 className="text-sm font-semibold text-gray-900">Current Users</h3>
@@ -1013,7 +1162,7 @@ export default function Settings() {
                                 }
                                 className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                               >
-                                {ROLE_OPTIONS.map((option) => (
+                                {roleOptions.map((option) => (
                                   <option key={option.value} value={option.value}>
                                     {option.label}
                                   </option>
@@ -1066,7 +1215,7 @@ export default function Settings() {
                               </div>
                             )}
                           </div>
-                          <div className="mt-4 flex justify-end">
+                          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <button
                               type="button"
                               onClick={() => handleSaveUser(user.userId)}
@@ -1079,6 +1228,20 @@ export default function Settings() {
                             >
                               {saving ? 'Saving...' : 'Save Changes'}
                             </button>
+                            {!isSystemAdmin && CLINIC_MANAGED_ROLES.includes(user.role) && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFromClinic(user)}
+                                disabled={removingUserId === user.userId}
+                                className={`rounded-full px-4 py-2 text-sm font-semibold text-red-600 transition ${
+                                  removingUserId === user.userId
+                                    ? 'cursor-not-allowed bg-red-100 text-red-400'
+                                    : 'border border-red-200 bg-white hover:bg-red-50'
+                                }`}
+                              >
+                                {removingUserId === user.userId ? 'Removing…' : 'Remove from clinic'}
+                              </button>
+                            )}
                           </div>
                         </li>
                       );

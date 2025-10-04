@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { useTranslation } from '../hooks/useTranslation';
@@ -12,7 +12,7 @@ import {
   type TenantMemberSummary,
   type UserAccount,
 } from '../api/client';
-import { CLINICALLY_GLOBAL_ROLES, ROLE_LABELS, STAFF_ROLES } from '../constants/roles';
+import { CLINICALLY_GLOBAL_ROLES, ROLE_LABELS } from '../constants/roles';
 import { useTenant } from '../contexts/TenantContext';
 
 interface FlashMessage {
@@ -23,11 +23,8 @@ interface FlashMessage {
 interface SelectionState {
   [tenantId: string]: {
     itAdmin?: string;
-    staff?: string;
   };
 }
-
-const STAFF_ASSIGNABLE_ROLES = STAFF_ROLES.filter((role) => role !== 'ITAdmin');
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error) {
@@ -67,8 +64,6 @@ export default function ClinicManagement() {
 
   const { setActiveTenant, isSwitching } = useTenant();
   const navigate = useNavigate();
-
-  const staffRoleSet = useMemo(() => new Set(STAFF_ASSIGNABLE_ROLES), []);
 
   useEffect(() => {
     let active = true;
@@ -120,7 +115,7 @@ export default function ClinicManagement() {
     }
   };
 
-  const handleSelectionChange = (tenantId: string, key: 'itAdmin' | 'staff', value: string) => {
+  const handleSelectionChange = (tenantId: string, key: 'itAdmin', value: string) => {
     setSelection((prev) => ({
       ...prev,
       [tenantId]: {
@@ -130,7 +125,7 @@ export default function ClinicManagement() {
     }));
   };
 
-  const handleAddMember = async (tenantId: string, key: 'itAdmin' | 'staff') => {
+  const handleAddMember = async (tenantId: string, key: 'itAdmin') => {
     const selectedUserId = selection[tenantId]?.[key];
     if (!selectedUserId) {
       return;
@@ -248,7 +243,7 @@ export default function ClinicManagement() {
   return (
     <DashboardLayout
       title={t('Clinic management')}
-      subtitle={t('Create clinics and assign administrative staff.')}
+      subtitle={t('Create clinics and assign IT administrators for each location.')}
       activeItem="clinics"
     >
       <div className="space-y-8">
@@ -267,7 +262,7 @@ export default function ClinicManagement() {
         <section className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900">{t('Create a new clinic')}</h2>
           <p className="mt-1 text-sm text-gray-500">
-            {t('Add a clinic to begin assigning IT administrators and support staff.')}
+            {t('Add a clinic to begin assigning dedicated IT administrators.')}
           </p>
           <form className="mt-4 grid gap-4 md:grid-cols-2" onSubmit={handleCreateClinic}>
             <div className="md:col-span-1">
@@ -330,12 +325,6 @@ export default function ClinicManagement() {
                 const availableItAdmins = users.filter(
                   (user) => user.role === 'ITAdmin' && !assignedUserIds.has(user.userId),
                 );
-                  const availableStaff = users.filter(
-                    (user) =>
-                      user.role !== 'ITAdmin' &&
-                      staffRoleSet.has(user.role) &&
-                      !assignedUserIds.has(user.userId),
-                  );
                 const itMembers = tenant.members.filter((member) => member.tenantRole === 'ITAdmin');
                 const staffMembers = tenant.members.filter(
                   (member) =>
@@ -344,9 +333,8 @@ export default function ClinicManagement() {
                 const otherMembers = tenant.members.filter((member) =>
                   CLINICALLY_GLOBAL_ROLES.includes(member.tenantRole),
                 );
-                const selectionState = selection[tenant.tenantId] ?? { itAdmin: '', staff: '' };
+                const selectionState = selection[tenant.tenantId] ?? { itAdmin: '' };
                 const assigningIt = assigningKey === `${tenant.tenantId}:itAdmin`;
-                const assigningStaff = assigningKey === `${tenant.tenantId}:staff`;
 
                 return (
                   <div key={tenant.tenantId} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -416,36 +404,12 @@ export default function ClinicManagement() {
                       <div>
                         <h4 className="text-sm font-semibold text-gray-900">{t('Clinic staff')}</h4>
                         <p className="mt-1 text-xs text-gray-500">
-                          {t('Add operational roles like front desk, billing, pharmacy, and nursing teams.')}
+                          {t(
+                            'Staff assignments are managed by each clinic’s IT administrators. Remove entries here only if they no longer belong to this clinic.',
+                          )}
                         </p>
                         <div className="mt-4 space-y-4">
                           {renderMemberList(tenant.tenantId, staffMembers, t('No staff assigned yet.'))}
-                          <div className="flex flex-col gap-3 sm:flex-row">
-                            <label className="sr-only" htmlFor={`staff-${tenant.tenantId}`}>
-                              {t('Select a staff member')}
-                            </label>
-                            <select
-                              id={`staff-${tenant.tenantId}`}
-                              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                              value={selectionState.staff ?? ''}
-                              onChange={(event) => handleSelectionChange(tenant.tenantId, 'staff', event.target.value)}
-                            >
-                              <option value="">{t('Select a staff member')}</option>
-                              {availableStaff.map((user) => (
-                                <option key={user.userId} value={user.userId}>
-                                  {user.email} · {t(ROLE_LABELS[user.role])}
-                                </option>
-                              ))}
-                            </select>
-                            <button
-                              type="button"
-                              onClick={() => handleAddMember(tenant.tenantId, 'staff')}
-                              disabled={!selectionState.staff || assigningStaff}
-                              className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
-                            >
-                              {assigningStaff ? t('Assigning…') : t('Assign')}
-                            </button>
-                          </div>
                         </div>
                       </div>
                     </div>

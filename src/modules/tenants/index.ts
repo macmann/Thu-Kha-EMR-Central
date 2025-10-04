@@ -182,6 +182,10 @@ router.post('/:tenantId/members', async (req: Request, res: Response) => {
     return res.status(404).json({ error: 'User not found' });
   }
 
+  if (user.role !== 'ITAdmin') {
+    return res.status(400).json({ error: 'Only IT administrators can be assigned by system administrators' });
+  }
+
   try {
     const created = await prisma.userTenant.create({
       data: {

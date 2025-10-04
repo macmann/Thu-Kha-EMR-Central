@@ -26,3 +26,14 @@ export const STAFF_ROLES: Role[] = [
 ];
 
 export const CLINICALLY_GLOBAL_ROLES: Role[] = ['Doctor', 'SystemAdmin', 'SuperAdmin'];
+
+export const CLINIC_MANAGED_ROLES: Role[] = [
+  'Doctor',
+  'AdminAssistant',
+  'Cashier',
+  'Pharmacist',
+  'PharmacyTech',
+  'InventoryManager',
+  'Nurse',
+  'LabTech',
+];
