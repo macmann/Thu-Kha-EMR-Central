@@ -3,7 +3,6 @@ import { PrismaClient, type Role } from '@prisma/client';
 import { z } from 'zod';
 
 import type { AuthRequest } from '../modules/auth/index.js';
-import { requireTenantRoles } from '../middleware/requireTenantRoles.js';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -17,8 +16,6 @@ export const exampleTenantJwtPayload = {
   tenantId: '11111111-2222-4333-8444-555555555555',
   role: 'Doctor',
 } as const;
-
-router.use(requireTenantRoles());
 
 router.post('/switch-tenant', async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {

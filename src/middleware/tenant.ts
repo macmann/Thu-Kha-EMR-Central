@@ -75,6 +75,7 @@ async function ensureTenantExistsById(tenantId: string): Promise<string | null> 
 }
 
 const TENANT_OPTIONAL_PREFIXES = ['/admin/tenants', '/users', '/me/tenants'];
+const TENANT_OPTIONAL_ALL_ROLES_PREFIXES = ['/sessions'];
 
 function normalizePath(value: string | undefined): string | null {
   if (!value) {
@@ -102,7 +103,7 @@ function registerPathVariants(target: Set<string>, rawPath: string | undefined) 
   }
 }
 
-function isTenantOptionalRequest(req: AuthRequest): boolean {
+function isRequestMatchingPrefixes(req: AuthRequest, prefixes: string[]): boolean {
   const candidates = new Set<string>();
 
   registerPathVariants(candidates, req.path);
@@ -113,7 +114,7 @@ function isTenantOptionalRequest(req: AuthRequest): boolean {
   }
 
   for (const path of candidates) {
-    if (TENANT_OPTIONAL_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
+    if (prefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
       return true;
     }
   }
@@ -141,7 +142,12 @@ export async function resolveTenant(req: AuthRequest, res: Response, next: NextF
     const isSuperAdmin = req.user?.role === 'SuperAdmin';
     const isSystemAdmin = req.user?.role === 'SystemAdmin';
 
-    if ((isSuperAdmin || isSystemAdmin) && isTenantOptionalRequest(req)) {
+    if (isRequestMatchingPrefixes(req, TENANT_OPTIONAL_ALL_ROLES_PREFIXES)) {
+      req.tenantId = undefined;
+      return next();
+    }
+
+    if ((isSuperAdmin || isSystemAdmin) && isRequestMatchingPrefixes(req, TENANT_OPTIONAL_PREFIXES)) {
       req.tenantId = undefined;
       return next();
     }
