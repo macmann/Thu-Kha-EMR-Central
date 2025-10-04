@@ -26,7 +26,7 @@ import LabOrdersPage from './pages/LabOrders';
 import LabOrderDetailPage from './pages/LabOrderDetail';
 import ClinicManagement from './pages/ClinicManagement';
 import './styles/App.css';
-import { TenantProvider, useTenant } from './contexts/TenantContext';
+import { useTenant } from './contexts/TenantContext';
 import TenantPicker from './components/TenantPicker';
 import SuperAdminTenantSetup from './components/SuperAdminTenantSetup';
 import { useAuth } from './context/AuthProvider';
@@ -296,11 +296,7 @@ function AppContent() {
 }
 
 function App() {
-  return (
-    <TenantProvider>
-      <AppContent />
-    </TenantProvider>
-  );
+  return <AppContent />;
 }
 
 export default App;
