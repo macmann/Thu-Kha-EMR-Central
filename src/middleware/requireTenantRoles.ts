@@ -24,17 +24,23 @@ export function requireTenantRoles(...roles: Role[]) {
         return res.status(400).json({ error: 'Tenant context missing' });
       }
 
-      if (
-        isPrivilegedRole &&
-        (roles.length === 0 || roles.some((role) => privilegedRoles.includes(role)))
-      ) {
-        req.tenantRole = user.role as RoleName;
-        return next();
-      }
-
       const membership = await prisma.userTenant.findUnique({
         where: { tenantId_userId: { tenantId, userId: user.userId } },
       });
+
+      if (isPrivilegedRole) {
+        if (membership) {
+          req.tenantRole = membership.role as RoleName;
+          return next();
+        }
+
+        if (user.role === 'SuperAdmin' || user.role === 'SystemAdmin') {
+          req.tenantRole = user.role as RoleName;
+          return next();
+        }
+
+        return res.status(403).json({ error: 'Forbidden' });
+      }
 
       if (!membership) {
         return res.status(403).json({ error: 'Forbidden' });
