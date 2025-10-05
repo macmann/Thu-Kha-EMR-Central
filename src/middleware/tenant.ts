@@ -75,7 +75,7 @@ async function ensureTenantExistsById(tenantId: string): Promise<string | null> 
 }
 
 const TENANT_OPTIONAL_PREFIXES = ['/admin/tenants', '/users', '/me/tenants'];
-const TENANT_OPTIONAL_ALL_ROLES_PREFIXES = ['/sessions'];
+const TENANT_OPTIONAL_ALL_ROLES_PREFIXES = ['/sessions', '/me/tenants'];
 
 function normalizePath(value: string | undefined): string | null {
   if (!value) {
