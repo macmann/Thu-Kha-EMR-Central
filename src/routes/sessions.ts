@@ -55,7 +55,7 @@ router.post('/switch-tenant', async (req: AuthRequest, res: Response, next: Next
         name: membership.tenant.name,
         code: membership.tenant.code ?? null,
       };
-    } else if (user.role === 'SuperAdmin') {
+    } else if (user.role === 'SuperAdmin' || user.role === 'SystemAdmin') {
       const tenant = await prisma.tenant.findUnique({
         where: { tenantId },
         select: { tenantId: true, name: true, code: true },
@@ -65,7 +65,7 @@ router.post('/switch-tenant', async (req: AuthRequest, res: Response, next: Next
         return res.status(404).json({ error: 'Tenant not found' });
       }
 
-      tenantRole = 'SuperAdmin';
+      tenantRole = user.role as Role;
       tenantDetails = {
         tenantId: tenant.tenantId,
         name: tenant.name,
