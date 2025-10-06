@@ -91,6 +91,16 @@ export function removeTenantMember(tenantId: string, userId: string): Promise<vo
   }).then(() => undefined);
 }
 
+export interface ClinicSummary {
+  tenantId: string;
+  name: string;
+  code: string | null;
+}
+
+export interface ClinicAssignment extends ClinicSummary {
+  mrn: string | null;
+}
+
 export interface Patient {
   patientId: string;
   name: string;
@@ -99,6 +109,7 @@ export interface Patient {
   gender?: string | null;
   contact?: string | null;
   drugAllergies?: string | null;
+  clinics?: ClinicAssignment[];
 }
 
 export interface Doctor {
@@ -245,6 +256,7 @@ export interface Visit {
   department: string;
   reason?: string;
   doctor: Doctor;
+  clinic?: ClinicSummary;
 }
 
 export interface VisitSummary {
@@ -255,6 +267,7 @@ export interface VisitSummary {
   medications: Medication[];
   labResults: VisitLabResult[];
   observations: Observation[];
+  clinic?: ClinicSummary;
 }
 
 export interface PatientSummary extends Patient {
