@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from '../hooks/useTranslation';
+import ClinicBrand from './ClinicBrand';
 
 interface LoginCardProps {
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -19,31 +20,14 @@ export default function LoginCard({
   const { t } = useTranslation();
   return (
     <div className="rounded-2xl bg-white p-6 shadow sm:p-8">
-      <div className="mb-6 flex flex-col items-center">
-        {logo ? (
-          <img
-            src={logo}
-            alt="logo"
-            className="mb-4 h-12 w-auto rounded object-contain"
-          />
-        ) : (
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-blue-600">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-6 w-6 text-white"
-              aria-hidden="true"
-            >
-              <path d="M12 6v12M6 12h12" />
-            </svg>
-          </div>
-        )}
-        <h1 className="text-2xl font-bold text-gray-900">{appName}</h1>
+      <div className="mb-6 flex flex-col items-center gap-3">
+        <ClinicBrand
+          name={appName}
+          logo={logo ?? undefined}
+          size="lg"
+          className="justify-center"
+          nameClassName="text-2xl font-bold text-gray-900"
+        />
         <p className="mt-2 text-sm text-gray-600">{t('Sign in to your account')}</p>
       </div>
 

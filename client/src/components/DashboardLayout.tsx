@@ -16,6 +16,7 @@ import { useSettings } from '../context/SettingsProvider';
 import { useTranslation } from '../hooks/useTranslation';
 import AppHeader from './AppHeader';
 import LogoutButton from './LogoutButton';
+import ClinicBrand from './ClinicBrand';
 import { ROLE_LABELS } from '../constants/roles';
 
 type NavigationKey =
@@ -152,7 +153,12 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-gray-50">
       <aside className="hidden w-72 flex-col border-r border-gray-200 bg-white px-6 py-8 shadow-sm md:flex lg:w-80">
-        <div className="text-lg font-semibold text-blue-600">{displayName}</div>
+        <ClinicBrand
+          name={displayName}
+          logo={logo ?? undefined}
+          size="md"
+          nameClassName="text-lg font-semibold text-blue-600"
+        />
         <nav className="mt-8 space-y-1">
           <NavigationLinks />
         </nav>
@@ -177,7 +183,12 @@ export default function DashboardLayout({
           />
           <div className="relative ml-auto flex h-full w-full max-w-xs flex-col bg-white px-6 py-6 shadow-xl">
             <div className="flex items-center justify-between gap-3">
-              <span className="text-lg font-semibold text-blue-600">{displayName}</span>
+              <ClinicBrand
+                name={displayName}
+                logo={logo ?? undefined}
+                size="md"
+                nameClassName="text-lg font-semibold text-blue-600"
+              />
               <button
                 type="button"
                 onClick={() => setIsMobileNavOpen(false)}

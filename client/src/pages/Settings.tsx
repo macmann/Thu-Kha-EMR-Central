@@ -1,5 +1,6 @@
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import ClinicBrand from '../components/ClinicBrand';
 import { AvatarIcon, CheckIcon, PatientsIcon, SettingsIcon } from '../components/icons';
 import { useSettings } from '../context/SettingsProvider';
 import { useTranslation, type Language } from '../hooks/useTranslation';
@@ -548,7 +549,12 @@ export default function Settings() {
               </span>
               <div>
                 <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Application</div>
-                <div className="mt-1 text-lg font-semibold text-gray-900">{appName}</div>
+                <ClinicBrand
+                  name={appName}
+                  logo={logo ?? undefined}
+                  size="sm"
+                  nameClassName="text-lg font-semibold text-gray-900"
+                />
                 <p className="text-xs text-gray-500">Visible across staff dashboard and patient portal.</p>
               </div>
             </div>
