@@ -173,7 +173,16 @@ router.get(
         return res.status(400).json({ error: parsed.error.flatten() });
       }
 
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+
       const { q, limit = 10, includeAll = false } = parsed.data;
+
+      const stocksFilter: Prisma.StockItemWhereInput = includeAll
+        ? { tenantId }
+        : { tenantId, qtyOnHand: { gt: 0 } };
 
       const where: Prisma.DrugWhereInput = {
         isActive: true,
@@ -185,14 +194,14 @@ router.get(
       };
 
       if (!includeAll) {
-        where.stocks = { some: { qtyOnHand: { gt: 0 } } };
+        where.stocks = { some: stocksFilter };
       }
 
       const drugs = await prisma.drug.findMany({
         where,
         include: {
           stocks: {
-            ...(includeAll ? {} : { where: { qtyOnHand: { gt: 0 } } }),
+            where: stocksFilter,
             select: { qtyOnHand: true },
           },
         },
@@ -228,7 +237,12 @@ router.get(
       }
 
       const { limit = 5, threshold = 10 } = parsed.data;
-      const data = await listLowStockInventory(limit, threshold);
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+
+      const data = await listLowStockInventory(tenantId, limit, threshold);
       res.json({ data });
     } catch (error) {
       next(error);
