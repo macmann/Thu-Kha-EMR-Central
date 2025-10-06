@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer';
 import { Router, type Response } from 'express';
 import type { AuthRequest } from '../auth/index.js';
 import { PrismaClient } from '@prisma/client';
@@ -7,6 +8,19 @@ import { requireTenantRoles } from '../../middleware/requireTenantRoles.js';
 
 const prisma = new PrismaClient();
 const router = Router();
+
+const MAX_LOGO_BYTES = 1_000_000;
+
+function getLogoByteSize(logo: string) {
+  const match = /^data:.*;base64,(.*)$/s.exec(logo);
+  const base64Content = match ? match[1] : logo;
+
+  try {
+    return Buffer.from(base64Content, 'base64').byteLength;
+  } catch {
+    return Buffer.byteLength(logo, 'utf8');
+  }
+}
 
 const updateSchema = z
   .object({
@@ -20,12 +34,15 @@ const updateSchema = z
     widgetEnabled: z.boolean().optional(),
   })
   .superRefine((value, ctx) => {
-    if (value.logo !== undefined && value.logo !== null && value.logo.length > 1_000_000) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['logo'],
-        message: 'Logo payload is too large',
-      });
+    if (value.logo !== undefined && value.logo !== null) {
+      const logoSize = getLogoByteSize(value.logo);
+      if (logoSize > MAX_LOGO_BYTES) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['logo'],
+          message: 'Logo payload is too large',
+        });
+      }
     }
   });
 
