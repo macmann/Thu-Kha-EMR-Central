@@ -147,8 +147,12 @@ export default function VisitDetail() {
     </div>
   ) : undefined;
 
+  const clinicLabel = visit?.clinic
+    ? `${visit.clinic.name}${visit.clinic.code ? ` (${visit.clinic.code})` : ''}`
+    : null;
+
   const subtitle = visit
-    ? `Visit on ${formatDate(visit.visitDate)} with ${visit.doctor.name}`
+    ? `Visit on ${formatDate(visit.visitDate)}${clinicLabel ? ` at ${clinicLabel}` : ''} with ${visit.doctor.name}`
     : loading
       ? 'Loading visit details...'
       : error ?? 'Visit details unavailable.';
@@ -232,6 +236,11 @@ export default function VisitDetail() {
                   {visit.reason || 'No visit reason documented.'}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs font-medium">
+                  {clinicLabel && (
+                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-indigo-600">
+                      {clinicLabel}
+                    </span>
+                  )}
                   <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-blue-600">
                     {visit.department}
                   </span>
@@ -262,6 +271,10 @@ export default function VisitDetail() {
                   <div className="flex items-center justify-between gap-4">
                     <dt className="text-gray-500">Gender</dt>
                     <dd className="font-semibold text-gray-900">{gender}</dd>
+                  </div>
+                  <div className="flex items-center justify-between gap-4">
+                    <dt className="text-gray-500">Clinic</dt>
+                    <dd className="font-semibold text-gray-900">{clinicLabel ?? '—'}</dd>
                   </div>
                   <div className="flex items-center justify-between gap-4">
                     <dt className="text-gray-500">Insurance</dt>

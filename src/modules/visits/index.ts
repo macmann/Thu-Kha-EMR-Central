@@ -13,6 +13,16 @@ import { withTenant } from '../../utils/tenant.js';
 const prisma = new PrismaClient();
 const router = Router();
 
+type VisitTenant = { tenantId: string; name: string; code: string | null };
+
+function formatVisitResponse<T extends { tenant?: VisitTenant | null }>(visit: T) {
+  const { tenant, ...rest } = visit;
+  return {
+    ...rest,
+    clinic: tenant ? { tenantId: tenant.tenantId, name: tenant.name, code: tenant.code } : undefined,
+  };
+}
+
 const diagnosisSchema = z.object({
   diagnosis: z.string().min(1),
 });
@@ -88,6 +98,7 @@ router.post('/visits', requireAuth, resolveTenant, requireTenantRoles('Doctor'),
     data,
     include: {
       doctor: { select: { doctorId: true, name: true, department: true } },
+      tenant: { select: { tenantId: true, name: true, code: true } },
       diagnoses: { orderBy: { createdAt: 'desc' } },
       medications: { orderBy: { createdAt: 'desc' } },
       labResults: { orderBy: { createdAt: 'desc' } },
@@ -107,7 +118,7 @@ router.post('/visits', requireAuth, resolveTenant, requireTenantRoles('Doctor'),
   for (const o of visit.observations) {
     await logDataChange(req.user!.userId, 'observation', o.obsId, undefined, o);
   }
-  res.status(201).json(visit);
+  res.status(201).json(formatVisitResponse(visit));
 });
 
 router.get('/patients/:id/visits', requireAuth, resolveTenant, requireTenantRoles(), async (req: AuthRequest, res: Response) => {
@@ -124,9 +135,12 @@ router.get('/patients/:id/visits', requireAuth, resolveTenant, requireTenantRole
   const visits = await prisma.visit.findMany({
     where: withTenant({ patientId: id }, tenantId),
     orderBy: { visitDate: 'desc' },
-    include: { doctor: { select: { doctorId: true, name: true, department: true } } },
+    include: {
+      doctor: { select: { doctorId: true, name: true, department: true } },
+      tenant: { select: { tenantId: true, name: true, code: true } },
+    },
   });
-  res.json(visits);
+  res.json(visits.map((visit) => formatVisitResponse(visit)));
 });
 
 router.get('/visits/:id', requireAuth, resolveTenant, requireTenantRoles(), async (req: AuthRequest, res: Response) => {
@@ -144,6 +158,7 @@ router.get('/visits/:id', requireAuth, resolveTenant, requireTenantRoles(), asyn
     where: withTenant({ visitId: id }, tenantId),
     include: {
       doctor: { select: { doctorId: true, name: true, department: true } },
+      tenant: { select: { tenantId: true, name: true, code: true } },
       diagnoses: { orderBy: { createdAt: 'desc' } },
       medications: { orderBy: { createdAt: 'desc' } },
       labResults: { orderBy: { createdAt: 'desc' } },
@@ -151,7 +166,7 @@ router.get('/visits/:id', requireAuth, resolveTenant, requireTenantRoles(), asyn
     },
   });
   if (!visit) return res.sendStatus(404);
-  res.json(visit);
+  res.json(formatVisitResponse(visit));
 });
 
 router.post(

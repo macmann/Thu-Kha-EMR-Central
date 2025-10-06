@@ -81,6 +81,12 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
     contact: true,
     insurance: true,
     drugAllergies: true,
+    tenantLinks: {
+      select: {
+        mrn: true,
+        tenant: { select: { tenantId: true, name: true, code: true } },
+      },
+    },
   };
   if (include) {
     select.visits = {
@@ -90,6 +96,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
         visitId: true,
         visitDate: true,
         doctor: { select: { doctorId: true, name: true, department: true } },
+        tenant: { select: { tenantId: true, name: true, code: true } },
         diagnoses: { select: { diagnosis: true } },
         medications: { select: { drugName: true, dosage: true, instructions: true } },
         labResults: {
@@ -118,8 +125,62 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   if (!patient) {
     return res.sendStatus(404);
   }
-  console.log('patient detail', { patientId: id, contact: maskContact(patient.contact as unknown as string | null) });
-  res.json(patient);
+  const patientWithRelations = patient as typeof patient & {
+    tenantLinks: Array<{
+      mrn: string | null;
+      tenant: { tenantId: string; name: string; code: string | null };
+    }>;
+    visits?: Array<{
+      visitId: string;
+      visitDate: Date;
+      doctor: { doctorId: string; name: string; department: string };
+      diagnoses: Array<{ diagnosis: string }>;
+      medications: Array<{ drugName: string; dosage: string | null; instructions: string | null }>;
+      labResults: Array<{ testName: string; resultValue: number | null; unit: string | null; testDate: Date | null }>;
+      observations: Array<{
+        obsId: string;
+        noteText: string;
+        bpSystolic: number | null;
+        bpDiastolic: number | null;
+        heartRate: number | null;
+        temperatureC: number | null;
+        spo2: number | null;
+        bmi: number | null;
+        createdAt: Date;
+      }>;
+      tenant?: { tenantId: string; name: string; code: string | null };
+    }>;
+  };
+
+  const { tenantLinks, visits, ...rest } = patientWithRelations;
+
+  const clinics = tenantLinks.map((link) => ({
+    tenantId: link.tenant.tenantId,
+    name: link.tenant.name,
+    code: link.tenant.code,
+    mrn: link.mrn ?? null,
+  }));
+
+  const visitsWithClinic = visits
+    ? visits.map(({ tenant, ...visitRest }) => ({
+        ...visitRest,
+        clinic: tenant
+          ? { tenantId: tenant.tenantId, name: tenant.name, code: tenant.code }
+          : undefined,
+      }))
+    : undefined;
+
+  const response = {
+    ...rest,
+    clinics,
+    ...(visitsWithClinic ? { visits: visitsWithClinic } : {}),
+  };
+
+  console.log('patient detail', {
+    patientId: id,
+    contact: maskContact(patient.contact as unknown as string | null),
+  });
+  res.json(response);
 });
 
 export default router;

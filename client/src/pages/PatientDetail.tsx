@@ -5,6 +5,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { PatientsIcon, SearchIcon } from '../components/icons';
 import VitalsCard from '../components/VitalsCard';
 import { useAuth } from '../context/AuthProvider';
+import { useTenant } from '../contexts/TenantContext';
 import {
   getPatient,
   listPatientVisits,
@@ -31,6 +32,7 @@ export default function PatientDetail() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { activeTenant } = useTenant();
   const initialTab =
     new URLSearchParams(location.search).get('tab') === 'visits'
       ? 'visits'
@@ -409,6 +411,12 @@ export default function PatientDetail() {
                   <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-blue-600">
                     {visit.department}
                   </span>
+                  {visit.clinic && (
+                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-indigo-600">
+                      {visit.clinic.name}
+                      {visit.clinic.code ? ` (${visit.clinic.code})` : ''}
+                    </span>
+                  )}
                   {visit.reason && (
                     <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-gray-600">
                       {visit.reason}
@@ -435,6 +443,12 @@ export default function PatientDetail() {
   const gender = formatGenderValue(patient?.gender);
   const age = patient ? calculateAge(patient.dob) : null;
   const lastVisit = patient?.visits?.[0] ?? null;
+  const clinicAssignments = patient?.clinics ?? [];
+  const highlightedClinic =
+    clinicAssignments.find((clinic) => clinic.tenantId === activeTenant?.tenantId) ?? clinicAssignments[0] ?? null;
+  const clinicDisplay = highlightedClinic
+    ? `${highlightedClinic.name}${highlightedClinic.code ? ` (${highlightedClinic.code})` : ''}`
+    : t('Not assigned');
 
   return (
     <DashboardLayout
@@ -479,10 +493,11 @@ export default function PatientDetail() {
                 <div className="mt-2 text-base font-semibold text-gray-900">{contact}</div>
               </div>
             </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {[
                 { label: t('Date of Birth'), value: formatDateValue(patient.dob) },
                 { label: t('Age'), value: age !== null ? t('{count} yrs', { count: age }) : '—' },
+                { label: t('Clinic'), value: clinicDisplay },
                 { label: t('Insurance'), value: coverage },
                 { label: t('Drug allergies'), value: allergies },
                 { label: t('Gender'), value: gender },
@@ -497,6 +512,32 @@ export default function PatientDetail() {
                   <div className="mt-2 text-base font-semibold text-gray-900">{stat.value}</div>
                 </div>
               ))}
+            </div>
+            <div className="mt-6">
+              <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                {t('Clinic memberships')}
+              </div>
+              {clinicAssignments.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
+                  {clinicAssignments.map((clinic) => {
+                    const label = `${clinic.name}${clinic.code ? ` (${clinic.code})` : ''}`;
+                    const isHighlighted = clinic.tenantId === highlightedClinic?.tenantId;
+                    return (
+                      <span
+                        key={clinic.tenantId}
+                        className={`inline-flex items-center rounded-full px-3 py-1 ${
+                          isHighlighted ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {label}
+                        {clinic.mrn ? ` • ${t('MRN')}: ${clinic.mrn}` : ''}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-gray-500">{t('No clinic assignments yet')}</p>
+              )}
             </div>
             <div
               className={`mt-6 rounded-xl px-4 py-3 text-sm ${
