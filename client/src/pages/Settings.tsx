@@ -13,6 +13,7 @@ import {
   type UserAccount,
 } from '../api/client';
 import { useAuth } from '../context/AuthProvider';
+import { useTenant } from '../contexts/TenantContext';
 import { CLINIC_MANAGED_ROLES, ROLE_LABELS } from '../constants/roles';
 
 type DoctorFormState = {
@@ -108,6 +109,7 @@ export default function Settings() {
   } = useSettings();
   const { t, language, setLanguage } = useTranslation();
   const { user } = useAuth();
+  const { activeTenant, tenants, setActiveTenant, isSwitching } = useTenant();
 
   const [name, setName] = useState(appName);
   const [userForm, setUserForm] = useState<{ email: string; password: string; role: Role; doctorId: string }>(
@@ -137,12 +139,18 @@ export default function Settings() {
   const [selectedExistingUserId, setSelectedExistingUserId] = useState('');
   const [assignExistingSaving, setAssignExistingSaving] = useState(false);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const [tenantSwitchError, setTenantSwitchError] = useState<string | null>(null);
+  const [tenantSwitchingId, setTenantSwitchingId] = useState<string | null>(null);
 
   const totalUsers = users.length;
   const totalDoctors = doctors.length;
   const latestDoctor = totalDoctors > 0 ? doctors[totalDoctors - 1] : undefined;
   const latestUser = totalUsers > 0 ? users[totalUsers - 1] : undefined;
   const isSystemAdmin = user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin';
+  const hasActiveTenant = Boolean(activeTenant);
+  const canManageMultipleClinics =
+    (tenants.length > 1 || (!activeTenant && tenants.length > 0)) &&
+    (user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin' || user?.role === 'ITAdmin');
   const roleOptions = useMemo(
     () =>
       isSystemAdmin
@@ -286,9 +294,27 @@ export default function Settings() {
     setLanguage(event.target.value as Language);
   }
 
+  async function handleUseClinic(tenantId: string) {
+    setTenantSwitchError(null);
+    setTenantSwitchingId(tenantId);
+    try {
+      await setActiveTenant(tenantId);
+    } catch (error) {
+      setTenantSwitchError(parseErrorMessage(error, t('Unable to switch clinics.')));
+    } finally {
+      setTenantSwitchingId(null);
+    }
+  }
+
   async function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file || !isSystemAdmin) return;
+
+    if (!hasActiveTenant) {
+      setBrandingError(t('Select a clinic before updating branding.'));
+      event.target.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -313,6 +339,11 @@ export default function Settings() {
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isSystemAdmin) return;
+
+    if (!hasActiveTenant) {
+      setBrandingError(t('Select a clinic before updating branding.'));
+      return;
+    }
 
     setBrandingSaving(true);
     setBrandingError(null);
@@ -516,7 +547,7 @@ export default function Settings() {
     }
   }
 
-  const headerStatus = (
+  const headerStatus = hasActiveTenant ? (
     <div className="flex flex-col gap-3 text-sm text-gray-600 md:flex-row md:items-center md:gap-4">
       <span
         className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
@@ -531,6 +562,10 @@ export default function Settings() {
         {t('Portal name synced as {name}', { name: appName })}
       </span>
     </div>
+  ) : (
+    <div className="text-sm font-semibold text-amber-600">
+      {t('Select a clinic to configure settings.')}
+    </div>
   );
 
   return (
@@ -541,6 +576,67 @@ export default function Settings() {
       headerChildren={headerStatus}
     >
       <div className="space-y-6">
+        {canManageMultipleClinics && (
+          <section className="rounded-2xl border border-blue-100 bg-blue-50/60 p-6 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">{t('Choose a clinic to configure')}</h2>
+                <p className="mt-1 text-sm text-gray-700">
+                  {t('Switch between clinics you manage to update branding, staff access, and scheduling preferences.')}
+                </p>
+              </div>
+              {!hasActiveTenant && (
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
+                  {t('No clinic selected')}
+                </span>
+              )}
+            </div>
+            {tenantSwitchError && (
+              <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {tenantSwitchError}
+              </div>
+            )}
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              {tenants.map((tenant) => {
+                const isActive = activeTenant?.tenantId === tenant.tenantId;
+                const isPending = tenantSwitchingId === tenant.tenantId || isSwitching;
+                return (
+                  <div
+                    key={tenant.tenantId}
+                    className="flex flex-col justify-between rounded-2xl border border-white bg-white/80 p-4 shadow-sm sm:flex-row sm:items-center"
+                  >
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-900">{tenant.name}</h3>
+                      <p className="text-xs uppercase tracking-wide text-gray-500">
+                        {t('Clinic code')}: {tenant.code || t('Not set')}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {t('Your role')}: {t(ROLE_LABELS[tenant.role] ?? tenant.role)}
+                      </p>
+                    </div>
+                    <div className="mt-3 flex items-center justify-end gap-2 sm:mt-0">
+                      {isActive ? (
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-700">
+                          {t('Currently in use')}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleUseClinic(tenant.tenantId)}
+                          disabled={isPending}
+                          className="inline-flex items-center rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                          {isPending ? t('Switching…') : t('Use this clinic')}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col rounded-2xl bg-white p-5 shadow-sm">
             <div className="flex items-center gap-3">
@@ -654,9 +750,9 @@ export default function Settings() {
                       type="text"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      disabled={!isSystemAdmin || brandingSaving}
+                      disabled={!isSystemAdmin || brandingSaving || !hasActiveTenant}
                       className={`mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-                        !isSystemAdmin ? 'cursor-not-allowed opacity-60' : ''
+                        !isSystemAdmin || !hasActiveTenant ? 'cursor-not-allowed opacity-60' : ''
                       }`}
                     />
                   </div>
@@ -670,9 +766,11 @@ export default function Settings() {
                       type="file"
                       accept="image/*"
                       onChange={handleLogoChange}
-                      disabled={!isSystemAdmin || logoUploading}
+                      disabled={!isSystemAdmin || logoUploading || !hasActiveTenant}
                       className={`mt-2 block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:px-4 file:py-2 file:text-sm file:font-semibold ${
-                        !isSystemAdmin ? 'file:bg-gray-200 file:text-gray-500' : 'file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100'
+                        !isSystemAdmin || !hasActiveTenant
+                          ? 'file:bg-gray-200 file:text-gray-500'
+                          : 'file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100'
                       } ${logoUploading ? 'opacity-70' : ''}`}
                     />
                     <p className="mt-1 text-xs text-gray-500">{t('PNG, JPG or SVG up to 1MB.')}</p>
@@ -707,10 +805,10 @@ export default function Settings() {
                     role="switch"
                     aria-checked={widgetEnabled}
                     onClick={() => {
-                      if (!isSystemAdmin) return;
+                      if (!isSystemAdmin || !hasActiveTenant) return;
                       setWidgetEnabled(!widgetEnabled);
                     }}
-                    disabled={!isSystemAdmin}
+                    disabled={!isSystemAdmin || !hasActiveTenant}
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition ${
                       widgetEnabled ? 'bg-blue-600' : 'bg-gray-300'
                     }`}
@@ -727,9 +825,9 @@ export default function Settings() {
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={!isSystemAdmin || brandingSaving}
+                    disabled={!isSystemAdmin || brandingSaving || !hasActiveTenant}
                     className={`inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white shadow ${
-                      !isSystemAdmin
+                      !isSystemAdmin || !hasActiveTenant
                         ? 'bg-gray-400'
                         : brandingSaving
                           ? 'bg-blue-400'
