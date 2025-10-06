@@ -1,4 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthProvider';
 import { useSettings } from '../context/SettingsProvider';
@@ -98,11 +99,17 @@ export default function AppHeader({
     </>
   );
 
+  const tenantPickerPortal =
+    isTenantPickerOpen && typeof document !== 'undefined'
+      ? createPortal(
+          <TenantPicker forceOpen onClose={() => setIsTenantPickerOpen(false)} />,
+          document.body,
+        )
+      : null;
+
   return (
     <>
-      {isTenantPickerOpen && (
-        <TenantPicker forceOpen onClose={() => setIsTenantPickerOpen(false)} />
-      )}
+      {tenantPickerPortal}
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-wrap items-center gap-3">
