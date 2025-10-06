@@ -128,11 +128,15 @@ export async function adjustStock(adjustments: AdjustStockInput) {
   );
 }
 
-export async function listLowStockInventory(limit = 5, threshold = 10) {
+export async function listLowStockInventory(tenantId: string, limit = 5, threshold = 10) {
   const drugs = await prisma.drug.findMany({
-    where: { isActive: true },
+    where: {
+      isActive: true,
+      stocks: { some: { tenantId } },
+    },
     include: {
       stocks: {
+        where: { tenantId },
         select: { location: true, qtyOnHand: true },
       },
     },
