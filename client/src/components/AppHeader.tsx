@@ -40,6 +40,7 @@ export default function AppHeader({
   const { activeTenant, tenants, role, isSwitching } = useTenant();
   const [isTenantPickerOpen, setIsTenantPickerOpen] = useState(false);
 
+  const hasClinics = tenants.length > 0;
   const tenantInitials = useMemo(() => {
     if (activeTenant) {
       return placeholderLogo(activeTenant.name);
@@ -57,14 +58,14 @@ export default function AppHeader({
   const canSwitchTenants = tenants.length > 1;
 
   const handleOpenTenantPicker = () => {
-    if (!canSwitchTenants || isSwitching) {
+    if (!hasClinics || isSwitching) {
       return;
     }
     setIsTenantPickerOpen(true);
   };
 
   const clinicCardClassName = `flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm ${
-    canSwitchTenants
+    hasClinics
       ? 'cursor-pointer transition hover:border-blue-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
       : ''
   }`;
@@ -124,7 +125,7 @@ export default function AppHeader({
                 <MenuIcon className="h-5 w-5" />
               </button>
             )}
-            {canSwitchTenants ? (
+            {hasClinics ? (
               <button
                 type="button"
                 onClick={handleOpenTenantPicker}
