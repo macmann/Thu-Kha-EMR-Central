@@ -53,12 +53,50 @@ export default function AppHeader({
   const showSettings =
     user?.role === 'ITAdmin' || user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin';
 
+  const canSwitchTenants = tenants.length > 1;
+
   const handleOpenTenantPicker = () => {
-    if (tenants.length <= 1) {
+    if (!canSwitchTenants || isSwitching) {
       return;
     }
     setIsTenantPickerOpen(true);
   };
+
+  const clinicCardClassName = `flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm ${
+    canSwitchTenants
+      ? 'cursor-pointer transition hover:border-blue-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
+      : ''
+  }`;
+
+  const clinicCardContent = (
+    <>
+      <span
+        className={`flex h-12 w-12 items-center justify-center rounded-full text-base font-semibold ${
+          logo ? 'bg-white' : 'bg-blue-100 text-blue-700'
+        }`}
+      >
+        {logo ? (
+          <img src={logo} alt={t('Clinic logo')} className="h-10 w-10 rounded-full object-cover" />
+        ) : (
+          tenantInitials
+        )}
+      </span>
+      <div>
+        <div className="text-sm font-semibold text-gray-900">
+          {activeTenant ? activeTenant.name : t('Select a clinic')}
+        </div>
+        <div className="text-xs uppercase tracking-wide text-gray-500">
+          {activeTenant ? activeTenant.code : t('No clinic selected')}
+        </div>
+      </div>
+      {canSwitchTenants && (
+        <span className="ml-auto inline-flex items-center gap-2 rounded-full border border-blue-200 px-3 py-1 text-xs font-medium text-blue-600">
+          {isSwitching ? t('Switching…') : t('Switch clinic')}
+          <ChevronDownIcon className="h-4 w-4" />
+        </span>
+      )}
+    </>
+  );
 
   return (
     <>
@@ -79,38 +117,20 @@ export default function AppHeader({
                 <MenuIcon className="h-5 w-5" />
               </button>
             )}
-            <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
-              <span
-                className={`flex h-12 w-12 items-center justify-center rounded-full text-base font-semibold ${
-                  logo ? 'bg-white' : 'bg-blue-100 text-blue-700'
-                }`}
+            {canSwitchTenants ? (
+              <button
+                type="button"
+                onClick={handleOpenTenantPicker}
+                className={clinicCardClassName}
+                disabled={isSwitching}
+                aria-haspopup="dialog"
+                aria-expanded={isTenantPickerOpen}
               >
-                {logo ? (
-                  <img src={logo} alt={t('Clinic logo')} className="h-10 w-10 rounded-full object-cover" />
-                ) : (
-                  tenantInitials
-                )}
-              </span>
-              <div>
-                <div className="text-sm font-semibold text-gray-900">
-                  {activeTenant ? activeTenant.name : t('Select a clinic')}
-                </div>
-                <div className="text-xs uppercase tracking-wide text-gray-500">
-                  {activeTenant ? activeTenant.code : t('No clinic selected')}
-                </div>
-              </div>
-              {tenants.length > 1 && (
-                <button
-                  type="button"
-                  onClick={handleOpenTenantPicker}
-                  className="inline-flex items-center gap-2 rounded-full border border-blue-200 px-3 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
-                  disabled={isSwitching}
-                >
-                  {isSwitching ? t('Switching…') : t('Switch clinic')}
-                  <ChevronDownIcon className="h-4 w-4" />
-                </button>
-              )}
-            </div>
+                {clinicCardContent}
+              </button>
+            ) : (
+              <div className={clinicCardClassName}>{clinicCardContent}</div>
+            )}
             {tenantRoleLabel && (
               <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600">
                 {tenantRoleLabel}
