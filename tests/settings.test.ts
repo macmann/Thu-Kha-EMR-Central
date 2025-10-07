@@ -15,7 +15,8 @@ function makeAuthHeader(userId: string, role: string, email: string, tenantId?: 
 describe('Clinic configuration permissions', () => {
   let tenantId: string;
   let systemAdminId: string;
-  let itAdminId: string;
+  let assignedItAdminId: string;
+  let unassignedItAdminId: string;
 
   beforeAll(async () => {
     const tenant = await prisma.tenant.create({
@@ -33,7 +34,7 @@ describe('Clinic configuration permissions', () => {
     });
     systemAdminId = systemAdmin.userId;
 
-    const itAdmin = await prisma.user.create({
+    const assignedItAdmin = await prisma.user.create({
       data: {
         email: `itadmin-${Date.now()}@example.com`,
         passwordHash: 'x',
@@ -41,13 +42,33 @@ describe('Clinic configuration permissions', () => {
         status: 'active',
       },
     });
-    itAdminId = itAdmin.userId;
+    assignedItAdminId = assignedItAdmin.userId;
+
+    await prisma.userTenant.create({
+      data: {
+        tenantId,
+        userId: assignedItAdminId,
+        role: 'ITAdmin',
+      },
+    });
+
+    const unassignedItAdmin = await prisma.user.create({
+      data: {
+        email: `itadmin-unassigned-${Date.now()}@example.com`,
+        passwordHash: 'x',
+        role: 'ITAdmin',
+        status: 'active',
+      },
+    });
+    unassignedItAdminId = unassignedItAdmin.userId;
   });
 
   afterAll(async () => {
     await prisma.tenantConfiguration.deleteMany({ where: { tenantId } });
     await prisma.userTenant.deleteMany({ where: { tenantId } });
-    await prisma.user.deleteMany({ where: { userId: { in: [systemAdminId, itAdminId] } } });
+    await prisma.user.deleteMany({
+      where: { userId: { in: [systemAdminId, assignedItAdminId, unassignedItAdminId] } },
+    });
     await prisma.tenant.deleteMany({ where: { tenantId } });
     await prisma.$disconnect();
   });
@@ -82,8 +103,31 @@ describe('Clinic configuration permissions', () => {
     expect(stored?.widgetEnabled).toBe(true);
   });
 
-  it('prevents IT administrators from updating clinic configuration', async () => {
-    const authHeader = makeAuthHeader(itAdminId, 'ITAdmin', 'itadmin@example.com', tenantId);
+  it('allows assigned IT administrators to update clinic configuration', async () => {
+    const authHeader = makeAuthHeader(
+      assignedItAdminId,
+      'ITAdmin',
+      'itadmin@example.com',
+      tenantId,
+    );
+
+    const res = await request(app)
+      .patch('/api/settings/clinic')
+      .set('Authorization', authHeader)
+      .send({ appName: 'Neighborhood Clinic', widgetEnabled: true });
+
+    expect(res.status).toBe(200);
+    expect(res.body.appName).toBe('Neighborhood Clinic');
+    expect(res.body.widgetEnabled).toBe(true);
+  });
+
+  it('prevents unassigned IT administrators from updating clinic configuration', async () => {
+    const authHeader = makeAuthHeader(
+      unassignedItAdminId,
+      'ITAdmin',
+      'unassigned@example.com',
+      tenantId,
+    );
 
     const res = await request(app)
       .patch('/api/settings/clinic')
