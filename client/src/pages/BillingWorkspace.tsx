@@ -12,6 +12,7 @@ import {
   type VisitDetail,
 } from '../api/client';
 import { useAuth } from '../context/AuthProvider';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface InvoiceSummary {
   invoiceId: string;
@@ -33,22 +34,6 @@ interface PaymentDraft {
   note: string;
 }
 
-const PAYMENT_METHODS = [
-  { value: 'CASH', label: 'Cash' },
-  { value: 'CARD', label: 'Card' },
-  { value: 'MOBILE_WALLET', label: 'Mobile Wallet' },
-  { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
-  { value: 'OTHER', label: 'Other' },
-];
-
-const INVOICE_STATUS_FILTERS = [
-  { value: 'ALL', label: 'All invoices' },
-  { value: 'DRAFT', label: 'Draft' },
-  { value: 'PENDING,PARTIALLY_PAID', label: 'Pending & partially paid' },
-  { value: 'PAID', label: 'Paid' },
-  { value: 'VOID', label: 'Voided' },
-];
-
 function formatMoney(value: string, currency = 'MMK') {
   const numeric = Number.parseFloat(value);
   if (Number.isNaN(numeric)) {
@@ -58,6 +43,7 @@ function formatMoney(value: string, currency = 'MMK') {
 }
 
 function InvoiceStatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
   const normalized = status.toUpperCase();
   const styles: Record<string, string> = {
     PAID: 'bg-green-50 text-green-700 border-green-200',
@@ -67,14 +53,22 @@ function InvoiceStatusBadge({ status }: { status: string }) {
     VOID: 'bg-red-50 text-red-600 border-red-200',
   };
   const applied = styles[normalized] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+  const labels: Record<string, string> = {
+    PAID: t('Paid'),
+    PARTIALLY_PAID: t('Partially paid'),
+    PENDING: t('Pending'),
+    DRAFT: t('Draft'),
+    VOID: t('Voided'),
+  };
   return (
     <span className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${applied}`}>
-      {normalized}
+      {labels[normalized] ?? normalized}
     </span>
   );
 }
 
 export default function BillingWorkspace() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [visitIdInput, setVisitIdInput] = useState('');
   const [lookupLoading, setLookupLoading] = useState(false);
@@ -121,6 +115,28 @@ export default function BillingWorkspace() {
     ? ['Pharmacist', 'ITAdmin', 'SystemAdmin', 'SuperAdmin'].includes(user.role)
     : false;
 
+  const paymentMethods = useMemo(
+    () => [
+      { value: 'CASH', label: t('Cash') },
+      { value: 'CARD', label: t('Card') },
+      { value: 'MOBILE_WALLET', label: t('Mobile wallet') },
+      { value: 'BANK_TRANSFER', label: t('Bank transfer') },
+      { value: 'OTHER', label: t('Other') },
+    ],
+    [t],
+  );
+
+  const invoiceStatusFilters = useMemo(
+    () => [
+      { value: 'ALL', label: t('All invoices') },
+      { value: 'DRAFT', label: t('Draft') },
+      { value: 'PENDING,PARTIALLY_PAID', label: t('Pending & partially paid') },
+      { value: 'PAID', label: t('Paid') },
+      { value: 'VOID', label: t('Voided') },
+    ],
+    [t],
+  );
+
   useEffect(() => {
     const handle = window.setTimeout(() => setDebouncedPatientQuery(patientQuery.trim()), 300);
     return () => window.clearTimeout(handle);
@@ -143,7 +159,7 @@ export default function BillingWorkspace() {
       } catch (error) {
         console.error(error);
         if (active) {
-          setInvoiceListError('Unable to load invoices right now.');
+          setInvoiceListError(t('Unable to load invoices right now.'));
         }
       } finally {
         if (active) {
@@ -155,7 +171,7 @@ export default function BillingWorkspace() {
     return () => {
       active = false;
     };
-  }, [invoiceStatusFilter]);
+  }, [invoiceStatusFilter, t]);
 
   useEffect(() => {
     let active = true;
@@ -177,7 +193,7 @@ export default function BillingWorkspace() {
         console.error(error);
         if (active) {
           setPatientMatches([]);
-          setPatientSearchError('Unable to search patients right now.');
+          setPatientSearchError(t('Unable to search patients right now.'));
         }
       } finally {
         if (active) {
@@ -189,7 +205,7 @@ export default function BillingWorkspace() {
     return () => {
       active = false;
     };
-  }, [debouncedPatientQuery]);
+  }, [debouncedPatientQuery, t]);
 
   const lookupCurrency = useMemo(() => visitInvoice?.currency ?? 'MMK', [visitInvoice]);
 
@@ -209,7 +225,7 @@ export default function BillingWorkspace() {
       setVisitInvoice(invoiceData);
     } catch (error) {
       console.error(error);
-      setLookupError('We could not find billing details for that visit.');
+      setLookupError(t('We could not find billing details for that visit.'));
     } finally {
       setLookupLoading(false);
     }
@@ -234,7 +250,7 @@ export default function BillingWorkspace() {
       await refreshInvoiceList();
     } catch (error) {
       console.error(error);
-      window.alert('Unable to create invoice for this visit.');
+      window.alert(t('Unable to create invoice for this visit.'));
     }
   }
 
@@ -251,7 +267,7 @@ export default function BillingWorkspace() {
       setInvoiceList(data);
     } catch (error) {
       console.error(error);
-      setInvoiceListError('Unable to refresh invoices right now.');
+      setInvoiceListError(t('Unable to refresh invoices right now.'));
     } finally {
       setInvoiceListLoading(false);
     }
@@ -291,7 +307,7 @@ export default function BillingWorkspace() {
       await Promise.all([refreshInvoiceList(), refreshLookupInvoice()]);
     } catch (error) {
       console.error(error);
-      setPaymentError('Unable to record payment. Please try again.');
+      setPaymentError(t('Unable to record payment. Please try again.'));
     }
   }
 
@@ -306,7 +322,7 @@ export default function BillingWorkspace() {
     event.preventDefault();
     if (!selectedInvoiceForVoid) return;
     if (!voidReason.trim()) {
-      setVoidError('Please include a reason before voiding the invoice.');
+      setVoidError(t('Please include a reason before voiding the invoice.'));
       return;
     }
     setVoidError(null);
@@ -322,7 +338,7 @@ export default function BillingWorkspace() {
       await Promise.all([refreshInvoiceList(), refreshLookupInvoice()]);
     } catch (error) {
       console.error(error);
-      setVoidError('Unable to void invoice right now.');
+      setVoidError(t('Unable to void invoice right now.'));
     } finally {
       setVoidLoading(false);
     }
@@ -340,14 +356,14 @@ export default function BillingWorkspace() {
       setPharmacyStatus({
         type: 'success',
         message: invoiceId
-          ? `Pharmacy charges posted. Invoice ${invoiceId} updated.`
-          : 'Pharmacy charges posted successfully.',
+          ? t('Pharmacy charges posted. Invoice {id} updated.', { id: invoiceId })
+          : t('Pharmacy charges posted successfully.'),
       });
       setPharmacyPrescriptionId('');
       await Promise.all([refreshInvoiceList(), refreshLookupInvoice()]);
     } catch (error) {
       console.error(error);
-      setPharmacyStatus({ type: 'error', message: 'Unable to post pharmacy charges.' });
+      setPharmacyStatus({ type: 'error', message: t('Unable to post pharmacy charges.') });
     }
   }
 
@@ -363,7 +379,7 @@ export default function BillingWorkspace() {
       setPatientVisits(visits);
     } catch (error) {
       console.error(error);
-      setPatientVisitsError('Unable to load visits for that patient.');
+      setPatientVisitsError(t('Unable to load visits for that patient.'));
     } finally {
       setPatientVisitsLoading(false);
     }
@@ -376,8 +392,8 @@ export default function BillingWorkspace() {
 
   return (
     <DashboardLayout
-      title="Billing workspace"
-      subtitle="Manage visit invoices, payments, and pharmacy charges"
+      title={t('Billing workspace')}
+      subtitle={t('Manage visit invoices, payments, and pharmacy charges')}
       activeItem="billing"
       headerChildren={
         <div className="hidden gap-3 md:flex">
@@ -385,14 +401,14 @@ export default function BillingWorkspace() {
             to="/billing/pos"
             className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
           >
-            POS queue
+            {t('POS queue')}
           </Link>
           {visitInvoice && (
             <Link
               to={`/billing/visit/${visitInvoice.visitId}`}
               className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
             >
-              Open visit invoice
+              {t('Open visit invoice')}
             </Link>
           )}
         </div>
@@ -401,21 +417,22 @@ export default function BillingWorkspace() {
       <div className="grid gap-6 xl:grid-cols-3">
         <section className="xl:col-span-2 rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-200 px-4 py-4 sm:px-6">
-            <h2 className="text-lg font-semibold text-gray-900">Visit lookup</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('Visit lookup')}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Search for a clinic visit to review the linked invoice. Doctors can verify service items before
-              discharge, while cashiers can immediately create the billing record.
+              {t(
+                'Search for a clinic visit to review the linked invoice. Doctors can verify service items before discharge, while cashiers can immediately create the billing record.',
+              )}
             </p>
           </div>
           <div className="space-y-6 px-4 py-4 sm:px-6">
             <form onSubmit={handleVisitLookup} className="flex flex-col gap-3 sm:flex-row">
               <div className="flex-1">
                 <label className="flex flex-col gap-1 text-sm">
-                  <span className="font-medium text-gray-700">Visit ID</span>
+                  <span className="font-medium text-gray-700">{t('Visit ID')}</span>
                   <input
                     value={visitIdInput}
                     onChange={(event) => setVisitIdInput(event.target.value)}
-                    placeholder="e.g. VIS-2024-00042"
+                    placeholder={t('e.g. VIS-2024-00042')}
                     className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   />
                 </label>
@@ -426,14 +443,16 @@ export default function BillingWorkspace() {
                   className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                   disabled={lookupLoading}
                 >
-                  {lookupLoading ? 'Searching…' : 'Find visit'}
+                  {lookupLoading ? t('Searching…') : t('Find visit')}
                 </button>
               </div>
             </form>
             <div className="rounded-lg border border-dashed border-gray-200 p-4">
-              <h3 className="text-sm font-semibold text-gray-900">Search by patient name</h3>
+              <h3 className="text-sm font-semibold text-gray-900">{t('Search by patient name')}</h3>
               <p className="mt-1 text-xs text-gray-500">
-                Find a visit even if you do not have the visit ID handy. Start typing a patient name to see recent visits.
+                {t(
+                  'Find a visit even if you do not have the visit ID handy. Start typing a patient name to see recent visits.',
+                )}
               </p>
               <div className="mt-3 space-y-3">
                 <input
@@ -446,7 +465,7 @@ export default function BillingWorkspace() {
                       setPatientVisitsError(null);
                     }
                   }}
-                  placeholder="e.g. Jane Doe"
+                  placeholder={t('e.g. Jane Doe')}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 />
                 {patientSearchError && (
@@ -454,7 +473,7 @@ export default function BillingWorkspace() {
                     {patientSearchError}
                   </div>
                 )}
-                {patientSearchLoading ? <div className="text-xs text-gray-500">Searching patients…</div> : null}
+                {patientSearchLoading ? <div className="text-xs text-gray-500">{t('Searching patients…')}</div> : null}
                 {!patientSearchLoading && patientMatches.length > 0 && (
                   <ul className="space-y-2">
                     {patientMatches.slice(0, 5).map((patient) => (
@@ -468,7 +487,7 @@ export default function BillingWorkspace() {
                             <span className="font-medium text-gray-900">{patient.name}</span>
                             <span className="text-xs text-gray-500">{new Date(patient.dob).toLocaleDateString()}</span>
                           </div>
-                          <div className="mt-1 text-xs text-gray-500">Patient ID: {patient.patientId}</div>
+                          <div className="mt-1 text-xs text-gray-500">{t('Patient ID: {id}', { id: patient.patientId })}</div>
                         </button>
                       </li>
                     ))}
@@ -478,8 +497,8 @@ export default function BillingWorkspace() {
                   <div className="rounded-lg border border-gray-200 p-3">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <h4 className="text-sm font-semibold text-gray-900">Recent visits for {selectedPatient.name}</h4>
-                        <p className="text-xs text-gray-500">Select a visit to load billing details.</p>
+                        <h4 className="text-sm font-semibold text-gray-900">{t('Recent visits for {name}', { name: selectedPatient.name })}</h4>
+                        <p className="text-xs text-gray-500">{t('Select a visit to load billing details.')}</p>
                       </div>
                       <button
                         type="button"
@@ -490,12 +509,12 @@ export default function BillingWorkspace() {
                           setPatientVisitsError(null);
                         }}
                       >
-                        Clear
+                        {t('Clear')}
                       </button>
                     </div>
                     <div className="mt-3 space-y-2">
                       {patientVisitsLoading ? (
-                        <div className="text-xs text-gray-500">Loading visits…</div>
+                        <div className="text-xs text-gray-500">{t('Loading visits…')}</div>
                       ) : patientVisitsError ? (
                         <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
                           {patientVisitsError}
@@ -513,15 +532,15 @@ export default function BillingWorkspace() {
                                 <div className="font-medium text-gray-900">{new Date(visit.visitDate).toLocaleString()}</div>
                                 <div className="text-xs text-gray-500">{visit.doctor?.name ?? '—'} • {visit.department}</div>
                               </div>
-                              <span className="text-xs font-semibold text-blue-600">Load visit</span>
+                              <span className="text-xs font-semibold text-blue-600">{t('Load visit')}</span>
                             </div>
                             {visit.reason && (
-                              <div className="mt-1 text-xs text-gray-500">Reason: {visit.reason}</div>
+                              <div className="mt-1 text-xs text-gray-500">{t('Reason: {reason}', { reason: visit.reason })}</div>
                             )}
                           </button>
                         ))
                       ) : (
-                        <div className="text-xs text-gray-500">No recent visits found for this patient.</div>
+                        <div className="text-xs text-gray-500">{t('No recent visits found for this patient.')}</div>
                       )}
                     </div>
                   </div>
@@ -533,14 +552,14 @@ export default function BillingWorkspace() {
                 to="/billing/pos"
                 className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
               >
-                POS queue
+                {t('POS queue')}
               </Link>
               {visitInvoice && (
                 <Link
                   to={`/billing/visit/${visitInvoice.visitId}`}
                   className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
                 >
-                  Open visit invoice
+                  {t('Open visit invoice')}
                 </Link>
               )}
             </div>
@@ -554,25 +573,25 @@ export default function BillingWorkspace() {
             {visitDetails && visitPatient && (
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <h3 className="text-sm font-semibold text-gray-900">Visit summary</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">{t('Visit summary')}</h3>
                   <dl className="mt-3 space-y-2 text-sm text-gray-700">
                     <div className="flex justify-between">
-                      <dt>Patient</dt>
+                      <dt>{t('Patient')}</dt>
                       <dd className="font-medium text-gray-900">{visitPatient.name}</dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt>Visit date</dt>
+                      <dt>{t('Visit date')}</dt>
                       <dd>{new Date(visitDetails.visitDate).toLocaleString()}</dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt>Reason</dt>
+                      <dt>{t('Reason')}</dt>
                       <dd className="text-right text-gray-900">{visitDetails.reason ?? '—'}</dd>
                     </div>
                   </dl>
                 </div>
 
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <h3 className="text-sm font-semibold text-gray-900">Invoice</h3>
+                  <h3 className="text-sm font-semibold text-gray-900">{t('Invoice')}</h3>
                   {visitInvoice ? (
                     <div className="mt-3 space-y-3 text-sm text-gray-700">
                       <div className="flex items-center justify-between">
@@ -580,13 +599,13 @@ export default function BillingWorkspace() {
                         <InvoiceStatusBadge status={visitInvoice.status} />
                       </div>
                       <div className="flex justify-between">
-                        <span>Grand total</span>
+                        <span>{t('Grand total')}</span>
                         <span className="font-semibold text-gray-900">
                           {formatMoney(visitInvoice.grandTotal, lookupCurrency)}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Amount due</span>
+                        <span>{t('Amount due')}</span>
                         <span className="font-semibold text-gray-900">
                           {formatMoney(visitInvoice.amountDue, lookupCurrency)}
                         </span>
@@ -596,7 +615,7 @@ export default function BillingWorkspace() {
                           to={`/billing/visit/${visitInvoice.visitId}`}
                           className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
                         >
-                          View invoice detail
+                          {t('View invoice detail')}
                         </Link>
                         {canCollectPayments && Number.parseFloat(visitInvoice.amountDue) > 0 && (
                           <button
@@ -604,7 +623,7 @@ export default function BillingWorkspace() {
                             onClick={() => openPaymentModal(visitInvoice)}
                             className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
                           >
-                            Record payment
+                            {t('Record payment')}
                           </button>
                         )}
                         {canTriggerVoid && visitInvoice.status !== 'VOID' && (
@@ -613,21 +632,21 @@ export default function BillingWorkspace() {
                             onClick={() => openVoidModal(visitInvoice)}
                             className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
                           >
-                            Void invoice
+                            {t('Void invoice')}
                           </button>
                         )}
                       </div>
                     </div>
                   ) : (
                     <div className="mt-3 space-y-3 text-sm text-gray-700">
-                      <p>No invoice found for this visit yet.</p>
+                      <p>{t('No invoice found for this visit yet.')}</p>
                       {canCreateInvoices && (
                         <button
                           type="button"
                           onClick={handleCreateInvoice}
                           className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
                         >
-                          Create invoice
+                          {t('Create invoice')}
                         </button>
                       )}
                     </div>
@@ -640,19 +659,19 @@ export default function BillingWorkspace() {
 
         <section className="rounded-lg border border-gray-200 bg-white shadow-sm">
           <div className="border-b border-gray-200 px-4 py-4">
-            <h2 className="text-lg font-semibold text-gray-900">Pharmacy charges</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('Pharmacy charges')}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Pharmacists can push dispense charges to billing. Re-run the posting when a prescription changes.
+              {t('Pharmacists can push dispense charges to billing. Re-run the posting when a prescription changes.')}
             </p>
           </div>
           <div className="space-y-4 px-4 py-4">
             <form onSubmit={handleRepostPharmacy} className="space-y-3">
               <label className="flex flex-col gap-1 text-sm">
-                <span className="font-medium text-gray-700">Prescription ID</span>
+                <span className="font-medium text-gray-700">{t('Prescription ID')}</span>
                 <input
                   value={pharmacyPrescriptionId}
                   onChange={(event) => setPharmacyPrescriptionId(event.target.value)}
-                  placeholder="e.g. RX-2024-00123"
+                  placeholder={t('e.g. RX-2024-00123')}
                   className="w-full rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                   disabled={!canRepostPharmacy}
                 />
@@ -666,7 +685,7 @@ export default function BillingWorkspace() {
                     : 'bg-gray-300 text-gray-600'
                 }`}
               >
-                Post pharmacy charges
+                {t('Post pharmacy charges')}
               </button>
             </form>
             {pharmacyStatus && (
@@ -682,7 +701,7 @@ export default function BillingWorkspace() {
             )}
             {!canRepostPharmacy && (
               <p className="text-xs text-gray-500">
-                Pharmacy repost requires pharmacist or IT admin access.
+                {t('Pharmacy repost requires pharmacist or IT admin access.')}
               </p>
             )}
           </div>
@@ -692,10 +711,11 @@ export default function BillingWorkspace() {
       <section className="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Invoice activity</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('Invoice activity')}</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Monitor invoices across the clinic. Cashiers see payment queues, doctors review service completeness,
-              and pharmacists confirm medication charges.
+              {t(
+                'Monitor invoices across the clinic. Cashiers see payment queues, doctors review service completeness, and pharmacists confirm medication charges.',
+              )}
             </p>
           </div>
           <div className="flex gap-3">
@@ -704,7 +724,7 @@ export default function BillingWorkspace() {
               onChange={(event) => setInvoiceStatusFilter(event.target.value)}
               className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             >
-              {INVOICE_STATUS_FILTERS.map((filter) => (
+                  {invoiceStatusFilters.map((filter) => (
                 <option key={filter.value} value={filter.value}>
                   {filter.label}
                 </option>
@@ -715,27 +735,27 @@ export default function BillingWorkspace() {
               onClick={refreshInvoiceList}
               className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
             >
-              Refresh
+              {t('Refresh')}
             </button>
           </div>
         </div>
         {invoiceListLoading ? (
-          <div className="px-4 py-6 text-sm text-gray-500">Loading invoices…</div>
+          <div className="px-4 py-6 text-sm text-gray-500">{t('Loading invoices…')}</div>
         ) : invoiceListError ? (
           <div className="px-4 py-6 text-sm text-red-600">{invoiceListError}</div>
         ) : invoiceList.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-gray-500">No invoices match the selected filter.</div>
+          <div className="px-4 py-6 text-sm text-gray-500">{t('No invoices match the selected filter.')}</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Invoice</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Visit</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Status</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-600">Grand total</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-600">Amount due</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-600">Actions</th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-600">{t('Invoice')}</th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-600">{t('Visit')}</th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-600">{t('Status')}</th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-600">{t('Grand total')}</th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-600">{t('Amount due')}</th>
+                  <th className="px-4 py-2 text-right font-medium text-gray-600">{t('Actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -758,7 +778,7 @@ export default function BillingWorkspace() {
                           to={`/billing/visit/${invoice.visitId}`}
                           className="rounded-full border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
                         >
-                          Review
+                          {t('Review')}
                         </Link>
                         {canCollectPayments && Number.parseFloat(invoice.amountDue) > 0 && (
                           <button
@@ -766,7 +786,7 @@ export default function BillingWorkspace() {
                             onClick={() => openPaymentModal(invoice)}
                             className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
                           >
-                            Payment
+                            {t('Payment')}
                           </button>
                         )}
                         {canTriggerVoid && invoice.status !== 'VOID' && (
@@ -775,7 +795,7 @@ export default function BillingWorkspace() {
                             onClick={() => openVoidModal(invoice)}
                             className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50"
                           >
-                            Void
+                            {t('Void')}
                           </button>
                         )}
                       </div>
@@ -791,13 +811,16 @@ export default function BillingWorkspace() {
       {isPaymentModalOpen && selectedInvoiceForPayment && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-900/40 px-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900">Record payment</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('Record payment')}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Invoice {selectedInvoiceForPayment.invoiceNo} — due amount {formatMoney(selectedInvoiceForPayment.amountDue, selectedInvoiceForPayment.currency ?? 'MMK')}
+              {t('Invoice {invoice} — due amount {amount}', {
+                invoice: selectedInvoiceForPayment.invoiceNo,
+                amount: formatMoney(selectedInvoiceForPayment.amountDue, selectedInvoiceForPayment.currency ?? 'MMK'),
+              })}
             </p>
             <form className="mt-4 space-y-4" onSubmit={handleSubmitPayment}>
               <label className="flex flex-col gap-1 text-sm">
-                <span className="font-medium text-gray-700">Amount</span>
+                <span className="font-medium text-gray-700">{t('Amount')}</span>
                 <input
                   value={paymentDraft.amount}
                   onChange={(event) => setPaymentDraft((state) => ({ ...state, amount: event.target.value }))}
@@ -806,13 +829,13 @@ export default function BillingWorkspace() {
                 />
               </label>
               <label className="flex flex-col gap-1 text-sm">
-                <span className="font-medium text-gray-700">Method</span>
+                <span className="font-medium text-gray-700">{t('Method')}</span>
                 <select
                   value={paymentDraft.method}
                   onChange={(event) => setPaymentDraft((state) => ({ ...state, method: event.target.value }))}
                   className="rounded border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                 >
-                  {PAYMENT_METHODS.map((method) => (
+                  {paymentMethods.map((method) => (
                     <option key={method.value} value={method.value}>
                       {method.label}
                     </option>
@@ -820,7 +843,7 @@ export default function BillingWorkspace() {
                 </select>
               </label>
               <label className="flex flex-col gap-1 text-sm">
-                <span className="font-medium text-gray-700">Reference number</span>
+                <span className="font-medium text-gray-700">{t('Reference number')}</span>
                 <input
                   value={paymentDraft.referenceNo}
                   onChange={(event) => setPaymentDraft((state) => ({ ...state, referenceNo: event.target.value }))}
@@ -828,7 +851,7 @@ export default function BillingWorkspace() {
                 />
               </label>
               <label className="flex flex-col gap-1 text-sm">
-                <span className="font-medium text-gray-700">Note</span>
+                <span className="font-medium text-gray-700">{t('Note')}</span>
                 <textarea
                   value={paymentDraft.note}
                   onChange={(event) => setPaymentDraft((state) => ({ ...state, note: event.target.value }))}
@@ -846,13 +869,13 @@ export default function BillingWorkspace() {
                   }}
                   className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                 >
-                  Cancel
+                  {t('Cancel')}
                 </button>
                 <button
                   type="submit"
                   className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
                 >
-                  Save payment
+                  {t('Save payment')}
                 </button>
               </div>
             </form>
@@ -863,13 +886,15 @@ export default function BillingWorkspace() {
       {selectedInvoiceForVoid && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-900/40 px-4">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h3 className="text-lg font-semibold text-gray-900">Void invoice</h3>
+            <h3 className="text-lg font-semibold text-gray-900">{t('Void invoice')}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Provide a reason for voiding invoice {selectedInvoiceForVoid.invoiceNo}. This action cannot be undone.
+              {t('Provide a reason for voiding invoice {invoice}. This action cannot be undone.', {
+                invoice: selectedInvoiceForVoid.invoiceNo,
+              })}
             </p>
             <form className="mt-4 space-y-4" onSubmit={handleVoidInvoice}>
               <label className="flex flex-col gap-1 text-sm">
-                <span className="font-medium text-gray-700">Reason</span>
+                <span className="font-medium text-gray-700">{t('Reason')}</span>
                 <textarea
                   value={voidReason}
                   onChange={(event) => setVoidReason(event.target.value)}
@@ -886,14 +911,14 @@ export default function BillingWorkspace() {
                   className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
                   disabled={voidLoading}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </button>
                 <button
                   type="submit"
                   className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
                   disabled={voidLoading}
                 >
-                  {voidLoading ? 'Voiding…' : 'Void invoice'}
+                  {voidLoading ? t('Voiding…') : t('Void invoice')}
                 </button>
               </div>
             </form>
