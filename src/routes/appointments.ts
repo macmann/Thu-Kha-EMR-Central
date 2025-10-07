@@ -379,11 +379,17 @@ router.patch(
             updatedAppointment.date.toISOString().slice(0, 10)
           );
 
+          const tenantId = updatedAppointment.tenantId;
+          if (!tenantId) {
+            throw new Error('Appointment is missing tenant context');
+          }
+
           const existingVisit = await client.visit.findFirst({
             where: {
               patientId: updatedAppointment.patientId,
               doctorId: updatedAppointment.doctorId,
               visitDate: appointmentDate,
+              tenantId,
             },
             select: { visitId: true },
           });
@@ -399,6 +405,7 @@ router.patch(
               visitDate: appointmentDate,
               department: updatedAppointment.department,
               reason: updatedAppointment.reason ?? undefined,
+              tenantId,
             },
             select: { visitId: true },
           });
