@@ -44,6 +44,10 @@ function escapeHtml(value: unknown) {
     .replace(/'/g, '&#39;');
 }
 
+function formatMultilineText(value: string) {
+  return escapeHtml(value).replace(/\r?\n/g, '<br />');
+}
+
 function formatCurrencyValue(value: unknown, currency: string) {
   if (value === null || typeof value === 'undefined') {
     return '';
@@ -88,6 +92,13 @@ function getReceiptStyles(format: ReceiptFormat) {
     body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; background: #fff; color: #111827; }
     h1, h2, h3, h4, h5, h6 { margin: 0; }
     .receipt { display: block; }
+    .receipt__header { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; }
+    .receipt__header-logo { display: flex; align-items: center; justify-content: center; border: 1px solid #d1d5db; border-radius: 12px; background: #fff; padding: 6px; max-height: 64px; }
+    .receipt__header-logo img { max-height: 52px; max-width: 140px; object-fit: contain; }
+    .receipt__header-details { display: flex; flex-direction: column; gap: 4px; }
+    .receipt__header-name { font-size: 18px; font-weight: 600; color: #111827; }
+    .receipt__header-contact { font-size: 12px; color: #4b5563; line-height: 1.4; }
+    .receipt__title { margin-top: 16px; font-size: 20px; font-weight: 600; text-align: left; color: #111827; }
     .receipt__meta { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
     .receipt__meta dt { font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; color: #4b5563; }
     .receipt__meta dd { margin: 0; color: #111827; font-size: 13px; }
@@ -106,7 +117,12 @@ function getReceiptStyles(format: ReceiptFormat) {
       ${baseStyles}
       @page { size: 80mm auto; margin: 4mm; }
       .receipt--thermal { width: 76mm; margin: 0 auto; padding: 8px 0 16px; font-size: 12px; }
-      .receipt--thermal h1 { font-size: 16px; text-align: center; margin-bottom: 8px; }
+      .receipt--thermal .receipt__header { flex-direction: column; text-align: center; gap: 6px; border-bottom: 1px dashed #d1d5db; padding-bottom: 8px; }
+      .receipt--thermal .receipt__header-logo { border-radius: 8px; padding: 4px; }
+      .receipt--thermal .receipt__header-logo img { max-height: 40px; }
+      .receipt--thermal .receipt__header-name { font-size: 14px; }
+      .receipt--thermal .receipt__header-contact { font-size: 11px; }
+      .receipt--thermal .receipt__title { font-size: 16px; text-align: center; margin-top: 10px; }
       .receipt--thermal .receipt__meta { margin-top: 8px; gap: 6px; font-size: 11px; }
       .receipt--thermal .receipt__meta dd { font-size: 11px; }
       .receipt--thermal .receipt__table { font-size: 11px; margin-top: 12px; }
@@ -124,7 +140,11 @@ function getReceiptStyles(format: ReceiptFormat) {
     ${baseStyles}
     @page { size: B5 portrait; margin: 15mm; }
     .receipt--b5 { max-width: 100%; padding: 32px; font-size: 14px; }
-    .receipt--b5 h1 { font-size: 24px; margin-bottom: 12px; }
+    .receipt--b5 .receipt__header { padding-bottom: 20px; }
+    .receipt--b5 .receipt__header-logo { max-height: 72px; }
+    .receipt--b5 .receipt__header-name { font-size: 24px; }
+    .receipt--b5 .receipt__header-contact { font-size: 13px; }
+    .receipt--b5 .receipt__title { font-size: 24px; margin-top: 24px; }
     .receipt--b5 .receipt__meta { margin-top: 16px; font-size: 13px; }
     .receipt--b5 .receipt__table { font-size: 13px; margin-top: 24px; }
     .receipt--b5 .receipt__table th, .receipt--b5 .receipt__table td { border: 1px solid #d1d5db; padding: 8px 12px; }
@@ -470,11 +490,15 @@ router.get(
           items: true,
           Patient: true,
           Visit: true,
+          tenant: true,
         },
       });
       if (!invoice) {
         throw new NotFoundError('Invoice not found');
       }
+      const configuration = await prisma.tenantConfiguration.findUnique({
+        where: { tenantId: invoice.tenantId },
+      });
       const createdAt = new Date(invoice.createdAt);
       const visitDate = invoice.Visit?.visitDate
         ? new Date(invoice.Visit.visitDate)
@@ -484,6 +508,30 @@ router.get(
       const patientName = escapeHtml(invoice.Patient?.name ?? 'Unknown patient');
       const invoiceNumber = escapeHtml(invoice.invoiceNo);
       const currency = invoice.currency ?? 'MMK';
+      const clinicNameRaw = configuration?.appName ?? invoice.tenant?.name ?? 'Clinic';
+      const clinicName = escapeHtml(clinicNameRaw);
+      const headerLogoHtml = configuration?.logo
+        ? `<div class="receipt__header-logo"><img src="${configuration.logo}" alt="${clinicName} logo" /></div>`
+        : '';
+      const contactLines: string[] = [];
+      if (configuration?.contactAddress) {
+        contactLines.push(`<div class="receipt__header-contact">${formatMultilineText(configuration.contactAddress)}</div>`);
+      }
+      if (configuration?.contactPhone) {
+        contactLines.push(`<div class="receipt__header-contact">${escapeHtml(configuration.contactPhone)}</div>`);
+      }
+      const headerDetails = `
+        <div class="receipt__header-details">
+          <div class="receipt__header-name">${clinicName}</div>
+          ${contactLines.join('')}
+        </div>
+      `;
+      const headerHtml = `
+        <header class="receipt__header">
+          ${headerLogoHtml}
+          ${headerDetails}
+        </header>
+      `;
       const receiptClass = format === 'thermal' ? 'receipt receipt--thermal' : 'receipt receipt--b5';
       const itemRows = invoice.items.length
         ? invoice.items
@@ -529,9 +577,8 @@ router.get(
   </head>
   <body>
     <main class="${receiptClass}">
-      <header>
-        <h1>Invoice ${invoiceNumber}</h1>
-      </header>
+      ${headerHtml}
+      <h1 class="receipt__title">Invoice ${invoiceNumber}</h1>
       <dl class="receipt__meta">
         <div>
           <dt>Patient</dt>

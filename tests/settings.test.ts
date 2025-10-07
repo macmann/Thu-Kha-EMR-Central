@@ -92,15 +92,24 @@ describe('Clinic configuration permissions', () => {
     const updateRes = await request(app)
       .patch('/api/settings/clinic')
       .set('Authorization', authHeader)
-      .send({ appName: 'Downtown Family Clinic', widgetEnabled: true });
+      .send({
+        appName: 'Downtown Family Clinic',
+        widgetEnabled: true,
+        contactAddress: '123 Main Street, Yangon',
+        contactPhone: '+95 1 234 567',
+      });
 
     expect(updateRes.status).toBe(200);
     expect(updateRes.body.appName).toBe('Downtown Family Clinic');
     expect(updateRes.body.widgetEnabled).toBe(true);
+    expect(updateRes.body.contactAddress).toBe('123 Main Street, Yangon');
+    expect(updateRes.body.contactPhone).toBe('+95 1 234 567');
 
     const stored = await prisma.tenantConfiguration.findUnique({ where: { tenantId } });
     expect(stored?.appName).toBe('Downtown Family Clinic');
     expect(stored?.widgetEnabled).toBe(true);
+    expect(stored?.contactAddress).toBe('123 Main Street, Yangon');
+    expect(stored?.contactPhone).toBe('+95 1 234 567');
   });
 
   it('allows assigned IT administrators to update clinic configuration', async () => {
@@ -114,11 +123,18 @@ describe('Clinic configuration permissions', () => {
     const res = await request(app)
       .patch('/api/settings/clinic')
       .set('Authorization', authHeader)
-      .send({ appName: 'Neighborhood Clinic', widgetEnabled: true });
+      .send({
+        appName: 'Neighborhood Clinic',
+        widgetEnabled: true,
+        contactAddress: null,
+        contactPhone: null,
+      });
 
     expect(res.status).toBe(200);
     expect(res.body.appName).toBe('Neighborhood Clinic');
     expect(res.body.widgetEnabled).toBe(true);
+    expect(res.body.contactAddress).toBeNull();
+    expect(res.body.contactPhone).toBeNull();
   });
 
   it('prevents unassigned IT administrators from updating clinic configuration', async () => {

@@ -17,6 +17,8 @@ export interface ClinicConfiguration {
   appName: string;
   logo: string | null;
   widgetEnabled: boolean;
+  contactAddress: string | null;
+  contactPhone: string | null;
   updatedAt: string;
 }
 
@@ -24,6 +26,8 @@ export interface UpdateClinicConfigurationPayload {
   appName?: string;
   logo?: string | null;
   widgetEnabled?: boolean;
+  contactAddress?: string | null;
+  contactPhone?: string | null;
 }
 
 export interface TenantMemberSummary {

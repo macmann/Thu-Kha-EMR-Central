@@ -40,6 +40,8 @@ model TenantConfiguration {
   appName       String   @default("EMR System")
   logo          String?
   widgetEnabled Boolean  @default(false)
+  contactAddress String?
+  contactPhone   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
