@@ -32,6 +32,12 @@ const updateSchema = z
       .optional(),
     logo: z.union([z.string(), z.null()]).optional(),
     widgetEnabled: z.boolean().optional(),
+    contactAddress: z
+      .union([z.string().trim().max(240, 'Contact address is too long'), z.null()])
+      .optional(),
+    contactPhone: z
+      .union([z.string().trim().max(60, 'Contact phone number is too long'), z.null()])
+      .optional(),
   })
   .superRefine((value, ctx) => {
     if (value.logo !== undefined && value.logo !== null) {
@@ -52,12 +58,16 @@ function mapConfiguration(configuration: {
   appName: string;
   logo: string | null;
   widgetEnabled: boolean;
+  contactAddress: string | null;
+  contactPhone: string | null;
   updatedAt: Date;
 }) {
   return {
     appName: configuration.appName,
     logo: configuration.logo,
     widgetEnabled: configuration.widgetEnabled,
+    contactAddress: configuration.contactAddress,
+    contactPhone: configuration.contactPhone,
     updatedAt: configuration.updatedAt.toISOString(),
   };
 }
@@ -79,6 +89,8 @@ async function ensureConfiguration(tenantId: string) {
       appName: tenant?.name ?? 'EMR System',
       widgetEnabled: false,
       logo: null,
+      contactAddress: null,
+      contactPhone: null,
     },
   });
 }
@@ -130,6 +142,8 @@ router.patch(
       appName?: string;
       logo?: string | null;
       widgetEnabled?: boolean;
+      contactAddress?: string | null;
+      contactPhone?: string | null;
     } = {};
 
     if (updates.appName !== undefined) {
@@ -142,6 +156,16 @@ router.patch(
 
     if (updates.widgetEnabled !== undefined) {
       data.widgetEnabled = updates.widgetEnabled;
+    }
+
+    if (updates.contactAddress !== undefined) {
+      const address = updates.contactAddress;
+      data.contactAddress = address === null ? null : address.trim() || null;
+    }
+
+    if (updates.contactPhone !== undefined) {
+      const phone = updates.contactPhone;
+      data.contactPhone = phone === null ? null : phone.trim() || null;
     }
 
     const updated = await prisma.tenantConfiguration.update({

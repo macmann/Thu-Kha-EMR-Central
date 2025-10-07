@@ -21,6 +21,8 @@ import { useTenant } from '../contexts/TenantContext';
 interface SettingsContextType {
   appName: string;
   logo: string | null;
+  contactAddress: string | null;
+  contactPhone: string | null;
   users: UserAccount[];
   doctors: Doctor[];
   updateSettings: (data: UpdateClinicConfigurationPayload) => Promise<void>;
@@ -38,6 +40,8 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [appName, setAppName] = useState<string>('EMR System');
   const [logo, setLogo] = useState<string | null>(null);
+  const [contactAddress, setContactAddress] = useState<string | null>(null);
+  const [contactPhone, setContactPhone] = useState<string | null>(null);
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [widgetEnabled, setWidgetEnabledState] = useState<boolean>(false);
@@ -48,6 +52,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (!accessToken || !activeTenant) {
       setAppName('EMR System');
       setLogo(null);
+      setContactAddress(null);
+      setContactPhone(null);
       setWidgetEnabledState(false);
       return;
     }
@@ -58,12 +64,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (!active) return;
         setAppName(configuration.appName || 'EMR System');
         setLogo(configuration.logo ?? null);
+        setContactAddress(configuration.contactAddress ?? null);
+        setContactPhone(configuration.contactPhone ?? null);
         setWidgetEnabledState(Boolean(configuration.widgetEnabled));
       })
       .catch(() => {
         if (!active) return;
         setAppName('EMR System');
         setLogo(null);
+        setContactAddress(null);
+        setContactPhone(null);
         setWidgetEnabledState(false);
       });
 
@@ -137,6 +147,14 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       payload.widgetEnabled = data.widgetEnabled;
     }
 
+    if (data.contactAddress !== undefined) {
+      payload.contactAddress = data.contactAddress;
+    }
+
+    if (data.contactPhone !== undefined) {
+      payload.contactPhone = data.contactPhone;
+    }
+
     if (Object.keys(payload).length === 0) {
       return;
     }
@@ -144,6 +162,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const updated = await updateClinicConfiguration(payload);
     setAppName(updated.appName || 'EMR System');
     setLogo(updated.logo ?? null);
+    setContactAddress(updated.contactAddress ?? null);
+    setContactPhone(updated.contactPhone ?? null);
     setWidgetEnabledState(Boolean(updated.widgetEnabled));
   };
 
@@ -189,6 +209,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       value={{
         appName,
         logo,
+        contactAddress,
+        contactPhone,
         users,
         doctors,
         updateSettings,

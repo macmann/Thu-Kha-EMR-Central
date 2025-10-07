@@ -96,6 +96,8 @@ export default function Settings() {
   const {
     appName,
     logo,
+    contactAddress,
+    contactPhone,
     users,
     doctors,
     updateSettings,
@@ -112,6 +114,8 @@ export default function Settings() {
   const { activeTenant, tenants, setActiveTenant, isSwitching } = useTenant();
 
   const [name, setName] = useState(appName);
+  const [address, setAddress] = useState(contactAddress ?? '');
+  const [phone, setPhone] = useState(contactPhone ?? '');
   const [userForm, setUserForm] = useState<{ email: string; password: string; role: Role; doctorId: string }>(
     { email: '', password: '', role: 'AdminAssistant', doctorId: '' },
   );
@@ -190,7 +194,9 @@ export default function Settings() {
 
   useEffect(() => {
     setName(appName);
-  }, [appName]);
+    setAddress(contactAddress ?? '');
+    setPhone(contactPhone ?? '');
+  }, [appName, contactAddress, contactPhone]);
 
   useEffect(() => {
     if (isSystemAdmin || user?.role !== 'ITAdmin') {
@@ -350,7 +356,12 @@ export default function Settings() {
     setBrandingError(null);
     setBrandingSuccess(null);
     try {
-      await updateSettings({ appName: name.trim() || 'EMR System', widgetEnabled });
+      await updateSettings({
+        appName: name.trim() || 'EMR System',
+        widgetEnabled,
+        contactAddress: address.trim() ? address.trim() : null,
+        contactPhone: phone.trim() ? phone.trim() : null,
+      });
       setBrandingSuccess(t('Branding updated.'));
     } catch (error) {
       setBrandingError(parseErrorMessage(error, t('Unable to update branding.')));
@@ -756,6 +767,44 @@ export default function Settings() {
                         !canManageBranding || !hasActiveTenant ? 'cursor-not-allowed opacity-60' : ''
                       }`}
                     />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700" htmlFor="contact-address">
+                      {t('Contact address')}
+                    </label>
+                    <textarea
+                      id="contact-address"
+                      value={address}
+                      onChange={(event) => setAddress(event.target.value)}
+                      disabled={!canManageBranding || brandingSaving || !hasActiveTenant}
+                      rows={3}
+                      className={`mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
+                        !canManageBranding || !hasActiveTenant ? 'cursor-not-allowed opacity-60' : ''
+                      }`}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {t('Shown on printed invoices as the clinic address.')}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700" htmlFor="contact-phone">
+                      {t('Contact phone number')}
+                    </label>
+                    <input
+                      id="contact-phone"
+                      type="text"
+                      value={phone}
+                      onChange={(event) => setPhone(event.target.value)}
+                      disabled={!canManageBranding || brandingSaving || !hasActiveTenant}
+                      className={`mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
+                        !canManageBranding || !hasActiveTenant ? 'cursor-not-allowed opacity-60' : ''
+                      }`}
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {t('Displayed at the top of patient invoices.')}
+                    </p>
                   </div>
 
                   <div>
