@@ -30,6 +30,111 @@ import { postPharmacyCharges } from '../services/billingService.js';
 const prisma = new PrismaClient();
 const router = Router();
 
+type ReceiptFormat = 'b5' | 'thermal';
+
+function escapeHtml(value: unknown) {
+  if (value === null || typeof value === 'undefined') {
+    return '';
+  }
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatCurrencyValue(value: unknown, currency: string) {
+  if (value === null || typeof value === 'undefined') {
+    return '';
+  }
+
+  let raw = '';
+  if (typeof value === 'number' || typeof value === 'bigint') {
+    raw = value.toString();
+  } else if (typeof value === 'string') {
+    raw = value;
+  } else if (typeof value === 'object' && value !== null && 'toString' in value) {
+    raw = String((value as { toString: () => string }).toString());
+  }
+
+  if (!raw) {
+    return '';
+  }
+
+  const numeric = Number.parseFloat(raw);
+  if (!Number.isFinite(numeric)) {
+    return escapeHtml(raw);
+  }
+
+  try {
+    return escapeHtml(
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }).format(numeric),
+    );
+  } catch {
+    return escapeHtml(numeric.toFixed(2));
+  }
+}
+
+function getReceiptStyles(format: ReceiptFormat) {
+  const baseStyles = `
+    :root { color: #111827; background: #fff; }
+    * { box-sizing: border-box; }
+    body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; background: #fff; color: #111827; }
+    h1, h2, h3, h4, h5, h6 { margin: 0; }
+    .receipt { display: block; }
+    .receipt__meta { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+    .receipt__meta dt { font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; color: #4b5563; }
+    .receipt__meta dd { margin: 0; color: #111827; font-size: 13px; }
+    .receipt__table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    .receipt__table thead th { font-weight: 600; color: #111827; }
+    .receipt__table tfoot td { font-weight: 600; }
+    .receipt__table td, .receipt__table th { text-align: left; }
+    .receipt__empty td { text-align: center; color: #6b7280; font-style: italic; padding: 24px 12px; }
+    .receipt__notes { color: #6b7280; text-align: center; margin-top: 16px; font-size: 12px; }
+    .receipt__notes--detail { color: #374151; text-align: left; }
+    @media print { body { background: #fff; } }
+  `;
+
+  if (format === 'thermal') {
+    return `
+      ${baseStyles}
+      @page { size: 80mm auto; margin: 4mm; }
+      .receipt--thermal { width: 76mm; margin: 0 auto; padding: 8px 0 16px; font-size: 12px; }
+      .receipt--thermal h1 { font-size: 16px; text-align: center; margin-bottom: 8px; }
+      .receipt--thermal .receipt__meta { margin-top: 8px; gap: 6px; font-size: 11px; }
+      .receipt--thermal .receipt__meta dd { font-size: 11px; }
+      .receipt--thermal .receipt__table { font-size: 11px; margin-top: 12px; }
+      .receipt--thermal .receipt__table thead th { padding: 4px 0; border-bottom: 1px solid #d1d5db; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+      .receipt--thermal .receipt__table tbody td { padding: 4px 0; border-bottom: 1px dashed #d1d5db; }
+      .receipt--thermal .receipt__table tfoot td { padding: 6px 0 0; }
+      .receipt--thermal .receipt__table td:nth-child(2) { text-align: center; }
+      .receipt--thermal .receipt__table td:nth-child(3), .receipt--thermal .receipt__table td:nth-child(4) { text-align: right; }
+      .receipt--thermal .receipt__notes { margin-top: 12px; font-size: 10px; }
+      .receipt--thermal .receipt__notes--detail { font-size: 10px; margin-top: 8px; }
+    `;
+  }
+
+  return `
+    ${baseStyles}
+    @page { size: B5 portrait; margin: 15mm; }
+    .receipt--b5 { max-width: 100%; padding: 32px; font-size: 14px; }
+    .receipt--b5 h1 { font-size: 24px; margin-bottom: 12px; }
+    .receipt--b5 .receipt__meta { margin-top: 16px; font-size: 13px; }
+    .receipt--b5 .receipt__table { font-size: 13px; margin-top: 24px; }
+    .receipt--b5 .receipt__table th, .receipt--b5 .receipt__table td { border: 1px solid #d1d5db; padding: 8px 12px; }
+    .receipt--b5 .receipt__table th:nth-child(2), .receipt--b5 .receipt__table td:nth-child(2) { text-align: center; }
+    .receipt--b5 .receipt__table th:nth-child(3), .receipt--b5 .receipt__table td:nth-child(3), .receipt--b5 .receipt__table th:nth-child(4), .receipt--b5 .receipt__table td:nth-child(4) { text-align: right; }
+    .receipt--b5 .receipt__notes { margin-top: 24px; font-size: 12px; }
+    .receipt--b5 .receipt__notes--detail { font-size: 12px; margin-top: 16px; }
+  `;
+}
+
 const ModifyInvoiceItemsSchema = z
   .object({
     add: z.array(AddInvoiceItemSchema).optional(),
@@ -356,6 +461,9 @@ router.get(
   requireRole('Cashier', 'ITAdmin', 'Doctor', 'Pharmacist'),
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const requestedFormat =
+        typeof req.query.format === 'string' ? req.query.format.toLowerCase() : 'b5';
+      const format: ReceiptFormat = requestedFormat === 'thermal' ? 'thermal' : 'b5';
       const invoice = await prisma.invoice.findUnique({
         where: { invoiceId: req.params.invoiceId },
         include: {
@@ -368,71 +476,107 @@ router.get(
         throw new NotFoundError('Invoice not found');
       }
       const createdAt = new Date(invoice.createdAt);
+      const visitDate = invoice.Visit?.visitDate
+        ? new Date(invoice.Visit.visitDate)
+        : createdAt;
+      const invoiceDate = createdAt.toLocaleString('en-GB', { timeZone: 'Asia/Yangon' });
+      const visitDateDisplay = visitDate.toLocaleString('en-GB', { timeZone: 'Asia/Yangon' });
+      const patientName = escapeHtml(invoice.Patient?.name ?? 'Unknown patient');
+      const invoiceNumber = escapeHtml(invoice.invoiceNo);
+      const currency = invoice.currency ?? 'MMK';
+      const receiptClass = format === 'thermal' ? 'receipt receipt--thermal' : 'receipt receipt--b5';
+      const itemRows = invoice.items.length
+        ? invoice.items
+            .map(
+              (item) => `
+            <tr>
+              <td>${escapeHtml(item.description)}</td>
+              <td>${escapeHtml(item.quantity)}</td>
+              <td>${formatCurrencyValue(item.unitPrice, currency)}</td>
+              <td>${formatCurrencyValue(item.lineTotal, currency)}</td>
+            </tr>`,
+            )
+            .join('')
+        : '<tr class="receipt__empty"><td colspan="4">No line items recorded.</td></tr>';
+      const totals = [
+        { label: 'Subtotal', value: formatCurrencyValue(invoice.subTotal, currency) },
+        { label: 'Discount', value: formatCurrencyValue(invoice.discountAmt, currency) },
+        { label: 'Tax', value: formatCurrencyValue(invoice.taxAmt, currency) },
+        { label: 'Grand total', value: formatCurrencyValue(invoice.grandTotal, currency) },
+        { label: 'Amount paid', value: formatCurrencyValue(invoice.amountPaid, currency) },
+        { label: 'Amount due', value: formatCurrencyValue(invoice.amountDue, currency) },
+      ];
+      const totalsRows = totals
+        .map(
+          (row) => `
+        <tr>
+          <td colspan="3">${escapeHtml(row.label)}</td>
+          <td>${row.value}</td>
+        </tr>`,
+        )
+        .join('');
+      const noteHtml = invoice.note
+        ? `<p class="receipt__notes receipt__notes--detail"><strong>Note:</strong> ${escapeHtml(
+            invoice.note,
+          )}</p>`
+        : '';
       const receiptHtml = `<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Invoice ${invoice.invoiceNo}</title>
-    <style>
-      body { font-family: Arial, sans-serif; padding: 24px; }
-      h1 { font-size: 20px; margin-bottom: 8px; }
-      table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-      th, td { border: 1px solid #ddd; padding: 8px; font-size: 13px; }
-      th { background: #f4f4f5; text-align: left; }
-      tfoot td { font-weight: bold; }
-    </style>
+    <title>Invoice ${invoiceNumber}</title>
+    <style>${getReceiptStyles(format)}</style>
   </head>
   <body>
-    <h1>Invoice ${invoice.invoiceNo}</h1>
-    <p><strong>Patient:</strong> ${invoice.Patient?.name ?? 'Unknown'}</p>
-    <p><strong>Visit Date:</strong> ${createdAt.toLocaleString('en-GB', {
-        timeZone: 'Asia/Yangon',
-      })}</p>
-    <table>
-      <thead>
-        <tr>
-          <th>Description</th>
-          <th>Qty</th>
-          <th>Unit Price</th>
-          <th>Line Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${invoice.items
-          .map(
-            (item) => `
-            <tr>
-              <td>${item.description}</td>
-              <td>${item.quantity}</td>
-              <td>${item.unitPrice.toString()}</td>
-              <td>${item.lineTotal.toString()}</td>
-            </tr>`,
-          )
-          .join('')}
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colspan="3">Subtotal</td>
-          <td>${invoice.subTotal.toString()}</td>
-        </tr>
-        <tr>
-          <td colspan="3">Discount</td>
-          <td>${invoice.discountAmt.toString()}</td>
-        </tr>
-        <tr>
-          <td colspan="3">Tax</td>
-          <td>${invoice.taxAmt.toString()}</td>
-        </tr>
-        <tr>
-          <td colspan="3">Grand Total</td>
-          <td>${invoice.grandTotal.toString()}</td>
-        </tr>
-        <tr>
-          <td colspan="3">Amount Due</td>
-          <td>${invoice.amountDue.toString()}</td>
-        </tr>
-      </tfoot>
-    </table>
+    <main class="${receiptClass}">
+      <header>
+        <h1>Invoice ${invoiceNumber}</h1>
+      </header>
+      <dl class="receipt__meta">
+        <div>
+          <dt>Patient</dt>
+          <dd>${patientName}</dd>
+        </div>
+        <div>
+          <dt>Invoice number</dt>
+          <dd>${invoiceNumber}</dd>
+        </div>
+        <div>
+          <dt>Visit date</dt>
+          <dd>${escapeHtml(visitDateDisplay)}</dd>
+        </div>
+        <div>
+          <dt>Invoice date</dt>
+          <dd>${escapeHtml(invoiceDate)}</dd>
+        </div>
+        <div>
+          <dt>Status</dt>
+          <dd>${escapeHtml(invoice.status)}</dd>
+        </div>
+        <div>
+          <dt>Currency</dt>
+          <dd>${escapeHtml(currency)}</dd>
+        </div>
+      </dl>
+      <table class="receipt__table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Qty</th>
+            <th>Unit price</th>
+            <th>Line total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemRows}
+        </tbody>
+        <tfoot>
+          ${totalsRows}
+        </tfoot>
+      </table>
+      ${noteHtml}
+      <p class="receipt__notes">Thank you for your visit!</p>
+    </main>
   </body>
 </html>`;
       res.setHeader('Content-Type', 'text/html; charset=utf-8');

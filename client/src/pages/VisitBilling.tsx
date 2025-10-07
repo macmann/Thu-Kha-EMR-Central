@@ -1,7 +1,7 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
-import { fetchJSON } from '../api/http';
+import { fetchJSON, fetchText } from '../api/http';
 import { getPatient, getVisit, type Patient, type VisitDetail as VisitDetailType } from '../api/client';
 
 type InvoiceItem = {
@@ -41,12 +41,27 @@ type PaymentDraft = {
 
 type ItemSourceType = 'SERVICE' | 'PHARMACY' | 'LAB';
 
+type PrintFormat = 'b5' | 'thermal';
+
 const PAYMENT_METHODS = [
   { value: 'CASH', label: 'Cash' },
   { value: 'CARD', label: 'Card' },
   { value: 'MOBILE_WALLET', label: 'Mobile Wallet' },
   { value: 'BANK_TRANSFER', label: 'Bank Transfer' },
   { value: 'OTHER', label: 'Other' },
+];
+
+const PRINT_FORMATS: Array<{ value: PrintFormat; label: string; description: string }> = [
+  {
+    value: 'b5',
+    label: 'Standard printer (B5)',
+    description: 'Best for office printers using B5 paper size.',
+  },
+  {
+    value: 'thermal',
+    label: 'Thermal receipt printer (80mm)',
+    description: 'Optimized for 80mm thermal receipt printers.',
+  },
 ];
 
 function formatMoney(value: string) {
@@ -83,6 +98,12 @@ export default function VisitBilling() {
     note: '',
   });
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isPrintDialogOpen, setPrintDialogOpen] = useState(false);
+  const [printFormat, setPrintFormat] = useState<PrintFormat>('b5');
+  const [printPreviewHtml, setPrintPreviewHtml] = useState<string | null>(null);
+  const [printLoading, setPrintLoading] = useState(false);
+  const [printError, setPrintError] = useState<string | null>(null);
+  const printFrameRef = useRef<HTMLIFrameElement | null>(null);
   const hasDue = useMemo(() => {
     if (!invoice) return false;
     const due = Number.parseFloat(invoice.amountDue);
@@ -153,6 +174,55 @@ export default function VisitBilling() {
     const refreshed = detailed as Invoice;
     setInvoice(refreshed);
     setAdjustmentDraft({ discount: refreshed.discountAmt ?? '0', tax: refreshed.taxAmt ?? '0' });
+  }
+
+  useEffect(() => {
+    if (!isPrintDialogOpen || !invoice) {
+      return;
+    }
+    let active = true;
+    setPrintLoading(true);
+    setPrintError(null);
+    setPrintPreviewHtml(null);
+
+    fetchText(`/billing/invoices/${invoice.invoiceId}/receipt?format=${printFormat}`)
+      .then((html) => {
+        if (!active) return;
+        setPrintPreviewHtml(html);
+      })
+      .catch((err) => {
+        console.error(err);
+        if (!active) return;
+        setPrintError('Unable to load invoice preview. Please try again.');
+      })
+      .finally(() => {
+        if (active) {
+          setPrintLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isPrintDialogOpen, invoice, printFormat]);
+
+  function handleOpenPrintDialog() {
+    setPrintFormat('b5');
+    setPrintPreviewHtml(null);
+    setPrintError(null);
+    setPrintDialogOpen(true);
+  }
+
+  function handleClosePrintDialog() {
+    setPrintDialogOpen(false);
+  }
+
+  function handlePrintInvoice() {
+    if (!printFrameRef.current || !printFrameRef.current.contentWindow) {
+      return;
+    }
+    printFrameRef.current.contentWindow.focus();
+    printFrameRef.current.contentWindow.print();
   }
 
   async function handleAdjustmentsSubmit(event: FormEvent<HTMLFormElement>) {
@@ -295,10 +365,10 @@ export default function VisitBilling() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => window.open(`/api/billing/invoices/${invoice.invoiceId}/receipt`, '_blank')}
+            onClick={handleOpenPrintDialog}
             className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
           >
-            Print Receipt
+            Print Invoice
           </button>
           {hasDue && (
             <button
@@ -634,6 +704,91 @@ export default function VisitBilling() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isPrintDialogOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-gray-900/40 px-4">
+          <div className="w-full max-w-5xl rounded-lg bg-white p-6 shadow-xl">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Print invoice</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Select a printer type to generate a preview and print the invoice.
+              </p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-[280px,1fr]">
+              <div className="space-y-4">
+                <fieldset className="space-y-3">
+                  <legend className="text-sm font-medium text-gray-700">Printer type</legend>
+                  <div className="space-y-2">
+                    {PRINT_FORMATS.map((option) => (
+                      <label
+                        key={option.value}
+                        className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-3 text-sm hover:border-blue-400"
+                      >
+                        <input
+                          type="radio"
+                          name="printer-format"
+                          value={option.value}
+                          checked={printFormat === option.value}
+                          onChange={() => setPrintFormat(option.value)}
+                          className="mt-1 h-4 w-4"
+                        />
+                        <span>
+                          <span className="block font-medium text-gray-900">{option.label}</span>
+                          <span className="mt-0.5 block text-gray-500">{option.description}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+                {printError ? (
+                  <p className="text-sm text-red-600">{printError}</p>
+                ) : (
+                  <p className="text-xs text-gray-500">
+                    Preview updates automatically when you change the printer type.
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-col gap-4">
+                <div className="h-[420px] overflow-hidden rounded border border-gray-200 bg-gray-50">
+                  {printLoading ? (
+                    <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                      Loading preview…
+                    </div>
+                  ) : printPreviewHtml ? (
+                    <iframe
+                      ref={printFrameRef}
+                      srcDoc={printPreviewHtml}
+                      title="Invoice preview"
+                      className="h-full w-full bg-white"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                      Preview unavailable.
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={handleClosePrintDialog}
+                    className="rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePrintInvoice}
+                    disabled={!printPreviewHtml || printLoading}
+                    className="rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+                  >
+                    Print invoice
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
