@@ -95,10 +95,16 @@ router.get('/clinic', requireTenantRoles(), async (req: AuthRequest, res: Respon
 
 router.patch(
   '/clinic',
-  requireRole('SystemAdmin', 'SuperAdmin'),
+  requireRole('SystemAdmin', 'SuperAdmin', 'ITAdmin'),
   requireTenantRoles(),
   async (req: AuthRequest, res: Response) => {
-    if (req.user?.role !== 'SystemAdmin' && req.user?.role !== 'SuperAdmin') {
+    const userRole = req.user?.role;
+    const tenantRole = req.tenantRole;
+
+    const isSystemOrSuperAdmin = userRole === 'SystemAdmin' || userRole === 'SuperAdmin';
+    const isAssignedItAdmin = userRole === 'ITAdmin' && tenantRole === 'ITAdmin';
+
+    if (!isSystemOrSuperAdmin && !isAssignedItAdmin) {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
