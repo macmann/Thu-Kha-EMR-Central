@@ -37,6 +37,16 @@ export default function LabOrderDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [forms, setForms] = useState<ResultForms>({});
   const [savingItemId, setSavingItemId] = useState<string | null>(null);
+  const statusLabels = useMemo(
+    () => ({
+      ORDERED: t('Ordered'),
+      IN_PROGRESS: t('In progress'),
+      RESULTED: t('Resulted'),
+      COMPLETED: t('Completed'),
+      CANCELLED: t('Cancelled'),
+    }),
+    [t],
+  );
 
   useEffect(() => {
     if (!labOrderId) {
@@ -170,7 +180,7 @@ export default function LabOrderDetailPage() {
           </Link>
           {order && (
             <span className="rounded-full bg-blue-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-blue-700">
-              {order.status.replace('_', ' ')}
+              {statusLabels[order.status] ?? order.status.replace('_', ' ')}
             </span>
           )}
         </div>
@@ -220,7 +230,7 @@ export default function LabOrderDetailPage() {
                         item.status === 'RESULTED' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                       }`}
                     >
-                      {t(item.status.replace('_', ' '))}
+                      {statusLabels[item.status] ?? item.status.replace('_', ' ')}
                     </span>
                   </div>
 

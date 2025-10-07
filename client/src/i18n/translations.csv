@@ -300,3 +300,129 @@ You only have access to one clinic right now. Ask your administrator to add you 
 Clinic,Clinic,Clinic
 Clinic memberships,Clinic memberships,Clinic memberships
 MRN,MRN,MRN
+Add at least one lab test.,Add at least one lab test.,အနည်းဆုံး လက်တင်စမ်းသပ်မှု တစ်ခုထည့်ပါ။
+Add test,Add test,စမ်းသပ်မှု ထည့်ပါ
+All invoices,All invoices,ဘောက်ချာများ အားလုံး
+Amount,Amount,ကျသင့်ငွေ
+Amount due,Amount due,ကျသင့်ငွေကျန်
+Back to orders,Back to orders,အော်ဒါစာရင်းသို့ ပြန်သွားပါ
+Bank transfer,Bank transfer,ဘဏ်လွှဲ
+Billing workspace,Billing workspace,ဘီလင်းလုပ်ငန်းဧရိယာ
+Cancel,Cancel,ရုတ်သိမ်းပါ
+Card,Card,ကတ်
+Cash,Cash,လက်ငင်း
+Clear,Clear,ဖယ်ရှင်းပါ
+Clinical notes,Clinical notes,ရောဂါအချက်အလက် မှတ်စုများ
+Create invoice,Create invoice,ဘောက်ချာ ဆောင်ရွက်ပါ
+Create lab order,Create lab order,လက်တင်အော်ဒါ ထုတ်ပါ
+Draft,Draft,မူကြမ်း
+Filter by patient ID,Filter by patient ID,လူနာအိုင်ဒီဖြင့် စိစစ်ပါ
+Filtering by patient {id},Filtering by patient {id},လူနာအိုင်ဒီ {id} ဖြင့် စိစစ်နေသည်
+Find visit,Find visit,လည်ပတ်မှုကို ရှာပါ
+Grand total,Grand total,စုစုပေါင်း
+Invoice,Invoice,ဘောက်ချာ
+Invoice activity,Invoice activity,ဘောက်ချာ လှုပ်ရှားမှု
+Invoice {invoice} — due amount {amount},Invoice {invoice} — due amount {amount},ဘောက်ချာ {invoice} — ကျသင့်ငွေ {amount}
+Lab order detail,Lab order detail,လက်တင်အော်ဒါ အသေးစိတ်
+Lab order not found.,Lab order not found.,လက်တင်အော်ဒါကို မတွေ့ပါ။
+Laboratory Orders,Laboratory Orders,လက်တင်အော်ဒါများ
+Load visit,Load visit,လည်ပတ်မှု ဖွင့်ပါ
+Loading invoices…,Loading invoices…,ဘောက်ချာများကို ဖွင့်နေပါသည်…
+Loading order information...,Loading order information...,အော်ဒါအချက်အလက်များကို ဖွင့်နေပါသည်...
+Loading orders...,Loading orders...,အော်ဒါများကို ဖွင့်နေပါသည်...
+Loading visits…,Loading visits…,လည်ပတ်မှုများကို ဖွင့်နေပါသည်…
+Manage laboratory workflow,Manage laboratory workflow,လက်တင် လုပ်ငန်းစဉ်ကို စီမံပါ
+"Manage visit invoices, payments, and pharmacy charges","Manage visit invoices, payments, and pharmacy charges",လည်ပတ်ဘောက်ချာများ၊ ပေးချေမှုများနှင့် ဆေးဆိုင် အခကြေးငွေများကို စီမံပါ
+Method,Method,ပေးချေမှု မျိုးတူ
+Mobile wallet,Mobile wallet,မိုဘိုင်းစာအိတ်
+No invoice found for this visit yet.,No invoice found for this visit yet.,ဤလည်ပတ်မှုအတွက် ဘောက်ချာ မရှိသေးပါ။
+No invoices match the selected filter.,No invoices match the selected filter.,ရွေးထားသော စိစစ်မှုနှင့် ကိုက်ညီသည့် ဘောက်ချာ မရှိပါ။
+No lab orders in this bucket.,No lab orders in this bucket.,ဤအခြေအနေတွင် လက်တင်အော်ဒါ မရှိပါ။
+No recent visits found for this patient.,No recent visits found for this patient.,ဤလူနာအတွက် မကြာသေးမီ လည်ပတ်မှုမတွေ့ပါ။
+No value provided,No value provided,တန်ဖိုး မပေးထားပါ
+Note,Note,မှတ်ချက်
+Notes,Notes,မှတ်စုများ
+Only doctors or administrators can create lab orders.,Only doctors or administrators can create lab orders.,လက်တင်အော်ဒါများကို ဆရာဝန်များ သို့မဟုတ် အုပ်ချုပ်ရေးမှူးများသာ ဖန်တီးနိုင်ပါသည်။
+Open visit invoice,Open visit invoice,လည်ပတ်ဘောက်ချာ ဖွင့်ပါ
+Order ID,Order ID,အော်ဒါ အိုင်ဒီ
+Order entry,Order entry,အော်ဒါ ထည့်သွင်းခြင်း
+Order summary,Order summary,အော်ဒါ အကျဉ်းချုံး
+Ordered,Ordered,အော်ဒါတင်ပြီး
+Orders,Orders,အော်ဒါများ
+Other,Other,အခြား
+POS queue,POS queue,POS စာရင်းစဉ်
+Paid,Paid,ပေးချေပြီး
+Partially paid,Partially paid,အပိုင်းအခြား ပေးချေထား
+Patient ID,Patient ID,လူနာ အိုင်ဒီ
+Patient ID: {id},Patient ID: {id},လူနာ အိုင်ဒီ - {id}
+Payment,Payment,ပေးချေမှု
+Pending,Pending,ဆိုင်းငံ့
+Pending & partially paid,Pending & partially paid,ဆိုင်းငံ့ / အပိုင်းအခြား ပေးချေထား
+Pharmacists can push dispense charges to billing. Re-run the posting when a prescription changes.,Pharmacists can push dispense charges to billing. Re-run the posting when a prescription changes.,ဆေးထုတ်ဝေသူများသည် ထုတ်ဝေခများကို ဘီလင်းသို့ ပို့နိုင်ပါသည်။ ဆေးညွှန်းပြောင်းလဲပါက ထပ်မံတင်ပေးပါ။
+Pharmacy charges,Pharmacy charges,ဆေးဆိုင် အခကြေးငွေများ
+Pharmacy charges posted successfully.,Pharmacy charges posted successfully.,ဆေးဆိုင်အခကြေးငွေများအား အောင်မြင်စွာ တင်ပြီးပါပြီ။
+Pharmacy charges posted. Invoice {id} updated.,Pharmacy charges posted. Invoice {id} updated.,ဆေးဆိုင်အခကြေးငွေများကို တင်ပြီးပါပြီ။ ဘောက်ချာ {id} ကို အပ်ဒိတ်လုပ်ပြီးပါပြီ။
+Pharmacy repost requires pharmacist or IT admin access.,Pharmacy repost requires pharmacist or IT admin access.,ဆေးဆိုင်ခများ ပြန်တင်ရန် ဆေးဝါးထုတ်ဝေသူ သို့မဟုတ် IT အုပ်ချုပ်ရေးခွင့် လိုအပ်ပါသည်။
+Please include a reason before voiding the invoice.,Please include a reason before voiding the invoice.,ဘောက်ချာကို အတ္တင်ဖျက်ရန် မတိုင်မီ အကြောင်းပြချက်ထည့်ပါ။
+Post pharmacy charges,Post pharmacy charges,ဆေးဆိုင်အခကြေးငွေများ တင်ပါ
+Prescription ID,Prescription ID,ဆေးညွှန်း အိုင်ဒီ
+Priority,Priority,ဦးစားပေးမှု
+Provide a reason for voiding invoice {invoice}. This action cannot be undone.,Provide a reason for voiding invoice {invoice}. This action cannot be undone.,ဘောက်ချာ {invoice} ကို ဖျက်သိမ်းရန် အကြောင်းပြချက် ပေးပါ။ ဤလုပ်ဆောင်မှုကို ပြန်မပြင်နိုင်ပါ။
+Reason,Reason,အကြောင်းပြချက်
+Reason: {reason},Reason: {reason},အကြောင်းပြချက် - {reason}
+Recent visits for {name},Recent visits for {name},{name} ၏ မကြာသေးမီ လည်ပတ်မှုများ
+Record payment,Record payment,ပေးချေမှု မှတ်တမ်းတင်ပါ
+Reference high,Reference high,ကိုးကား အထက်ကန့်
+Reference low,Reference low,ကိုးကား အောက်ကန့်
+Reference number,Reference number,ကိုးကားနံပါတ်
+Reference range,Reference range,ကိုးကား အတိုင်းအတာ
+Refresh,Refresh,ပြန်လည်တင်ဆက်ပါ
+Remove test,Remove test,စမ်းသပ်မှု ဖယ်ရှားပါ
+Result notes,Result notes,ရလဒ် မှတ်စုများ
+Result value (numeric),Result value (numeric),ရလဒ် တန်ဖိုး (ဂဏန်း)
+Result value (text),Result value (text),ရလဒ် တန်ဖိုး (စာသား)
+Resulted,Resulted,ရလဒ်ထွက်ပြီး
+Review,Review,စစ်ဆေးကြည့်ပါ
+Routine,Routine,ပုံမှန်
+"Routine, Stat, ...","Routine, Stat, ...",ပုံမှန်၊ ချက်ချင်း၊ ...
+Save payment,Save payment,ပေးချေမှု သိမ်းဆည်းပါ
+Saving...,Saving...,သိမ်းဆည်းနေပါသည်...
+Search by patient name,Search by patient name,လူနာအမည်ဖြင့် ရှာဖွေပါ
+Searching patients…,Searching patients…,လူနာများကို ရှာနေပါသည်…
+Searching…,Searching…,ရှာနေပါသည်…
+Select a visit to load billing details.,Select a visit to load billing details.,ဘီလင်းအသေးစိတ် ဖွင့်ရန် လည်ပတ်မှုတစ်ခုကို ရွေးပါ။
+Specimen,Specimen,နမူနာ
+Submit result,Submit result,ရလဒ် တင်ပြပါ
+Submitting...,Submitting...,တင်ပြနေပါသည်...
+Test code,Test code,စမ်းသပ်မှု ကုဒ်
+Test name,Test name,စမ်းသပ်မှု အမည်
+Tests,Tests,စမ်းသပ်မှုများ
+Unable to create invoice for this visit.,Unable to create invoice for this visit.,ဤလည်ပတ်မှုအတွက် ဘောက်ချာ မဖန်တီးနိုင်ပါ။
+Unable to create lab order.,Unable to create lab order.,လက်တင်အော်ဒါ မဖန်တီးနိုင်ပါ။
+Unable to fetch lab orders.,Unable to fetch lab orders.,လက်တင်အော်ဒါများကို မရယူနိုင်ပါ။
+Unable to load invoices right now.,Unable to load invoices right now.,လတ်တလော ဘောက်ချာများကို မဖွင့်နိုင်ပါ။
+Unable to load lab order.,Unable to load lab order.,လက်တင်အော်ဒါကို မဖွင့်နိုင်ပါ။
+Unable to load visits for that patient.,Unable to load visits for that patient.,ဤလူနာအတွက် လည်ပတ်မှုများကို မဖွင့်နိုင်ပါ။
+Unable to post pharmacy charges.,Unable to post pharmacy charges.,ဆေးဆိုင်အခကြေးငွေများကို မတင်နိုင်ပါ။
+Unable to record payment. Please try again.,Unable to record payment. Please try again.,ပေးချေမှုကို မှတ်တမ်းတင်မရပါ။ ထပ်မံ ကြိုးစားပါ။
+Unable to refresh invoices right now.,Unable to refresh invoices right now.,လတ်တလော ဘောက်ချာများကို ပြန်လည်တင်ပြ မရနိုင်ပါ။
+Unable to save lab result.,Unable to save lab result.,လက်တင်ရလဒ်ကို မသိမ်းဆည်းနိုင်ပါ။
+Unable to search patients right now.,Unable to search patients right now.,လတ်တလော လူနာများကို ရှာဖွေရန် မရနိုင်ပါ။
+Unable to void invoice right now.,Unable to void invoice right now.,လတ်တလော ဘောက်ချာကို ဖျက်သိမ်းမရနိုင်ပါ။
+Unit,Unit,ယူနစ်
+View invoice detail,View invoice detail,ဘောက်ချာအသေးစိတ် ကြည့်ပါ
+Visit,Visit,လည်ပတ်မှု
+Visit ID,Visit ID,လည်ပတ်မှု အိုင်ဒီ
+Visit ID and patient ID are required.,Visit ID and patient ID are required.,လည်ပတ်မှု အိုင်ဒီနှင့် လူနာ အိုင်ဒီ လိုအပ်ပါသည်။
+Visit date,Visit date,လည်ပတ်သည့် ရက်စွဲ
+Visit lookup,Visit lookup,လည်ပတ်မှု ရှာဖွေမှု
+Visit summary,Visit summary,လည်ပတ်မှု အကျဉ်းချုံး
+Visit {visitId} • Patient {patientId},Visit {visitId} • Patient {patientId},လည်ပတ်မှု {visitId} • လူနာ {patientId}
+Void,Void,ဖျက်သိမ်းပါ
+Void invoice,Void invoice,ဘောက်ချာ ဖျက်သိမ်းပါ
+Voided,Voided,ဖျက်သိမ်းပြီး
+Voiding…,Voiding…,ဖျက်သိမ်းနေပါသည်…
+We could not find billing details for that visit.,We could not find billing details for that visit.,ထိုလည်ပတ်မှုအတွက် ဘီလင်းအသေးစိတ် မတွေ့ပါ။
+e.g. Jane Doe,e.g. Jane Doe,ဥပမာ။ Jane Doe
+e.g. RX-2024-00123,e.g. RX-2024-00123,ဥပမာ။ RX-2024-00123
+e.g. VIS-2024-00042,e.g. VIS-2024-00042,ဥပမာ။ VIS-2024-00042

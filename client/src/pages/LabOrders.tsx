@@ -149,6 +149,16 @@ export default function LabOrdersPage() {
     ? t('Filtering by patient {id}', { id: patientFilter })
     : t('Manage laboratory workflow');
 
+  const statusLabels = useMemo(
+    () => ({
+      ORDERED: t('Ordered'),
+      IN_PROGRESS: t('In progress'),
+      COMPLETED: t('Completed'),
+      CANCELLED: t('Cancelled'),
+    }),
+    [t],
+  );
+
   return (
     <DashboardLayout title={t('Laboratory Orders')} subtitle={subtitle} activeItem="patients">
       <div className="grid gap-6 lg:grid-cols-2">
@@ -296,7 +306,7 @@ export default function LabOrdersPage() {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    {t(status.replace('_', ' '))}
+                    {statusLabels[status] ?? status.replace('_', ' ')}
                   </button>
                 ))}
               </div>
