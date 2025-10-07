@@ -147,6 +147,7 @@ export default function Settings() {
   const latestDoctor = totalDoctors > 0 ? doctors[totalDoctors - 1] : undefined;
   const latestUser = totalUsers > 0 ? users[totalUsers - 1] : undefined;
   const isSystemAdmin = user?.role === 'SystemAdmin' || user?.role === 'SuperAdmin';
+  const canManageBranding = isSystemAdmin || user?.role === 'ITAdmin';
   const hasActiveTenant = Boolean(activeTenant);
   const canManageMultipleClinics =
     (tenants.length > 1 || (!activeTenant && tenants.length > 0)) &&
@@ -308,7 +309,7 @@ export default function Settings() {
 
   async function handleLogoChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file || !isSystemAdmin) return;
+    if (!file || !canManageBranding) return;
 
     if (!hasActiveTenant) {
       setBrandingError(t('Select a clinic before updating branding.'));
@@ -338,7 +339,7 @@ export default function Settings() {
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!isSystemAdmin) return;
+    if (!canManageBranding) return;
 
     if (!hasActiveTenant) {
       setBrandingError(t('Select a clinic before updating branding.'));
@@ -731,9 +732,9 @@ export default function Settings() {
                   <p className="mt-1 text-sm text-gray-600">
                     Update your organization name, upload a logo, and manage the patient widget visibility.
                   </p>
-                  {!isSystemAdmin && (
+                  {!canManageBranding && (
                     <p className="mt-2 text-xs font-semibold text-amber-600">
-                      {t('Only system administrators can update branding details.')}
+                      {t('Only system or IT administrators can update branding details.')}
                     </p>
                   )}
                 </div>
@@ -750,9 +751,9 @@ export default function Settings() {
                       type="text"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      disabled={!isSystemAdmin || brandingSaving || !hasActiveTenant}
+                      disabled={!canManageBranding || brandingSaving || !hasActiveTenant}
                       className={`mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 ${
-                        !isSystemAdmin || !hasActiveTenant ? 'cursor-not-allowed opacity-60' : ''
+                        !canManageBranding || !hasActiveTenant ? 'cursor-not-allowed opacity-60' : ''
                       }`}
                     />
                   </div>
@@ -766,9 +767,9 @@ export default function Settings() {
                       type="file"
                       accept="image/*"
                       onChange={handleLogoChange}
-                      disabled={!isSystemAdmin || logoUploading || !hasActiveTenant}
+                      disabled={!canManageBranding || logoUploading || !hasActiveTenant}
                       className={`mt-2 block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:px-4 file:py-2 file:text-sm file:font-semibold ${
-                        !isSystemAdmin || !hasActiveTenant
+                        !canManageBranding || !hasActiveTenant
                           ? 'file:bg-gray-200 file:text-gray-500'
                           : 'file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100'
                       } ${logoUploading ? 'opacity-70' : ''}`}
@@ -805,10 +806,10 @@ export default function Settings() {
                     role="switch"
                     aria-checked={widgetEnabled}
                     onClick={() => {
-                      if (!isSystemAdmin || !hasActiveTenant) return;
+                      if (!canManageBranding || !hasActiveTenant) return;
                       setWidgetEnabled(!widgetEnabled);
                     }}
-                    disabled={!isSystemAdmin || !hasActiveTenant}
+                    disabled={!canManageBranding || !hasActiveTenant}
                     className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition ${
                       widgetEnabled ? 'bg-blue-600' : 'bg-gray-300'
                     }`}
@@ -825,9 +826,9 @@ export default function Settings() {
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    disabled={!isSystemAdmin || brandingSaving || !hasActiveTenant}
+                    disabled={!canManageBranding || brandingSaving || !hasActiveTenant}
                     className={`inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white shadow ${
-                      !isSystemAdmin || !hasActiveTenant
+                      !canManageBranding || !hasActiveTenant
                         ? 'bg-gray-400'
                         : brandingSaving
                           ? 'bg-blue-400'
