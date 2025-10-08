@@ -200,10 +200,14 @@ Select an invoice line to apply its details to the stock form.,Select an invoice
 No medication lines were detected. Enter the stock details manually.,No medication lines were detected. Enter the stock details manually.,ဆေးဝါးအစီအစဉ်များ မတွေ့ပါ။ စတော့အသေးစိတ်ကို ကိုယ်တိုင် ဖြည့်သွင်းပါ။
 Unable to scan the invoice. Try again.,Unable to scan the invoice. Try again.,ငွေတောင်းခံလွှာကို စကန်းမရပါ။ ထပ်စမ်းကြည့်ပါ။
 Select a medication before recording stock.,Select a medication before recording stock.,စတော့ကို မှတ်တမ်းတင်ရန် မတိုင်မှီ ဆေးဝါးတစ်မျိုးကို ရွေးချယ်ပါ။
+Apply an invoice line or create the medication before recording stock.,Apply an invoice line or create the medication before recording stock.,စတော့ကို မှတ်တမ်းတင်ရန်မတိုင်မီ ငွေတောင်းခံလွှာစာရင်းတန်းတစ်ခုကို အသုံးပြုပါ သို့မဟုတ် ဆေးဝါးကို ဖန်တီးပါ။
+Invoice line is missing the name, form, or strength. Add the medication manually before recording stock.,Invoice line is missing the name, form, or strength. Add the medication manually before recording stock.,ငွေတောင်းခံလွှာစာရင်းတန်းတွင် နာမည်၊ ပုံစံ သို့မဟုတ် အားကြောင်း မပါရှိပါ။ စတော့မှတ်တမ်းတင်ရန်မတိုင်မီ ဆေးဝါးကို ကိုယ်တိုင် ထည့်သွင်းပါ။
 Quantity on hand must be zero or greater.,Quantity on hand must be zero or greater.,လက်ကျန်အရေအတွက်သည် သုည သို့မဟုတ် ထို့ထက်မြင့်ရမည်။
 Location is required.,Location is required.,တည်နေရာကို ပြည့်စုံဖော်ပြရပါမည်။
 Select another line item or upload a new invoice to continue.,Select another line item or upload a new invoice to continue.,ဆက်လုပ်ရန် အခြားစုစည်းတစ်ခုကို ရွေးချယ်ပါ သို့မဟုတ် ငွေတောင်းခံလွှာအသစ်တင်ပါ။
+Medication created and stock recorded from the invoice line. Upload another invoice to continue.,Medication created and stock recorded from the invoice line. Upload another invoice to continue.,ငွေတောင်းခံလွှာစာရင်းတန်းမှ ဆေးဝါးကို ဖန်တီးပြီး စတော့ကို မှတ်တမ်းတင်ပြီးပါပြီ။ ဆက်လုပ်ရန် ငွေတောင်းခံလွှာအသစ်တင်ပါ။
 Unable to record stock.,Unable to record stock.,စတော့ကို မှတ်တမ်းတင်မရပါ။
+Unable to determine which medication to update.,Unable to determine which medication to update.,ဘယ်ဆေးဝါးကို ပြင်ဆင်ရမည်ကို သတ်မှတ်မထားနိုင်ပါ။
 Select a medication to adjust inventory.,Select a medication to adjust inventory.,စတော့ကို ပြင်ဆင်ရန် ဆေးဝါးတစ်မျိုးကို ရွေးချယ်ပါ။
 No adjustments detected. Update a quantity before submitting.,No adjustments detected. Update a quantity before submitting.,ပြင်ဆင်မှု မတွေ့ပါ။ တင်သွင်းရန် မတိုင်မီ အရေအတွက်ကို ပြင်ဆင်ပါ။
 Unable to adjust stock.,Unable to adjust stock.,စတော့ကို ပြင်ဆင်မရပါ။

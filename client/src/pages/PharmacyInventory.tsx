@@ -9,6 +9,7 @@ import {
   InvoiceScanResult,
   InvoiceScanLineItem,
   adjustStockLevels,
+  createDrug,
   listStockItems,
   receiveStockItems,
   searchInventoryDrugs,
@@ -53,6 +54,7 @@ export default function PharmacyInventory() {
   const [scanStatus, setScanStatus] = useState<'idle' | 'scanning' | 'success' | 'error'>('idle');
   const [scanError, setScanError] = useState<string | null>(null);
   const [scanNotice, setScanNotice] = useState<string | null>(null);
+  const [appliedInvoiceLine, setAppliedInvoiceLine] = useState<InvoiceScanLineItem | null>(null);
 
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [stockLoading, setStockLoading] = useState(false);
@@ -133,13 +135,7 @@ export default function PharmacyInventory() {
 
   async function handleReceive(event: FormEvent) {
     event.preventDefault();
-    if (!selectedDrug) {
-      setReceiveError(t('Select a medication before recording stock.'));
-      setReceiveStatus('error');
-      return;
-    }
 
-    const drugId = selectedDrug.drugId;
     const qty = Number.parseInt(receiveForm.qtyOnHand, 10);
     if (Number.isNaN(qty) || qty < 0) {
       setReceiveError(t('Quantity on hand must be zero or greater.'));
@@ -148,7 +144,7 @@ export default function PharmacyInventory() {
     }
 
     const payload: ReceiveStockItemPayload = {
-      drugId,
+      drugId: selectedDrug?.drugId ?? '',
       location: receiveForm.location.trim(),
       qtyOnHand: qty,
     };
@@ -157,6 +153,25 @@ export default function PharmacyInventory() {
       setReceiveError(t('Location is required.'));
       setReceiveStatus('error');
       return;
+    }
+
+    const needsDrugCreation = !selectedDrug;
+    if (needsDrugCreation) {
+      if (!appliedInvoiceLine) {
+        setReceiveError(t('Apply an invoice line or create the medication before recording stock.'));
+        setReceiveStatus('error');
+        return;
+      }
+      const invoiceName = (appliedInvoiceLine.brandName || appliedInvoiceLine.genericName || '').trim();
+      const invoiceForm = (appliedInvoiceLine.form || '').trim();
+      const invoiceStrength = (appliedInvoiceLine.strength || '').trim();
+      if (!invoiceName || !invoiceForm || !invoiceStrength) {
+        setReceiveError(
+          t('Invoice line is missing the name, form, or strength. Add the medication manually before recording stock.'),
+        );
+        setReceiveStatus('error');
+        return;
+      }
     }
 
     if (receiveForm.batchNo.trim()) {
@@ -179,12 +194,51 @@ export default function PharmacyInventory() {
     setReceiveError(null);
 
     try {
+      let activeDrug: InventoryDrug | null = selectedDrug;
+      let createdFromInvoice = false;
+      if (needsDrugCreation && appliedInvoiceLine) {
+        const created = await createDrug({
+          name: (appliedInvoiceLine.brandName || appliedInvoiceLine.genericName || '').trim(),
+          genericName: appliedInvoiceLine.genericName?.trim() || undefined,
+          form: (appliedInvoiceLine.form || '').trim(),
+          strength: (appliedInvoiceLine.strength || '').trim(),
+        });
+        activeDrug = {
+          drugId: created.drugId,
+          name: created.name,
+          genericName: created.genericName,
+          strength: created.strength,
+          form: created.form,
+          routeDefault: created.routeDefault,
+          qtyOnHand: 0,
+        };
+        setSelectedDrug(activeDrug);
+        setSearchTerm(`${created.name} ${created.strength}`.trim());
+        setSuggestions([]);
+        createdFromInvoice = true;
+        payload.drugId = created.drugId;
+      }
+
+      if (!activeDrug && !payload.drugId) {
+        throw new Error(t('Unable to determine which medication to update.'));
+      }
+
+      const drugId = payload.drugId || activeDrug?.drugId;
+      if (!drugId) {
+        throw new Error(t('Unable to determine which medication to update.'));
+      }
+      payload.drugId = drugId;
+
       await receiveStockItems([payload]);
       setReceiveStatus('success');
       setReceiveForm(EMPTY_RECEIVE_FORM);
-      setScanNotice(t('Select another line item or upload a new invoice to continue.'));
+      setScanNotice(
+        createdFromInvoice
+          ? t('Medication created and stock recorded from the invoice line. Upload another invoice to continue.')
+          : t('Select another line item or upload a new invoice to continue.'),
+      );
       // refresh stock list
-      const data = await listStockItems(drugId);
+      const data = await listStockItems(payload.drugId);
       setStockItems(data);
       const initial: Record<string, string> = {};
       data.forEach((item) => {
@@ -258,6 +312,7 @@ export default function PharmacyInventory() {
     setScanStatus('scanning');
     setScanError(null);
     setScanNotice(null);
+    setAppliedInvoiceLine(null);
     try {
       const result = await scanInvoiceForInventory(file);
       setInvoiceResult(result);
@@ -296,6 +351,7 @@ export default function PharmacyInventory() {
       appliedForm = updated;
       return updated;
     });
+    setAppliedInvoiceLine(line);
 
     if (!selectedDrug) {
       const searchCandidate = [line.brandName, line.genericName].filter(Boolean).join(' ');
@@ -350,6 +406,7 @@ export default function PharmacyInventory() {
     setSuggestions([]);
     setStockItems([]);
     setAdjustments({});
+    setAppliedInvoiceLine(null);
   }
 
   const subtitle = useMemo(() => {
