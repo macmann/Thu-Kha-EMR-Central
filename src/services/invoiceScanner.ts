@@ -98,12 +98,17 @@ function getClient() {
   return cachedClient;
 }
 
-function ensureJsonObject(content: string) {
+function ensureJsonObject(content: string, debugContext?: Record<string, unknown>) {
   const firstBrace = content.indexOf('{');
   const lastBrace = content.lastIndexOf('}');
   if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
     throw new InvoiceScanError('Unable to parse invoice response from OpenAI.', {
       statusCode: 502,
+      details: {
+        ...(debugContext ? { debugContext } : {}),
+        reason: 'missing_json_braces',
+        contentLength: content.length,
+      },
     });
   }
   const jsonSlice = content.slice(firstBrace, lastBrace + 1);
@@ -113,6 +118,11 @@ function ensureJsonObject(content: string) {
     throw new InvoiceScanError('Invoice parsing returned invalid JSON data.', {
       statusCode: 502,
       cause: error,
+      details: {
+        ...(debugContext ? { debugContext } : {}),
+        reason: 'invalid_json_payload',
+        contentLength: jsonSlice.length,
+      },
     });
   }
 }
@@ -252,12 +262,20 @@ function isSupportedImage(buffer: Buffer, mimeType?: string | null) {
 }
 
 export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Promise<InvoiceScanResult> {
+  const model = process.env.OPENAI_INVOICE_MODEL || DEFAULT_MODEL;
+  const debugContext: Record<string, unknown> = {
+    model,
+    mimeType: mimeType ?? null,
+    fileSize: buffer.length,
+  };
   if (!buffer.length) {
-    throw new InvoiceScanError('Invoice file is empty.', { statusCode: 400 });
+    throw new InvoiceScanError('Invoice file is empty.', {
+      statusCode: 400,
+      details: { debugContext, reason: 'empty_file' },
+    });
   }
 
   const client = getClient();
-  const model = process.env.OPENAI_INVOICE_MODEL || DEFAULT_MODEL;
   try {
     const pdf = isPdf(buffer, mimeType);
 
@@ -265,10 +283,15 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
 
     if (pdf) {
       const rawText = await extractPdfText(buffer);
+      debugContext.inputType = 'pdf';
+      debugContext.pdfRawTextLength = rawText.length;
       const sanitizedText = sanitizePdfText(rawText);
+      debugContext.pdfSanitizedLength = sanitizedText.length;
+      debugContext.pdfTruncated = sanitizedText.includes('... (truncated)');
       if (!sanitizedText) {
         throw new InvoiceScanError('No readable text was found in the invoice PDF. Please enter details manually.', {
           statusCode: 422,
+          details: { debugContext, reason: 'empty_pdf_text' },
         });
       }
       userContent =
@@ -276,9 +299,11 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
         'Please keep numbers as digits and use ISO 8601 dates (YYYY-MM-DD).\n\n' +
         `Invoice text:\n${sanitizedText}`;
     } else {
+      debugContext.inputType = 'image';
       if (!isSupportedImage(buffer, mimeType)) {
         throw new InvoiceScanError('Unsupported invoice format. Upload a PDF or image file instead.', {
           statusCode: 415,
+          details: { debugContext, reason: 'unsupported_mime_type' },
         });
       }
       const base64 = buffer.toString('base64');
@@ -314,6 +339,8 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
       },
     ];
 
+    debugContext.messages = messages.length;
+
     const response = await client.chat.completions.create({
       model,
       temperature: 0,
@@ -321,10 +348,16 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
       messages,
     });
 
+    debugContext.openAIResponseId = response.id;
+    debugContext.openAIModel = response.model;
+    debugContext.openAIFinishReason = response.choices?.[0]?.finish_reason ?? null;
+    debugContext.openAIUsage = response.usage ?? null;
+
     const message = response.choices?.[0]?.message;
     if (!message) {
       throw new InvoiceScanError('OpenAI returned an empty response for the invoice.', {
         statusCode: 502,
+        details: { debugContext, reason: 'missing_message' },
       });
     }
 
@@ -339,6 +372,7 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
       if (!content) {
         throw new InvoiceScanError('OpenAI returned an empty response for the invoice.', {
           statusCode: 502,
+          details: { debugContext, reason: 'missing_content' },
         });
       }
 
@@ -348,12 +382,13 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
             .join('')
         : content;
 
-      parsed = ensureJsonObject(textContent);
+      parsed = ensureJsonObject(textContent, debugContext);
     }
 
     if (!parsed || typeof parsed !== 'object') {
       throw new InvoiceScanError('OpenAI returned an invalid invoice response.', {
         statusCode: 502,
+        details: { debugContext, reason: 'non_object_response' },
       });
     }
 
@@ -390,6 +425,13 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
       suggestedLocation: normalizeString(item.suggestedLocation),
     }));
 
+    console.info('Invoice scan succeeded', {
+      debugContext,
+      metadata: normalizedMetadata,
+      lineItemCount: lineItems.length,
+      warningCount: rawWarnings.length,
+    });
+
     return {
       metadata: normalizedMetadata,
       lineItems,
@@ -397,7 +439,17 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
       rawText: normalizeString(parsedRecord.rawText),
     };
   } catch (error) {
+    const serializedError =
+      error instanceof Error
+        ? { name: error.name, message: error.message }
+        : { name: 'UnknownError', message: String(error) };
+    console.error('Invoice scan failed', { error: serializedError, debugContext });
     if (error instanceof InvoiceScanError) {
+      const existingDetails =
+        error.details && typeof error.details === 'object'
+          ? (error.details as Record<string, unknown>)
+          : {};
+      error.details = { ...existingDetails, debugContext };
       throw error;
     }
 
@@ -422,7 +474,9 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
         {
           statusCode: 503,
           cause: error,
-          details: providerMessage ? { providerMessage } : undefined,
+          details: providerMessage
+            ? { providerMessage, debugContext }
+            : { debugContext, reason: 'unauthorized' },
         },
       );
     }
@@ -430,6 +484,7 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
     throw new InvoiceScanError('Unable to analyze the invoice automatically. Please enter details manually.', {
       statusCode: 502,
       cause: error,
+      details: { debugContext },
     });
   }
 }
