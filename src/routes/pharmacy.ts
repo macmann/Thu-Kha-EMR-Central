@@ -113,10 +113,24 @@ router.post(
       if (!file) {
         return res.status(400).json({ error: 'Invoice file is required.' });
       }
+      console.info('Invoice scan request received', {
+        tenantId: req.tenantId ?? null,
+        userId: req.user?.userId ?? null,
+        fileName: file.originalname ?? null,
+        mimeType: file.mimetype ?? null,
+        fileSize: file.size,
+      });
       const result = await analyzeInvoice(file.buffer, file.mimetype);
       res.json({ data: result });
     } catch (error) {
       if (error instanceof InvoiceScanError) {
+        console.warn('Invoice scan error response', {
+          tenantId: req.tenantId ?? null,
+          userId: req.user?.userId ?? null,
+          message: error.message,
+          statusCode: error.statusCode ?? 502,
+          details: error.details ?? null,
+        });
         return res
           .status(error.statusCode ?? 502)
           .json({ error: error.message, details: error.details ?? null });
