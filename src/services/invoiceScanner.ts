@@ -52,7 +52,7 @@ const MAX_PDF_TEXT_LENGTH = 20_000;
 let cachedClient: OpenAI | null = null;
 
 async function extractPdfText(buffer: Buffer) {
-  const pdfModule = await import('pdf-parse');
+  const pdfModule = await import('pdf-parse/lib/pdf-parse.js');
   const parser = (pdfModule.default ?? pdfModule) as unknown;
   if (typeof parser !== 'function') {
     throw new InvoiceScanError('Invoice PDF support is not available. Please enter details manually.', {
@@ -164,7 +164,7 @@ function buildSchema() {
     schema: {
       type: 'object',
       additionalProperties: false,
-      required: ['lineItems'],
+      required: ['metadata', 'lineItems', 'warnings', 'rawText'],
       properties: {
         rawText: { type: 'string', description: 'Full transcription of the invoice if helpful', nullable: true },
         warnings: {
@@ -473,22 +473,26 @@ export async function scanInvoice(buffer: Buffer, mimeType?: string | null): Pro
       throw error;
     }
 
-    const status =
-      typeof error === 'object' && error !== null
-        ? (error as { status?: number; statusCode?: number }).status ??
-          (error as { status?: number; statusCode?: number }).statusCode ??
-          null
-        : null;
+    const baseError = typeof error === 'object' && error !== null ? (error as Record<string, unknown>) : null;
+    const status = baseError
+      ? ((baseError.status as number | undefined) ?? (baseError.statusCode as number | undefined) ?? null)
+      : null;
+    const providerMessage =
+      baseError?.error && typeof baseError.error === 'object'
+        ? (baseError.error as { message?: unknown }).message &&
+          typeof (baseError.error as { message?: unknown }).message === 'string'
+          ? ((baseError.error as { message?: string }).message as string)
+          : undefined
+        : undefined;
+    const messageText =
+      baseError && typeof baseError.message === 'string' ? (baseError.message as string) : undefined;
+    const isUnauthorized =
+      status === 401 ||
+      status === 403 ||
+      (providerMessage ? /unauthori[sz]ed|forbidden|incorrect api key|permission/i.test(providerMessage) : false) ||
+      (messageText ? /unauthori[sz]ed|forbidden|permission/i.test(messageText) : false);
 
-    if (status === 401 || status === 403) {
-      const providerMessage =
-        typeof error === 'object' && error !== null
-          ? (error as { error?: { message?: string } }).error?.message ??
-            (typeof (error as { message?: unknown }).message === 'string'
-              ? (error as { message?: string }).message
-              : undefined)
-          : undefined;
-
+    if (isUnauthorized) {
       throw new InvoiceScanError(
         'Invoice scanning is not authorized. Verify the OpenAI API credentials and try again.',
         {
