@@ -66,6 +66,12 @@ describe('scanInvoice', () => {
     expect(invoiceError.message).toContain('not authorized');
     expect(invoiceError.details).toEqual({
       providerMessage: 'Incorrect API key provided',
+      debugContext: expect.objectContaining({
+        model: 'gpt-4o-mini',
+        mimeType: 'image/gif',
+        fileSize: buffer.length,
+        inputType: 'image',
+      }),
     });
   });
 });
