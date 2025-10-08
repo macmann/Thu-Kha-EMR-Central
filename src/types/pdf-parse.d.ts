@@ -1,10 +1,8 @@
-declare module 'pdf-parse' {
-  interface PDFParseResult {
-    text?: string | null;
-  }
+declare module 'pdf-parse/lib/pdf-parse.js' {
+  import type { PDFData } from 'pdf-parse';
 
-  type PDFParse = (data: Buffer) => Promise<PDFParseResult>;
+  type PdfParse = (data: Buffer) => Promise<PDFData>;
 
-  const pdfParse: PDFParse;
-  export = pdfParse;
+  const pdfParse: PdfParse;
+  export default pdfParse;
 }
