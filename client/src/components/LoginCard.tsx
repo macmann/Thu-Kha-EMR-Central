@@ -19,24 +19,21 @@ export default function LoginCard({
 }: LoginCardProps) {
   const { t } = useTranslation();
   return (
-    <div className="rounded-2xl bg-white p-6 shadow sm:p-8">
-      <div className="mb-6 flex flex-col items-center gap-3">
+    <div>
+      <div className="flex flex-col items-center gap-3 text-center">
         <ClinicBrand
           name={appName}
           logo={logo ?? undefined}
           size="lg"
           className="justify-center"
-          nameClassName="text-2xl font-bold text-gray-900"
+          nameClassName="text-2xl font-semibold text-slate-900"
         />
-        <p className="mt-2 text-sm text-gray-600">{t('Sign in to your account')}</p>
+        <p className="text-sm text-slate-600">{t('Sign in to your account')}</p>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-6">
-        <div>
-          <label
-            htmlFor="username"
-            className="block text-sm font-medium text-gray-700"
-          >
+      <form onSubmit={onSubmit} className="mt-8 space-y-6">
+        <div className="space-y-2">
+          <label htmlFor="username" className="block text-sm font-medium text-slate-700">
             {t('Username or Email')}
           </label>
           <input
@@ -46,15 +43,12 @@ export default function LoginCard({
             autoComplete="username"
             value={values.username}
             onChange={onChange}
-            className="mt-1 w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70"
           />
         </div>
 
-        <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700"
-          >
+        <div className="space-y-2">
+          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
             {t('Password')}
           </label>
           <input
@@ -64,29 +58,29 @@ export default function LoginCard({
             autoComplete="current-password"
             value={values.password}
             onChange={onChange}
-            className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70"
           />
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <label htmlFor="remember" className="flex items-center text-sm text-gray-700">
+          <label htmlFor="remember" className="flex items-center gap-2 text-sm text-slate-700">
             <input
               id="remember"
               name="remember"
               type="checkbox"
               onChange={onChange}
-              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
             />
-            <span className="ml-2">{t('Remember me')}</span>
+            <span>{t('Remember me')}</span>
           </label>
-          <a href="#" className="text-sm text-blue-600 hover:text-blue-500 sm:self-end">
+          <a href="#" className="text-sm font-medium text-blue-600 transition hover:text-blue-700">
             {t('Forgot your password?')}
           </a>
         </div>
 
         <button
           type="submit"
-          className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:from-blue-700 hover:via-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:ring-offset-2"
         >
           {t('Login')}
         </button>
