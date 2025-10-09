@@ -1,11 +1,21 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
+import multer from 'multer';
 import { PrismaClient, Prisma, Observation } from '@prisma/client';
 import { z } from 'zod';
 import { requireAuth, requireRole, type AuthRequest } from '../auth/index.js';
 import { logDataChange } from '../audit/index.js';
+import { resolveTenant } from '../../middleware/tenant.js';
+import { requireTenantRoles } from '../../middleware/requireTenantRoles.js';
+import { withTenant } from '../../utils/tenant.js';
+import { saveObservationImage } from '../../services/observationImageStore.js';
+import { extractVisitDetailsFromImage, VisitOcrError } from '../../services/visitOcr.js';
 
 const prisma = new PrismaClient();
 const router = Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 const observationSchema = z.object({
   noteText: z.string().min(1),
@@ -164,5 +174,78 @@ router.get('/patients/:patientId/observations', requireAuth, async (req: AuthReq
   });
   res.json(observations);
 });
+
+router.post(
+  '/visits/:id/observation-images',
+  requireAuth,
+  resolveTenant,
+  requireTenantRoles('Doctor', 'Nurse', 'AdminAssistant', 'ITAdmin'),
+  upload.single('image'),
+  async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    try {
+      z.string().uuid().parse(id);
+    } catch {
+      return res.status(400).json({ error: 'invalid id' });
+    }
+
+    const tenantId = req.tenantId;
+    if (!tenantId) {
+      return res.status(400).json({ error: 'Tenant context missing' });
+    }
+
+    const visit = await prisma.visit.findFirst({
+      where: withTenant({ visitId: id }, tenantId),
+      select: { visitId: true, patientId: true, doctorId: true },
+    });
+
+    if (!visit) {
+      return res.status(404).json({ error: 'Visit not found' });
+    }
+
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'Image file is required' });
+    }
+
+    if (!file.buffer || file.buffer.length === 0) {
+      return res.status(400).json({ error: 'Uploaded image is empty' });
+    }
+
+    let extraction = null;
+    let ocrError: VisitOcrError | null = null;
+
+    try {
+      extraction = await extractVisitDetailsFromImage(file.buffer, file.mimetype);
+    } catch (error) {
+      if (error instanceof VisitOcrError) {
+        ocrError = error;
+      } else {
+        throw error;
+      }
+    }
+
+    const stored = await saveObservationImage({
+      tenantId,
+      visitId: visit.visitId,
+      patientId: visit.patientId,
+      doctorId: visit.doctorId,
+      uploadedBy: req.user!.userId,
+      filename: file.originalname || null,
+      contentType: file.mimetype || null,
+      size: file.size,
+      buffer: file.buffer,
+      ocr: extraction,
+      ocrError: ocrError ? ocrError.message : null,
+    });
+
+    return res.status(201).json({
+      imageId: stored.imageId,
+      createdAt: stored.createdAt.toISOString(),
+      ocr: extraction,
+      error: ocrError ? ocrError.message : null,
+    });
+  },
+);
 
 export default router;

@@ -626,6 +626,44 @@ export async function addObservation(
   });
 }
 
+export interface VisitObservationOcrObservation {
+  noteText?: string | null;
+  bpSystolic?: number | null;
+  bpDiastolic?: number | null;
+  heartRate?: number | null;
+  temperatureC?: number | null;
+  spo2?: number | null;
+  bmi?: number | null;
+}
+
+export interface VisitObservationOcrResult {
+  observation: VisitObservationOcrObservation | null;
+  diagnoses: string[];
+  medications: Array<{ drugName: string; dosage?: string | null }>;
+  labResults: Array<{ testName: string; resultValue?: number | null; unit?: string | null }>;
+  warnings: string[];
+  rawText: string | null;
+}
+
+export interface UploadObservationImageResponse {
+  imageId: string;
+  createdAt: string;
+  ocr: VisitObservationOcrResult | null;
+  error: string | null;
+}
+
+export async function uploadObservationImage(
+  visitId: string,
+  file: File,
+): Promise<UploadObservationImageResponse> {
+  const formData = new FormData();
+  formData.append('image', file, file.name);
+  return fetchJSON(`/visits/${visitId}/observation-images`, {
+    method: 'POST',
+    body: formData,
+  });
+}
+
 export interface ListPatientObservationsParams {
   author?: 'me' | 'any';
   before_visit?: string;
