@@ -20,6 +20,7 @@ Thu Kha (သုခ) EMR is a reference implementation of an electronic medical r
 - A PostgreSQL database (Neon, local Postgres, or compatible)
 - `openssl` (or similar) to generate a `JWT_SECRET`
 - Optional: an OpenAI API key for automated invoice scanning (`OPENAI_API_KEY`)
+- Optional: a MongoDB deployment for observation note image storage
 
 ### Steps
 1. **Clone and install dependencies**
@@ -32,7 +33,7 @@ Thu Kha (သုခ) EMR is a reference implementation of an electronic medical r
    ```bash
    cp .env.example .env
    ```
-   Fill in database credentials (`DATABASE_URL`, `DIRECT_URL`), `JWT_SECRET`, rate-limit settings, and optional `OPENAI_API_KEY`/`OPENAI_INVOICE_MODEL` values.
+   Fill in database credentials (`DATABASE_URL`, `DIRECT_URL`), the observation image store connection (`MONGODB_URI` and optional `MONGODB_DB`), `JWT_SECRET`, rate-limit settings, and optional `OPENAI_API_KEY`/`OPENAI_INVOICE_MODEL` values.
 3. **Provision the database** – Ensure the target PostgreSQL instance is running and reachable from your development machine.
 4. **Apply migrations and seed demo data**
    ```bash
@@ -93,6 +94,8 @@ The OpenAPI specification is served at `/api/docs/openapi.json`.
    - `JWT_SECRET`
    - `RATE_LIMIT_WINDOW_MIN`
    - `RATE_LIMIT_MAX`
+   - `MONGODB_URI`
+   - `MONGODB_DB` (optional)
 3. Build command: `npm install && npm run build`
 4. Start command: `npm start`
 5. The start command now runs the Prisma seed automatically, so the default

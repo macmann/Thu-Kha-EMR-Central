@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
-import type { Doctor } from '../api/client';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent, ReactNode } from 'react';
+import type { Doctor, Role, VisitObservationOcrResult } from '../api/client';
+import { uploadObservationImage } from '../api/client';
 import {
   createVisitFormInitialValues,
   type VisitFormInitialValues,
@@ -8,6 +9,9 @@ import {
   type VisitFormObservationValues,
 } from '../utils/visitForm';
 import { useTranslation } from '../hooks/useTranslation';
+import { useAuth } from '../context/AuthProvider';
+
+const OBSERVATION_IMAGE_ROLES: ReadonlyArray<Role> = ['Doctor', 'Nurse', 'AdminAssistant', 'ITAdmin'];
 
 interface VisitFormProps {
   doctors: Doctor[];
@@ -19,6 +23,7 @@ interface VisitFormProps {
   disableVisitDate?: boolean;
   submitDisabled?: boolean;
   extraActions?: ReactNode;
+  visitId?: string | null;
 }
 
 type DiagnosisEntry = string;
@@ -63,16 +68,26 @@ export default function VisitForm({
   disableVisitDate = false,
   submitDisabled = false,
   extraActions = null,
+  visitId = null,
 }: VisitFormProps) {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [state, setState] = useState<VisitFormState>(() =>
     toState(initialValues ?? createVisitFormInitialValues()),
   );
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadingObservationImage, setUploadingObservationImage] = useState(false);
+  const [observationUploadError, setObservationUploadError] = useState<string | null>(null);
+  const [observationUploadSuccess, setObservationUploadSuccess] = useState<string | null>(null);
+  const [observationUploadWarnings, setObservationUploadWarnings] = useState<string[]>([]);
 
   const initialKey = useMemo(
     () => JSON.stringify(initialValues ?? {}),
     [initialValues],
   );
+
+  const canUploadObservationImage =
+    user && OBSERVATION_IMAGE_ROLES.includes(user.role) ? true : false;
 
   const doctorLookup = useMemo(() => {
     const map = new Map<string, Doctor>();
@@ -101,6 +116,99 @@ export default function VisitForm({
       return { ...current, department: doc.department };
     });
   }, [doctorLookup]);
+
+  useEffect(() => {
+    setObservationUploadSuccess(null);
+    setObservationUploadError(null);
+    setObservationUploadWarnings([]);
+  }, [visitId]);
+
+  const observationUploadEnabled = canUploadObservationImage && Boolean(visitId);
+
+  function handleObservationImageButton() {
+    if (!observationUploadEnabled || uploadingObservationImage) {
+      return;
+    }
+    setObservationUploadError(null);
+    setObservationUploadSuccess(null);
+    fileInputRef.current?.click();
+  }
+
+  async function handleObservationImageSelected(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !visitId) {
+      return;
+    }
+
+    setObservationUploadError(null);
+    setObservationUploadSuccess(null);
+    setObservationUploadWarnings([]);
+    setUploadingObservationImage(true);
+
+    try {
+      const response = await uploadObservationImage(visitId, file);
+
+      if (response.error) {
+        setObservationUploadError(response.error);
+      }
+
+      if (response.ocr) {
+        setObservationUploadWarnings(response.ocr.warnings ?? []);
+        const hasNewContent = hasOcrContent(response.ocr);
+
+        if (hasNewContent) {
+          const existing = hasExistingVisitFormData(state);
+          let overwriteAll = !existing;
+          let apply = true;
+
+          if (existing) {
+            const confirmed = window.confirm(
+              t('Replace existing visit details with information from the uploaded note?'),
+            );
+            if (!confirmed) {
+              apply = false;
+              if (!response.error) {
+                setObservationUploadSuccess(
+                  t('Observation image stored. Existing visit details were not changed.'),
+                );
+              }
+            } else {
+              overwriteAll = true;
+            }
+          }
+
+          if (apply) {
+            setState((current) => applyOcrToState(current, response.ocr!, overwriteAll));
+            if (!response.error) {
+              setObservationUploadSuccess(
+                t('Observation note details updated from the uploaded image.'),
+              );
+            }
+          }
+        } else if (!response.error) {
+          setObservationUploadSuccess(
+            t('Observation image stored, but no new details were recognised.'),
+          );
+        }
+      } else {
+        setObservationUploadWarnings([]);
+        if (!response.error) {
+          setObservationUploadSuccess(t('Observation image stored.'));
+        }
+      }
+    } catch (error) {
+      setObservationUploadWarnings([]);
+      setObservationUploadSuccess(null);
+      if (error instanceof Error) {
+        setObservationUploadError(error.message);
+      } else {
+        setObservationUploadError(t('Unable to process the uploaded image. Please try again.'));
+      }
+    } finally {
+      setUploadingObservationImage(false);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -493,13 +601,59 @@ export default function VisitForm({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">{t('Observation Note')}</label>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label htmlFor="observation-note" className="block text-sm font-medium text-gray-700">
+            {t('Observation Note')}
+          </label>
+          {canUploadObservationImage && (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleObservationImageSelected}
+              />
+              <button
+                type="button"
+                onClick={handleObservationImageButton}
+                disabled={!observationUploadEnabled || uploadingObservationImage}
+                className={`inline-flex items-center rounded-md border px-3 py-1 text-xs font-medium sm:text-sm ${
+                  !observationUploadEnabled || uploadingObservationImage
+                    ? 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-500'
+                    : 'border-blue-200 bg-blue-50 text-blue-600 hover:border-blue-300 hover:bg-blue-100'
+                }`}
+              >
+                {uploadingObservationImage ? t('Processing...') : t('Upload Note Image')}
+              </button>
+              {!visitId && (
+                <span className="text-xs text-gray-500 sm:text-sm">
+                  {t('Save the visit before uploading notes.')}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
         <textarea
+          id="observation-note"
           value={state.obsNote}
           onChange={(event) => setState((current) => ({ ...current, obsNote: event.target.value }))}
           className="mt-1 w-full rounded-md border-gray-300 shadow-sm"
           rows={2}
         />
+        {canUploadObservationImage && (
+          <div className="mt-2 space-y-1 text-xs sm:text-sm">
+            {observationUploadSuccess && (
+              <p className="text-green-600">{observationUploadSuccess}</p>
+            )}
+            {observationUploadError && <p className="text-red-600">{observationUploadError}</p>}
+            {observationUploadWarnings.map((warning, index) => (
+              <p key={`${warning}-${index}`} className="text-amber-600">
+                {warning}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
@@ -658,4 +812,155 @@ function createEmptyLabEntry(overrides: Partial<LabEntry> = {}): LabEntry {
     resultValue: overrides.resultValue ?? '',
     unit: overrides.unit ?? '',
   };
+}
+
+function hasExistingVisitFormData(state: VisitFormState): boolean {
+  if (state.obsNote.trim()) return true;
+  if (state.bpSystolic.trim() || state.bpDiastolic.trim() || state.heartRate.trim()) return true;
+  if (state.temperatureC.trim() || state.spo2.trim() || state.bmi.trim()) return true;
+  if (state.diagnoses.some((diagnosis) => diagnosis.trim().length > 0)) return true;
+  if (
+    state.medications.some(
+      (medication) =>
+        medication.drugName.trim() ||
+        medication.dosage.trim() ||
+        medication.frequency.trim() ||
+        medication.duration.trim(),
+    )
+  ) {
+    return true;
+  }
+  if (
+    state.labs.some(
+      (lab) => lab.testName.trim() || lab.resultValue.trim() || lab.unit.trim(),
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function hasOcrContent(ocr: VisitObservationOcrResult): boolean {
+  if (ocr.observation) {
+    const obs = ocr.observation;
+    if (
+      (obs.noteText && obs.noteText.trim().length > 0) ||
+      obs.bpSystolic != null ||
+      obs.bpDiastolic != null ||
+      obs.heartRate != null ||
+      obs.temperatureC != null ||
+      obs.spo2 != null ||
+      obs.bmi != null
+    ) {
+      return true;
+    }
+  }
+  if (ocr.diagnoses.length > 0) return true;
+  if (ocr.medications.length > 0) return true;
+  if (ocr.labResults.length > 0) return true;
+  return false;
+}
+
+function applyOcrToState(
+  current: VisitFormState,
+  ocr: VisitObservationOcrResult,
+  overwriteAll: boolean,
+): VisitFormState {
+  const next: VisitFormState = {
+    ...current,
+    diagnoses: [...current.diagnoses],
+    medications: current.medications.map((medication) => ({ ...medication })),
+    labs: current.labs.map((lab) => ({ ...lab })),
+  };
+
+  if (ocr.observation) {
+    const obs = ocr.observation;
+    next.obsNote =
+      obs.noteText !== undefined && obs.noteText !== null
+        ? obs.noteText
+        : overwriteAll
+          ? ''
+          : next.obsNote;
+    next.bpSystolic =
+      obs.bpSystolic !== undefined && obs.bpSystolic !== null
+        ? String(obs.bpSystolic)
+        : overwriteAll
+          ? ''
+          : next.bpSystolic;
+    next.bpDiastolic =
+      obs.bpDiastolic !== undefined && obs.bpDiastolic !== null
+        ? String(obs.bpDiastolic)
+        : overwriteAll
+          ? ''
+          : next.bpDiastolic;
+    next.heartRate =
+      obs.heartRate !== undefined && obs.heartRate !== null
+        ? String(obs.heartRate)
+        : overwriteAll
+          ? ''
+          : next.heartRate;
+    next.temperatureC =
+      obs.temperatureC !== undefined && obs.temperatureC !== null
+        ? String(obs.temperatureC)
+        : overwriteAll
+          ? ''
+          : next.temperatureC;
+    next.spo2 =
+      obs.spo2 !== undefined && obs.spo2 !== null
+        ? String(obs.spo2)
+        : overwriteAll
+          ? ''
+          : next.spo2;
+    next.bmi =
+      obs.bmi !== undefined && obs.bmi !== null
+        ? String(obs.bmi)
+        : overwriteAll
+          ? ''
+          : next.bmi;
+  } else if (overwriteAll) {
+    next.obsNote = '';
+    next.bpSystolic = '';
+    next.bpDiastolic = '';
+    next.heartRate = '';
+    next.temperatureC = '';
+    next.spo2 = '';
+    next.bmi = '';
+  }
+
+  const diagnoses = ocr.diagnoses.length
+    ? ocr.diagnoses.map((diagnosis) => diagnosis)
+    : overwriteAll
+      ? []
+      : next.diagnoses;
+  next.diagnoses = diagnoses.length ? diagnoses : [''];
+
+  const medications = ocr.medications.length
+    ? ocr.medications.map((medication) =>
+        createEmptyMedicationEntry({
+          drugName: medication.drugName,
+          dosage: medication.dosage ?? '',
+        }),
+      )
+    : overwriteAll
+      ? [createEmptyMedicationEntry()]
+      : next.medications;
+  next.medications = medications.length ? medications : [createEmptyMedicationEntry()];
+
+  const labs = ocr.labResults.length
+    ? ocr.labResults.map((lab) =>
+        createEmptyLabEntry({
+          testName: lab.testName,
+          resultValue:
+            lab.resultValue !== undefined && lab.resultValue !== null
+              ? String(lab.resultValue)
+              : '',
+          unit: lab.unit ?? '',
+        }),
+      )
+    : overwriteAll
+      ? [createEmptyLabEntry()]
+      : next.labs;
+  next.labs = labs.length ? labs : [createEmptyLabEntry()];
+
+  return next;
 }

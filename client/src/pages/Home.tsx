@@ -1679,6 +1679,7 @@ function DoctorQueueDashboard() {
                       saving={savingVisit}
                       disableDoctorSelection
                       disableVisitDate
+                      visitId={selectedVisitId}
                       submitLabel={
                         selected.status === 'Completed'
                           ? t('Update Visit')
