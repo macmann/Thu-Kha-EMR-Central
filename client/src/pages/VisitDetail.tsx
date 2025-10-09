@@ -1,18 +1,26 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { PatientsIcon, SearchIcon } from '../components/icons';
 import PrescribeDrawer from '../components/PrescribeDrawer';
 import { useAuth } from '../context/AuthProvider';
 import {
+  addDiagnosis,
+  addLabResult,
+  addMedication,
   addObservation,
   getPatient,
   getVisit,
+  uploadObservationImage,
   type Observation,
   type Patient,
   type VisitDetail as VisitDetailType,
+  type VisitObservationOcrObservation,
+  type AddObservationPayload,
 } from '../api/client';
+
+const OBSERVATION_IMAGE_ROLES = ['Doctor', 'Nurse', 'AdminAssistant', 'ITAdmin'] as const;
 
 function formatDate(value: string | Date | null | undefined) {
   if (!value) return '—';
@@ -79,6 +87,11 @@ export default function VisitDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploadingObservationImage, setUploadingObservationImage] = useState(false);
+  const [observationUploadError, setObservationUploadError] = useState<string | null>(null);
+  const [observationUploadSuccess, setObservationUploadSuccess] = useState<string | null>(null);
+  const [observationUploadWarnings, setObservationUploadWarnings] = useState<string[]>([]);
 
   useEffect(() => {
     const visitId = id;
@@ -133,6 +146,161 @@ export default function VisitDetail() {
     } catch (err) {
       console.error(err);
       window.alert('Unable to add an observation at this time.');
+    }
+  }
+
+  useEffect(() => {
+    setObservationUploadError(null);
+    setObservationUploadSuccess(null);
+    setObservationUploadWarnings([]);
+  }, [id]);
+
+  const canUploadObservationImage =
+    user && OBSERVATION_IMAGE_ROLES.includes(user.role) ? Boolean(visit) : false;
+
+  function handleObservationImageButton() {
+    if (!canUploadObservationImage || uploadingObservationImage) {
+      return;
+    }
+    setObservationUploadError(null);
+    setObservationUploadSuccess(null);
+    setObservationUploadWarnings([]);
+    fileInputRef.current?.click();
+  }
+
+  async function handleObservationImageSelected(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file || !id) {
+      return;
+    }
+
+    setObservationUploadError(null);
+    setObservationUploadSuccess(null);
+    setObservationUploadWarnings([]);
+    setUploadingObservationImage(true);
+
+    try {
+      const response = await uploadObservationImage(id, file);
+
+      if (response.error) {
+        setObservationUploadError(response.error);
+      }
+
+      let updated = false;
+
+      if (response.ocr && visit) {
+        setObservationUploadWarnings(response.ocr.warnings ?? []);
+
+        const operations: Array<Promise<unknown>> = [];
+
+        const observationPayload = buildObservationPayload(response.ocr.observation);
+        if (observationPayload) {
+          const duplicateObservation = visit.observations.some(
+            (existing) => existing.noteText.trim().toLowerCase() === observationPayload.noteText.trim().toLowerCase(),
+          );
+          if (!duplicateObservation) {
+            operations.push(
+              addObservation(id, observationPayload).catch((err) => {
+                throw new Error(err instanceof Error ? err.message : 'Unable to save observation from OCR.');
+              }),
+            );
+          }
+        }
+
+        const existingDiagnoses = new Set(
+          visit.diagnoses.map((diagnosis) => diagnosis.diagnosis.trim().toLowerCase()),
+        );
+        response.ocr.diagnoses.forEach((diagnosis) => {
+          const trimmed = diagnosis.trim();
+          if (!trimmed) return;
+          if (existingDiagnoses.has(trimmed.toLowerCase())) return;
+          existingDiagnoses.add(trimmed.toLowerCase());
+          operations.push(
+            addDiagnosis(id, { diagnosis: trimmed }).catch((err) => {
+              throw new Error(err instanceof Error ? err.message : 'Unable to save diagnosis from OCR.');
+            }),
+          );
+        });
+
+        const existingMedications = new Set(
+          visit.medications.map((medication) =>
+            [medication.drugName.trim().toLowerCase(), (medication.dosage ?? '').trim().toLowerCase()].join('||'),
+          ),
+        );
+        response.ocr.medications.forEach((medication) => {
+          const name = medication.drugName?.trim();
+          if (!name) return;
+          const dosage = medication.dosage?.trim() ?? '';
+          const key = [name.toLowerCase(), dosage.toLowerCase()].join('||');
+          if (existingMedications.has(key)) return;
+          existingMedications.add(key);
+          operations.push(
+            addMedication(id, {
+              drugName: name,
+              ...(dosage ? { dosage } : {}),
+            }).catch((err) => {
+              throw new Error(err instanceof Error ? err.message : 'Unable to save medication from OCR.');
+            }),
+          );
+        });
+
+        const existingLabs = new Set(
+          visit.labResults.map((lab) =>
+            [lab.testName.trim().toLowerCase(), lab.unit ? lab.unit.trim().toLowerCase() : '', lab.resultValue ?? ''].join('||'),
+          ),
+        );
+        response.ocr.labResults.forEach((lab) => {
+          const testName = lab.testName?.trim();
+          if (!testName) return;
+          const unit = lab.unit?.trim() ?? '';
+          const resultValue =
+            lab.resultValue !== undefined && lab.resultValue !== null && !Number.isNaN(lab.resultValue)
+              ? lab.resultValue
+              : undefined;
+          const key = [testName.toLowerCase(), unit.toLowerCase(), resultValue ?? ''].join('||');
+          if (existingLabs.has(key)) return;
+          existingLabs.add(key);
+          operations.push(
+            addLabResult(id, {
+              testName,
+              ...(resultValue !== undefined ? { resultValue } : {}),
+              ...(unit ? { unit } : {}),
+            }).catch((err) => {
+              throw new Error(err instanceof Error ? err.message : 'Unable to save lab result from OCR.');
+            }),
+          );
+        });
+
+        if (operations.length > 0) {
+          await Promise.all(operations);
+          const refreshedVisit = await getVisit(id);
+          setVisit(refreshedVisit);
+          updated = true;
+        }
+
+        if (!response.error) {
+          setObservationUploadSuccess(
+            updated
+              ? "Doctor's note processed and visit details were updated."
+              : 'Observation image stored, but no new details were recognised.',
+          );
+        }
+      } else if (!response.error) {
+        setObservationUploadWarnings([]);
+        setObservationUploadSuccess('Observation image stored.');
+      }
+    } catch (err) {
+      setObservationUploadWarnings([]);
+      setObservationUploadSuccess(null);
+      if (err instanceof Error) {
+        setObservationUploadError(err.message);
+      } else {
+        setObservationUploadError('Unable to process the uploaded image. Please try again.');
+      }
+    } finally {
+      setUploadingObservationImage(false);
     }
   }
 
@@ -437,6 +605,52 @@ export default function VisitDetail() {
             )}
           </section>
 
+          {canUploadObservationImage && (
+            <section className="rounded-2xl bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Doctor&apos;s Note Image</h3>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Upload a photo of the doctor&apos;s note to automatically extract observations, diagnoses, medications, and
+                    lab results.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleObservationImageSelected}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleObservationImageButton}
+                    disabled={uploadingObservationImage}
+                    className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold shadow transition ${
+                      uploadingObservationImage
+                        ? 'cursor-not-allowed bg-gray-200 text-gray-500'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {uploadingObservationImage ? 'Processing...' : 'Upload Note Image'}
+                  </button>
+                </div>
+              </div>
+              {(observationUploadSuccess || observationUploadError || observationUploadWarnings.length > 0) && (
+                <div className="mt-4 space-y-2 text-sm">
+                  {observationUploadSuccess && <p className="text-green-600">{observationUploadSuccess}</p>}
+                  {observationUploadError && <p className="text-red-600">{observationUploadError}</p>}
+                  {observationUploadWarnings.map((warning, index) => (
+                    <p key={`${warning}-${index}`} className="text-amber-600">
+                      {warning}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
           <section className="rounded-2xl bg-white p-6 shadow-sm">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -469,4 +683,38 @@ export default function VisitDetail() {
       )}
     </DashboardLayout>
   );
+}
+
+function buildObservationPayload(ocr: VisitObservationOcrObservation | null): AddObservationPayload | null {
+  if (!ocr) {
+    return null;
+  }
+
+  const note = ocr.noteText?.trim();
+  if (!note) {
+    return null;
+  }
+
+  const payload: AddObservationPayload = { noteText: note };
+
+  if (ocr.bpSystolic !== undefined && ocr.bpSystolic !== null) {
+    payload.bpSystolic = ocr.bpSystolic;
+  }
+  if (ocr.bpDiastolic !== undefined && ocr.bpDiastolic !== null) {
+    payload.bpDiastolic = ocr.bpDiastolic;
+  }
+  if (ocr.heartRate !== undefined && ocr.heartRate !== null) {
+    payload.heartRate = ocr.heartRate;
+  }
+  if (ocr.temperatureC !== undefined && ocr.temperatureC !== null) {
+    payload.temperatureC = ocr.temperatureC;
+  }
+  if (ocr.spo2 !== undefined && ocr.spo2 !== null) {
+    payload.spo2 = ocr.spo2;
+  }
+  if (ocr.bmi !== undefined && ocr.bmi !== null) {
+    payload.bmi = ocr.bmi;
+  }
+
+  return payload;
 }
