@@ -207,35 +207,48 @@ function normalizeDiagnoses(value: unknown): string[] {
 
 function normalizeMedications(value: unknown): VisitOcrMedication[] {
   if (!Array.isArray(value)) return [];
-  return value
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object') return null;
-      const record = entry as Record<string, unknown>;
-      const drugName = normalizeString(record.drugName);
-      if (!drugName) return null;
-      const dosage = normalizeString(record.dosage);
-      return { drugName, ...(dosage ? { dosage } : {}) };
-    })
-    .filter((item): item is VisitOcrMedication => item !== null);
+
+  const medications: VisitOcrMedication[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const record = entry as Record<string, unknown>;
+    const drugName = normalizeString(record.drugName);
+    if (!drugName) {
+      continue;
+    }
+    const dosage = normalizeString(record.dosage);
+    medications.push({
+      drugName,
+      dosage: dosage ?? null,
+    });
+  }
+  return medications;
 }
 
 function normalizeLabResults(value: unknown): VisitOcrLabResult[] {
   if (!Array.isArray(value)) return [];
-  return value
-    .map((entry) => {
-      if (!entry || typeof entry !== 'object') return null;
-      const record = entry as Record<string, unknown>;
-      const testName = normalizeString(record.testName);
-      if (!testName) return null;
-      const resultValue = normalizeNumber(record.resultValue);
-      const unit = normalizeString(record.unit);
-      return {
-        testName,
-        ...(resultValue !== null ? { resultValue } : {}),
-        ...(unit ? { unit } : {}),
-      };
-    })
-    .filter((item): item is VisitOcrLabResult => item !== null);
+
+  const labResults: VisitOcrLabResult[] = [];
+  for (const entry of value) {
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
+    const record = entry as Record<string, unknown>;
+    const testName = normalizeString(record.testName);
+    if (!testName) {
+      continue;
+    }
+    const resultValue = normalizeNumber(record.resultValue);
+    const unit = normalizeString(record.unit);
+    labResults.push({
+      testName,
+      resultValue: resultValue ?? null,
+      unit: unit ?? null,
+    });
+  }
+  return labResults;
 }
 
 function normalizeWarnings(value: unknown): string[] {

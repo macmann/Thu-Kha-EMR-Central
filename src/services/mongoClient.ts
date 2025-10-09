@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+import { MongoClient, type Document } from 'mongodb';
 
 let cachedClient: MongoClient | null = null;
 let cachedDb: ReturnType<MongoClient['db']> | null = null;
@@ -31,7 +31,7 @@ export async function getMongoDb() {
   return cachedDb;
 }
 
-export async function getMongoCollection<TSchema = unknown>(name: string) {
+export async function getMongoCollection<TSchema extends Document = Document>(name: string) {
   const db = await getMongoDb();
   return db.collection<TSchema>(name);
 }
