@@ -373,6 +373,31 @@ export async function login(email: string, password: string): Promise<LoginRespo
   });
 }
 
+export interface ForgotPasswordResponse {
+  message: string;
+  resetToken?: string;
+}
+
+export async function requestPasswordReset(email: string): Promise<ForgotPasswordResponse> {
+  return fetchJSON('/auth/password/forgot', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+export async function resetPassword(token: string, password: string): Promise<ResetPasswordResponse> {
+  return fetchJSON('/auth/password/reset', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password }),
+  });
+}
+
 export interface CreatePatientPayload {
   name: string;
   dob: string;

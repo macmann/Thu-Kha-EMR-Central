@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from '../hooks/useTranslation';
 import ClinicBrand from './ClinicBrand';
 
@@ -73,9 +74,12 @@ export default function LoginCard({
             />
             <span>{t('Remember me')}</span>
           </label>
-          <a href="#" className="text-sm font-medium text-blue-600 transition hover:text-blue-700">
+          <Link
+            to="/forgot-password"
+            className="text-sm font-medium text-blue-600 transition hover:text-blue-700"
+          >
             {t('Forgot your password?')}
-          </a>
+          </Link>
         </div>
 
         <button
