@@ -9,6 +9,7 @@ import { createPrescription } from '../../services/pharmacyService.js';
 import { resolveTenant } from '../../middleware/tenant.js';
 import { requireTenantRoles } from '../../middleware/requireTenantRoles.js';
 import { withTenant } from '../../utils/tenant.js';
+import { logger } from '../../utils/logger.js';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -63,63 +64,80 @@ const visitSchema = z.object({
   observations: z.array(observationSchema).optional(),
 });
 
-router.post('/visits', requireAuth, resolveTenant, requireTenantRoles('Doctor'), async (req: AuthRequest, res: Response) => {
-  const parsed = visitSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: parsed.error.flatten() });
+router.post(
+  '/visits',
+  requireAuth,
+  resolveTenant,
+  requireTenantRoles('Doctor'),
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const parsed = visitSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.flatten() });
+      }
+      const { diagnoses, medications, labResults, observations, ...visitData } = parsed.data;
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ error: 'Tenant context missing' });
+      }
+      const data: any = { ...visitData, tenantId };
+      if (diagnoses && diagnoses.length) {
+        data.diagnoses = { create: diagnoses };
+      }
+      if (medications && medications.length) {
+        data.medications = { create: medications };
+      }
+      if (labResults && labResults.length) {
+        data.labResults = {
+          create: labResults.map((result) => ({ ...result, tenantId })),
+        };
+      }
+      if (observations && observations.length) {
+        data.observations = {
+          create: observations.map((o) => ({
+            ...o,
+            patientId: visitData.patientId,
+            doctorId: visitData.doctorId,
+          })),
+        };
+      }
+      const visit = await prisma.visit.create({
+        data,
+        include: {
+          doctor: { select: { doctorId: true, name: true, department: true } },
+          tenant: { select: { tenantId: true, name: true, code: true } },
+          diagnoses: { orderBy: { createdAt: 'desc' } },
+          medications: { orderBy: { createdAt: 'desc' } },
+          labResults: { orderBy: { createdAt: 'desc' } },
+          observations: { orderBy: { createdAt: 'desc' } },
+        },
+      });
+      await logDataChange(req.user!.userId, 'visit', visit.visitId, undefined, visit);
+      for (const d of visit.diagnoses) {
+        await logDataChange(req.user!.userId, 'diagnosis', d.diagId, undefined, d);
+      }
+      for (const m of visit.medications) {
+        await logDataChange(req.user!.userId, 'medication', m.medId, undefined, m);
+      }
+      for (const l of visit.labResults) {
+        await logDataChange(req.user!.userId, 'lab', l.labId, undefined, l);
+      }
+      for (const o of visit.observations) {
+        await logDataChange(req.user!.userId, 'observation', o.obsId, undefined, o);
+      }
+      res.status(201).json(formatVisitResponse(visit));
+    } catch (err) {
+      logger.error('Failed to create visit record', {
+        tenantId: req.tenantId,
+        userId: req.user?.userId,
+        doctorId: req.body?.doctorId,
+        patientId: req.body?.patientId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      next(err);
+    }
   }
-  const { diagnoses, medications, labResults, observations, ...visitData } = parsed.data;
-  const tenantId = req.tenantId;
-  if (!tenantId) {
-    return res.status(400).json({ error: 'Tenant context missing' });
-  }
-  const data: any = { ...visitData, tenantId };
-  if (diagnoses && diagnoses.length) {
-    data.diagnoses = { create: diagnoses };
-  }
-  if (medications && medications.length) {
-    data.medications = { create: medications };
-  }
-  if (labResults && labResults.length) {
-    data.labResults = {
-      create: labResults.map((result) => ({ ...result, tenantId })),
-    };
-  }
-  if (observations && observations.length) {
-    data.observations = {
-      create: observations.map((o) => ({
-        ...o,
-        patientId: visitData.patientId,
-        doctorId: visitData.doctorId,
-      })),
-    };
-  }
-  const visit = await prisma.visit.create({
-    data,
-    include: {
-      doctor: { select: { doctorId: true, name: true, department: true } },
-      tenant: { select: { tenantId: true, name: true, code: true } },
-      diagnoses: { orderBy: { createdAt: 'desc' } },
-      medications: { orderBy: { createdAt: 'desc' } },
-      labResults: { orderBy: { createdAt: 'desc' } },
-      observations: { orderBy: { createdAt: 'desc' } },
-    },
-  });
-  await logDataChange(req.user!.userId, 'visit', visit.visitId, undefined, visit);
-  for (const d of visit.diagnoses) {
-    await logDataChange(req.user!.userId, 'diagnosis', d.diagId, undefined, d);
-  }
-  for (const m of visit.medications) {
-    await logDataChange(req.user!.userId, 'medication', m.medId, undefined, m);
-  }
-  for (const l of visit.labResults) {
-    await logDataChange(req.user!.userId, 'lab', l.labId, undefined, l);
-  }
-  for (const o of visit.observations) {
-    await logDataChange(req.user!.userId, 'observation', o.obsId, undefined, o);
-  }
-  res.status(201).json(formatVisitResponse(visit));
-});
+);
 
 router.get('/patients/:id/visits', requireAuth, resolveTenant, requireTenantRoles(), async (req: AuthRequest, res: Response) => {
   const id = req.params.id;
