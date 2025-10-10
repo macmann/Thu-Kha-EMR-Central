@@ -1,5 +1,7 @@
 import { Routes, Route, useLocation, Link } from 'react-router-dom';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import RouteGuard from './components/RouteGuard';
 import Patients from './pages/Patients';
 import PatientDetail from './pages/PatientDetail';
@@ -39,18 +41,19 @@ function TenantOverlays() {
   const isSuperAdmin = user?.role === 'SuperAdmin';
   const isSystemAdmin = user?.role === 'SystemAdmin';
 
-  const isLoginRoute = location.pathname === '/login';
-  const showLoading = isLoading && !isLoginRoute;
+  const authRoutes = new Set(['/login', '/forgot-password', '/reset-password']);
+  const isAuthRoute = authRoutes.has(location.pathname);
+  const showLoading = isLoading && !isAuthRoute;
   const showSuperAdminSetup =
-    isSuperAdmin && !isLoginRoute && !isLoading && tenants.length === 0 && !activeTenant;
+    isSuperAdmin && !isAuthRoute && !isLoading && tenants.length === 0 && !activeTenant;
   const showTenantPicker =
-    !isLoginRoute &&
+    !isAuthRoute &&
     !isLoading &&
     tenants.length > 0 &&
     !activeTenant &&
     (tenants.length > 1 || isSuperAdmin);
   const showNoTenants =
-    !isLoginRoute &&
+    !isAuthRoute &&
     !isLoading &&
     tenants.length === 0 &&
     !activeTenant &&
@@ -97,6 +100,8 @@ function AppContent() {
     <>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route
           path="/patients"
           element={
