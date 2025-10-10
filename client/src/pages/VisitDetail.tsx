@@ -18,9 +18,10 @@ import {
   type VisitDetail as VisitDetailType,
   type VisitObservationOcrObservation,
   type AddObservationPayload,
+  type Role,
 } from '../api/client';
 
-const OBSERVATION_IMAGE_ROLES = ['Doctor', 'Nurse', 'AdminAssistant', 'ITAdmin'] as const;
+const OBSERVATION_IMAGE_ROLES: Role[] = ['Doctor', 'Nurse', 'AdminAssistant', 'ITAdmin'];
 
 function formatDate(value: string | Date | null | undefined) {
   if (!value) return '—';
