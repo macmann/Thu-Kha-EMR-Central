@@ -54,6 +54,8 @@ model Tenant {
   code       String?  @unique
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  enabledForPatientPortal Boolean @default(false)
+  portalBranding Json?
 
   userMemberships    UserTenant[]
   patientMemberships PatientTenant[]

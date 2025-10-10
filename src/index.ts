@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 import { apiRouter } from './server.js';
+import publicRouter from './modules/public/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRouter, { requireAuth } from './modules/auth/index.js';
 import { resolveTenant } from './middleware/tenant.js';
@@ -63,6 +64,8 @@ app.use(express.json({ limit: '2mb' }));
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
+
+app.use('/api/public', publicRouter);
 
 app.use('/api/auth', authRouter);
 
