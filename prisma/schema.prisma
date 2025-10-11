@@ -140,6 +140,7 @@ model Tenant {
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
   enabledForPatientPortal Boolean  @default(false)
+  enabledForPatientBooking Boolean  @default(false)
   portalBranding          Json?
 
   userMemberships    UserTenant[]
@@ -216,6 +217,8 @@ model Appointment {
   location      String?
   status        AppointmentStatus @default(Scheduled)
   cancelReason  String?
+  reminder24SentAt DateTime?
+  reminder3SentAt  DateTime?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
