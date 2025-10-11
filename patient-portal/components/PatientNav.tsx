@@ -1,5 +1,12 @@
 import Link from 'next/link';
-import { HomeIcon, CalendarDaysIcon, UserCircleIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import {
+  HomeIcon,
+  CalendarDaysIcon,
+  UserCircleIcon,
+  ClipboardDocumentListIcon,
+  BeakerIcon,
+  PillIcon,
+} from '@heroicons/react/24/outline';
 import type { ReactNode } from 'react';
 
 type NavItem = {
@@ -11,6 +18,8 @@ type NavItem = {
 const navItems: NavItem[] = [
   { href: '#home', label: 'Home', icon: <HomeIcon className="h-5 w-5" /> },
   { href: '#visits', label: 'Visits', icon: <ClipboardDocumentListIcon className="h-5 w-5" /> },
+  { href: '#labs', label: 'Labs', icon: <BeakerIcon className="h-5 w-5" /> },
+  { href: '#meds', label: 'Meds', icon: <PillIcon className="h-5 w-5" /> },
   { href: '#appointments', label: 'Appointments', icon: <CalendarDaysIcon className="h-5 w-5" /> },
   { href: '#profile', label: 'Profile', icon: <UserCircleIcon className="h-5 w-5" /> },
 ];
