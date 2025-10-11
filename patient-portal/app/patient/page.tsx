@@ -19,6 +19,13 @@ export default async function PatientHome() {
             Manage consent
             <span aria-hidden>→</span>
           </Link>
+          <Link
+            href="/patient/visits"
+            className="inline-flex items-center gap-2 rounded-full border border-brand px-4 py-2 text-sm font-semibold text-brand shadow-sm transition hover:bg-brand hover:text-white"
+          >
+            View visit history
+            <span aria-hidden>→</span>
+          </Link>
           <p className="text-sm text-slate-500">
             Adjust sharing settings for each clinic. ဆေးခန်းတစ်ခုချင်းစီအတွက် မျှဝေမှုများကို ဤနေရာတွင် ပြင်ဆင်ပါ။
           </p>

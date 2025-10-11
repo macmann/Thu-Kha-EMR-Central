@@ -11,6 +11,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import authRouter, { requireAuth } from './modules/auth/index.js';
 import { resolveTenant } from './middleware/tenant.js';
 import patientConsentRouter from './modules/patient-consent/index.js';
+import patientHistoryRouter, { docsRouter as patientDocsRouter } from './modules/patient-history/index.js';
 
 if (
   process.env.DATABASE_URL &&
@@ -72,6 +73,8 @@ app.use('/api/public', publicRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/patient/auth', patientAuthRouter);
 app.use('/api/patient/consent', patientConsentRouter);
+app.use('/api/patient/history', patientHistoryRouter);
+app.use('/api/patient/docs', patientDocsRouter);
 
 const protectedApi = Router();
 protectedApi.use(requireAuth);

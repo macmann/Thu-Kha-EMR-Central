@@ -48,6 +48,12 @@ enum PatientConsentStatus {
   REVOKED
 }
 
+enum DoctorNoteStorageType {
+  S3
+  MONGO
+  LOCAL
+}
+
 model GlobalPatient {
   id           String    @id @default(cuid())
   primaryPhone String?   @unique
@@ -265,6 +271,7 @@ model Visit {
   observations  Observation[]
   prescriptions Prescription[]
   invoices      Invoice[]
+  doctorNotes   DoctorNote[]
 
   @@index([patientId, visitDate(sort: Desc)])
   @@index([doctorId, visitDate(sort: Desc)])
@@ -327,6 +334,37 @@ model Observation {
   doctor  Doctor  @relation(fields: [doctorId], references: [doctorId])
 
   @@index([patientId, doctorId, createdAt(sort: Desc)])
+}
+
+model DoctorNote {
+  id          String                @id @default(cuid())
+  visitId     String                @db.Uuid
+  tenantId    String                @db.Uuid
+  patientId   String                @db.Uuid
+  storageType DoctorNoteStorageType
+  storageKey  String
+  fileName    String?
+  contentType String?
+  size        Int
+  createdAt   DateTime              @default(now())
+
+  visit Visit @relation(fields: [visitId], references: [visitId])
+
+  @@index([visitId])
+  @@index([tenantId])
+  @@index([patientId])
+}
+
+model PatientAccessLog {
+  id            String   @id @default(cuid())
+  patientUserId String
+  resourceType  String
+  resourceId    String
+  clinicId      String?
+  ts            DateTime @default(now())
+
+  @@index([patientUserId, ts])
+  @@index([clinicId, ts])
 }
 
 model User {
