@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { Router, type Request, type Response, type NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { z } from 'zod';
 
 const prisma = new PrismaClient();
@@ -93,7 +93,7 @@ async function handleStart(req: Request, res: Response, next: NextFunction) {
     const deviceId = typeof rawDeviceId === 'string' ? rawDeviceId.trim() || null : null;
     const requestIp = req.ip;
 
-    const rateLimitWhere: Parameters<typeof prisma.patientOtp.count>[0]['where'] = {
+    const rateLimitWhere: Prisma.PatientOtpWhereInput = {
       contact,
       createdAt: { gte: cutoff },
     };
