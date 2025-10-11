@@ -343,6 +343,7 @@ historyRouter.get('/visit/:id', async (req: PatientAuthRequest, res: Response) =
       contentType: note.contentType,
       size: note.size,
       createdAt: note.createdAt.toISOString(),
+      extractedText: note.extractedText,
     })),
     nextVisitDate: nextVisit?.visitDate ? nextVisit.visitDate.toISOString() : null,
   });
