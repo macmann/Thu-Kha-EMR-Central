@@ -23,6 +23,7 @@ export type DoctorNoteMetadata = {
   contentType: string | null;
   size: number;
   createdAt: Date;
+  extractedText: string | null;
 };
 
 export type DoctorNoteContent = {
@@ -138,7 +139,11 @@ export async function loadDoctorNoteContent(note: DoctorNoteMetadata): Promise<D
   return null;
 }
 
+type DoctorNoteWithExtraction = DoctorNote & { extractedText?: string | null };
+
 function mapNoteToMetadata(note: DoctorNote): DoctorNoteMetadata {
+  const noteWithExtraction = note as DoctorNoteWithExtraction;
+
   return {
     id: note.id,
     visitId: note.visitId,
@@ -150,6 +155,7 @@ function mapNoteToMetadata(note: DoctorNote): DoctorNoteMetadata {
     contentType: note.contentType ?? null,
     size: note.size,
     createdAt: note.createdAt,
+    extractedText: noteWithExtraction.extractedText ?? null,
   };
 }
 

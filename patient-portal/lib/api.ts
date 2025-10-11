@@ -75,7 +75,14 @@ export type PatientVisitDetail = {
     bmi: number | null;
     createdAt: string;
   }[];
-  doctorNotes: { id: string; fileName: string | null; contentType: string | null; size: number; createdAt: string }[];
+  doctorNotes: {
+    id: string;
+    fileName: string | null;
+    contentType: string | null;
+    size: number;
+    createdAt: string;
+    extractedText: string | null;
+  }[];
   nextVisitDate: string | null;
 };
 
