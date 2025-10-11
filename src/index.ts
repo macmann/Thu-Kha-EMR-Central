@@ -16,6 +16,7 @@ import {
   clinicsRouter as patientClinicsRouter,
   appointmentsRouter as patientAppointmentsRouter,
 } from './modules/patient-appointments/index.js';
+import patientBillingRouter from './modules/patient-billing/index.js';
 import { startAppointmentReminderCron } from './services/appointmentReminderCron.js';
 
 if (
@@ -82,6 +83,7 @@ app.use('/api/patient/history', patientHistoryRouter);
 app.use('/api/patient/docs', patientDocsRouter);
 app.use('/api/patient/clinics', patientClinicsRouter);
 app.use('/api/patient/appointments', patientAppointmentsRouter);
+app.use('/api/patient/invoices', patientBillingRouter);
 
 const protectedApi = Router();
 protectedApi.use(requireAuth);

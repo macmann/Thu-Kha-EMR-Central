@@ -52,6 +52,20 @@ export type PatientAppointmentsResponse = {
   past: PatientAppointmentSummary[];
 };
 
+export type PatientInvoiceSummary = {
+  id: string;
+  number: string;
+  status: string;
+  clinic: { id: string; name: string } | null;
+  issuedAt: string;
+  visitId: string | null;
+  amountDue: string;
+  grandTotal: string;
+  amountPaid: string;
+  currency: string;
+  canPay: boolean;
+};
+
 export type PatientConsentScope = 'VISITS' | 'LAB' | 'MEDS' | 'BILLING' | 'ALL';
 export type PatientConsentStatus = 'GRANTED' | 'REVOKED';
 
@@ -337,6 +351,26 @@ export async function fetchPatientAppointments(
   }
 
   return (await response.json()) as PatientAppointmentsResponse;
+}
+
+export async function fetchPatientInvoices(
+  options: { status?: 'PAID' | 'UNPAID'; cookie?: string } = {},
+): Promise<PatientInvoiceSummary[]> {
+  const response = await patientApiRequest('/api/patient/invoices', {
+    cookie: options.cookie,
+    query: { status: options.status },
+  });
+
+  if (response.status === 401) {
+    return [];
+  }
+
+  if (!response.ok) {
+    throw new Error('Unable to load invoices');
+  }
+
+  const data = (await response.json()) as { invoices: PatientInvoiceSummary[] };
+  return data.invoices;
 }
 
 export async function fetchPatientConsents(options: { cookie?: string } = {}): Promise<PatientConsentResponse | null> {
