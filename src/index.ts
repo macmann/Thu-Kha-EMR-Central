@@ -12,6 +12,11 @@ import authRouter, { requireAuth } from './modules/auth/index.js';
 import { resolveTenant } from './middleware/tenant.js';
 import patientConsentRouter from './modules/patient-consent/index.js';
 import patientHistoryRouter, { docsRouter as patientDocsRouter } from './modules/patient-history/index.js';
+import {
+  clinicsRouter as patientClinicsRouter,
+  appointmentsRouter as patientAppointmentsRouter,
+} from './modules/patient-appointments/index.js';
+import { startAppointmentReminderCron } from './services/appointmentReminderCron.js';
 
 if (
   process.env.DATABASE_URL &&
@@ -75,6 +80,8 @@ app.use('/api/patient/auth', patientAuthRouter);
 app.use('/api/patient/consent', patientConsentRouter);
 app.use('/api/patient/history', patientHistoryRouter);
 app.use('/api/patient/docs', patientDocsRouter);
+app.use('/api/patient/clinics', patientClinicsRouter);
+app.use('/api/patient/appointments', patientAppointmentsRouter);
 
 const protectedApi = Router();
 protectedApi.use(requireAuth);
@@ -91,6 +98,8 @@ app.get('*', (req: Request, res: Response) =>
 
 // Error handler should be last and only apply to /api routes
 app.use('/api', errorHandler);
+
+startAppointmentReminderCron();
 
 if (process.env.NODE_ENV !== 'test') {
   const port = process.env.PORT || 8080;

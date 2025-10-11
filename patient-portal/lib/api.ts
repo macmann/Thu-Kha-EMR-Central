@@ -11,6 +11,47 @@ export type ClinicSummary = {
   } | null;
 };
 
+export type ClinicPatientProfile = {
+  id: string;
+  name: string;
+};
+
+export type ClinicBookingSummary = ClinicSummary & {
+  patients: ClinicPatientProfile[];
+};
+
+export type PatientDoctorSummary = {
+  id: string;
+  name: string;
+  department: string | null;
+};
+
+export type PatientSlotSummary = {
+  start: string;
+  end: string;
+  startMin: number;
+  endMin: number;
+};
+
+export type PatientAppointmentSummary = {
+  id: string;
+  clinic: { id: string; name: string };
+  doctor: { id: string; name: string; department: string | null };
+  patient: { id: string; name: string };
+  slotStart: string;
+  slotEnd: string;
+  status: string;
+  reason: string | null;
+  cancelReason: string | null;
+  canCancel: boolean;
+  canReschedule: boolean;
+};
+
+export type PatientAppointmentsResponse = {
+  upcoming: PatientAppointmentSummary[];
+  past: PatientAppointmentSummary[];
+};
+
 export type PatientConsentScope = 'VISITS' | 'LAB' | 'MEDS' | 'BILLING' | 'ALL';
 export type PatientConsentStatus = 'GRANTED' | 'REVOKED';
 
@@ -101,6 +142,201 @@ export async function fetchClinics(): Promise<ClinicSummary[]> {
 export async function fetchClinicById(clinicId: string): Promise<ClinicSummary | null> {
   const clinics = await fetchClinics();
   return clinics.find((clinic) => clinic.id === clinicId) ?? null;
+}
+
+type PatientApiRequestOptions = {
+  method?: string;
+  body?: unknown;
+  cookie?: string;
+  query?: Record<string, string | undefined>;
+  cache?: RequestCache;
+};
+
+async function patientApiRequest(path: string, options: PatientApiRequestOptions = {}): Promise<Response> {
+  const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
+  const url = new URL(path, baseUrl);
+
+  if (options.query) {
+    for (const [key, value] of Object.entries(options.query)) {
+      if (value) {
+        url.searchParams.set(key, value);
+      }
+    }
+  }
+
+  const headers: Record<string, string> = { Accept: 'application/json' };
+  if (options.cookie) {
+    headers.cookie = options.cookie;
+  }
+
+  const init: RequestInit = {
+    method: options.method ?? 'GET',
+    headers,
+    credentials: 'include',
+    cache: options.cache ?? 'no-store',
+  };
+
+  if (options.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    init.body = JSON.stringify(options.body);
+  }
+
+  return fetch(url.toString(), init);
+}
+
+export async function searchPatientClinics(
+  options: { q?: string; city?: string; specialty?: string; cookie?: string } = {},
+): Promise<ClinicBookingSummary[]> {
+  const response = await patientApiRequest('/api/patient/clinics/search', {
+    query: {
+      q: options.q,
+      city: options.city,
+      specialty: options.specialty,
+    },
+    cookie: options.cookie,
+  });
+
+  if (response.status === 401) {
+    return [];
+  }
+
+  if (!response.ok) {
+    throw new Error('Unable to load clinics');
+  }
+
+  const data = (await response.json()) as { clinics: Array<ClinicBookingSummary> };
+  return data.clinics;
+}
+
+export async function fetchClinicDoctors(
+  clinicId: string,
+  options: { cookie?: string } = {},
+): Promise<{ clinic: { id: string; name: string }; doctors: PatientDoctorSummary[]; patients: ClinicPatientProfile[] } | null> {
+  const response = await patientApiRequest(`/api/patient/clinics/${clinicId}/doctors`, {
+    cookie: options.cookie,
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error('Unable to load doctors');
+  }
+
+  return (await response.json()) as {
+    clinic: { id: string; name: string };
+    doctors: PatientDoctorSummary[];
+    patients: ClinicPatientProfile[];
+  };
+}
+
+export async function fetchDoctorSlots(
+  doctorId: string,
+  date: string,
+  options: { clinicId: string; cookie?: string },
+): Promise<{ date: string; slots: PatientSlotSummary[] } | null> {
+  const response = await patientApiRequest(`/api/patient/appointments/doctors/${doctorId}/slots`, {
+    query: { date, clinicId: options.clinicId },
+    cookie: options.cookie,
+  });
+
+  if (response.status === 401 || response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error('Unable to load availability');
+  }
+
+  return (await response.json()) as { date: string; slots: PatientSlotSummary[] };
+}
+
+export async function createPatientAppointment(
+  payload: { clinicId: string; doctorId: string; slotStart: string; reason?: string; patientId?: string },
+  options: { cookie?: string } = {},
+): Promise<PatientAppointmentSummary> {
+  const response = await patientApiRequest('/api/patient/appointments', {
+    method: 'POST',
+    body: payload,
+    cookie: options.cookie,
+  });
+
+  if (response.status === 401) {
+    throw new Error('Unauthorized');
+  }
+
+  if (!response.ok) {
+    throw new Error('Unable to book appointment');
+  }
+
+  return (await response.json()) as PatientAppointmentSummary;
+}
+
+export async function reschedulePatientAppointment(
+  appointmentId: string,
+  payload: { slotStart: string; reason?: string },
+  options: { cookie?: string } = {},
+): Promise<PatientAppointmentSummary> {
+  const response = await patientApiRequest(`/api/patient/appointments/${appointmentId}/reschedule`, {
+    method: 'POST',
+    body: payload,
+    cookie: options.cookie,
+  });
+
+  if (response.status === 401) {
+    throw new Error('Unauthorized');
+  }
+
+  if (!response.ok) {
+    throw new Error('Unable to reschedule appointment');
+  }
+
+  return (await response.json()) as PatientAppointmentSummary;
+}
+
+export async function cancelPatientAppointment(
+  appointmentId: string,
+  payload: { reason?: string } = {},
+  options: { cookie?: string } = {},
+): Promise<PatientAppointmentSummary> {
+  const response = await patientApiRequest(`/api/patient/appointments/${appointmentId}/cancel`, {
+    method: 'POST',
+    body: payload,
+    cookie: options.cookie,
+  });
+
+  if (response.status === 401) {
+    throw new Error('Unauthorized');
+  }
+
+  if (!response.ok) {
+    throw new Error('Unable to cancel appointment');
+  }
+
+  return (await response.json()) as PatientAppointmentSummary;
+}
+
+export async function fetchPatientAppointments(
+  options: { cookie?: string } = {},
+): Promise<PatientAppointmentsResponse | null> {
+  const response = await patientApiRequest('/api/patient/appointments', {
+    cookie: options.cookie,
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error('Unable to load appointments');
+  }
+
+  return (await response.json()) as PatientAppointmentsResponse;
 }
 
 export async function fetchPatientConsents(options: { cookie?: string } = {}): Promise<PatientConsentResponse | null> {
