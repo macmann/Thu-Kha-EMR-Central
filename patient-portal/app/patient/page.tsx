@@ -11,6 +11,18 @@ export default async function PatientHome() {
         <p className="mt-2 text-sm text-slate-500">
           Choose your clinic to access upcoming visits, appointment requests, and health information.
         </p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Link
+            href="/patient/consent"
+            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
+          >
+            Manage consent
+            <span aria-hidden>→</span>
+          </Link>
+          <p className="text-sm text-slate-500">
+            Adjust sharing settings for each clinic. ဆေးခန်းတစ်ခုချင်းစီအတွက် မျှဝေမှုများကို ဤနေရာတွင် ပြင်ဆင်ပါ။
+          </p>
+        </div>
       </section>
 
       <section className="space-y-4">

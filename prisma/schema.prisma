@@ -35,6 +35,19 @@ enum Role {
   LabTech
 }
 
+enum PatientConsentScope {
+  VISITS
+  LAB
+  MEDS
+  BILLING
+  ALL
+}
+
+enum PatientConsentStatus {
+  GRANTED
+  REVOKED
+}
+
 model GlobalPatient {
   id           String    @id @default(cuid())
   primaryPhone String?   @unique
@@ -45,6 +58,7 @@ model GlobalPatient {
 
   users PatientUser[]
   links PatientLink[]
+  consents PatientConsent[]
 }
 
 model PatientUser {
@@ -68,6 +82,21 @@ model PatientLink {
 
   @@unique([clinicId, patientId])
   @@index([globalPatientId])
+}
+
+model PatientConsent {
+  id              String               @id @default(cuid())
+  globalPatientId String
+  clinicId        String
+  scope           PatientConsentScope
+  status          PatientConsentStatus @default(GRANTED)
+  updatedAt       DateTime             @updatedAt
+
+  globalPatient GlobalPatient @relation(fields: [globalPatientId], references: [id], onDelete: Cascade)
+
+  @@unique([globalPatientId, clinicId, scope])
+  @@index([globalPatientId])
+  @@index([clinicId])
 }
 
 model PatientOtp {

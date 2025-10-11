@@ -11,6 +11,27 @@ export type ClinicSummary = {
   } | null;
 };
 
+export type PatientConsentScope = 'VISITS' | 'LAB' | 'MEDS' | 'BILLING' | 'ALL';
+export type PatientConsentStatus = 'GRANTED' | 'REVOKED';
+
+export type ClinicConsentToggle = {
+  scope: PatientConsentScope;
+  status: PatientConsentStatus;
+  updatedAt: string | null;
+};
+
+export type ClinicConsentSummary = {
+  clinicId: string;
+  clinicName: string;
+  branding: Record<string, unknown> | null;
+  scopes: ClinicConsentToggle[];
+  lastUpdated: string | null;
+};
+
+export type PatientConsentResponse = {
+  clinics: ClinicConsentSummary[];
+};
+
 export async function fetchClinics(): Promise<ClinicSummary[]> {
   const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
   const response = await fetch(`${baseUrl}/api/public/clinics`, { next: { revalidate: 60 } });
@@ -26,4 +47,30 @@ export async function fetchClinics(): Promise<ClinicSummary[]> {
 export async function fetchClinicById(clinicId: string): Promise<ClinicSummary | null> {
   const clinics = await fetchClinics();
   return clinics.find((clinic) => clinic.id === clinicId) ?? null;
+}
+
+export async function fetchPatientConsents(options: { cookie?: string } = {}): Promise<PatientConsentResponse | null> {
+  const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
+  const headers: Record<string, string> = { Accept: 'application/json' };
+
+  if (options.cookie) {
+    headers.cookie = options.cookie;
+  }
+
+  const response = await fetch(`${baseUrl}/api/patient/consent`, {
+    method: 'GET',
+    headers,
+    credentials: 'include',
+    cache: 'no-store',
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error('Unable to load consent settings');
+  }
+
+  return (await response.json()) as PatientConsentResponse;
 }
