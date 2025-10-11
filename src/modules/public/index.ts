@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -10,7 +10,7 @@ type PortalBranding = {
   [key: string]: unknown;
 } | null;
 
-router.get('/clinics', async (_req, res) => {
+router.get('/clinics', async (_req: Request, res: Response) => {
   const clinics = await prisma.tenant.findMany({
     where: { enabledForPatientPortal: true },
     select: {
