@@ -6,6 +6,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import { apiRouter } from './server.js';
 import publicRouter from './modules/public/index.js';
+import patientAuthRouter from './modules/patient-auth/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRouter, { requireAuth } from './modules/auth/index.js';
 import { resolveTenant } from './middleware/tenant.js';
@@ -68,6 +69,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 app.use('/api/public', publicRouter);
 
 app.use('/api/auth', authRouter);
+app.use('/api/patient/auth', patientAuthRouter);
 
 const protectedApi = Router();
 protectedApi.use(requireAuth);
