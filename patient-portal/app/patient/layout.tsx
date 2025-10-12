@@ -4,10 +4,12 @@ import { PatientPortalTopNav } from '@/components/PatientPortalTopNav';
 
 export default function PatientLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-transparent">
       <ServiceWorkerRegistrar />
       <PatientPortalTopNav />
-      <div className="flex flex-1 flex-col">{children}</div>
+      <div className="flex flex-1 flex-col bg-surface px-4 pb-12 pt-6 text-surface-foreground transition dark:bg-slate-950 dark:text-slate-100">
+        {children}
+      </div>
     </div>
   );
 }

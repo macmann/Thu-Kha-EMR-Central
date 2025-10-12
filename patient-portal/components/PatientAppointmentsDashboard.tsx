@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from 'react';
+import { CalendarClock, CalendarDays, Loader2, RefreshCw, WifiOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   cancelPatientAppointment,
   createPatientAppointment,
   fetchClinicDoctors,
   fetchDoctorSlots,
   fetchPatientAppointments,
+  reschedulePatientAppointment,
   searchPatientClinics,
   type ClinicBookingSummary,
   type ClinicPatientProfile,
@@ -24,15 +27,19 @@ import {
   getYangonDateKey,
   shiftDateKey,
 } from '@/lib/datetime';
+import { cn } from '@/lib/utils';
+
+import { Skeleton } from './ui/Skeleton';
+import { useToast } from './ui/ToastProvider';
 
 type WizardStep = 0 | 1 | 2 | 3 | 4;
 
-const STEP_TITLES: Record<WizardStep, string> = {
-  0: 'Choose clinic',
-  1: 'Pick doctor',
-  2: 'Select date',
-  3: 'Choose time',
-  4: 'Confirm details',
+const STEP_KEYS: Record<WizardStep, 'clinic' | 'doctor' | 'date' | 'time' | 'confirm'> = {
+  0: 'clinic',
+  1: 'doctor',
+  2: 'date',
+  3: 'time',
+  4: 'confirm',
 };
 
 type Props = {
@@ -43,6 +50,8 @@ type Props = {
 type BookingMode = 'create' | 'reschedule';
 
 export function PatientAppointmentsDashboard({ initialAppointments, initialClinics }: Props) {
+  const { t } = useTranslation();
+  const { pushToast } = useToast();
   const [appointments, setAppointments] = useState<PatientAppointmentsResponse>(initialAppointments);
   const [clinics, setClinics] = useState<ClinicBookingSummary[]>(initialClinics);
   const [clinicsLoading, setClinicsLoading] = useState(false);
@@ -66,12 +75,34 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
   const [reason, setReason] = useState('');
   const [editingAppointment, setEditingAppointment] = useState<PatientAppointmentSummary | null>(null);
 
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [isOffline, setIsOffline] = useState<boolean>(typeof navigator !== 'undefined' ? !navigator.onLine : false);
 
   const todayKey = useMemo(() => getTodayYangonDateKey(), []);
   const tomorrowKey = useMemo(() => shiftDateKey(todayKey, 1), [todayKey]);
+  const stepLabels = useMemo(
+    () => ({
+      0: t('appointments.stepTitles.clinic'),
+      1: t('appointments.stepTitles.doctor'),
+      2: t('appointments.stepTitles.date'),
+      3: t('appointments.stepTitles.time'),
+      4: t('appointments.stepTitles.confirm'),
+    }),
+    [t],
+  );
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     if (!selectedClinic) {
@@ -102,7 +133,13 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
           }
         }
       })
-      .catch((err) => setError(getErrorMessage(err)))
+      .catch((err) =>
+        pushToast({
+          variant: 'error',
+          title: t('appointments.errorTitle'),
+          description: getErrorMessage(err),
+        }),
+      )
       .finally(() => {
         if (!cancelled) {
           setDoctorsLoading(false);
@@ -112,7 +149,7 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
     return () => {
       cancelled = true;
     };
-  }, [selectedClinic, mode, editingAppointment]);
+  }, [selectedClinic, mode, editingAppointment, pushToast, t]);
 
   useEffect(() => {
     if (!selectedClinic || !selectedDoctor || !selectedDate) {
@@ -137,7 +174,13 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
           }
         }
       })
-      .catch((err) => setError(getErrorMessage(err)))
+      .catch((err) =>
+        pushToast({
+          variant: 'error',
+          title: t('appointments.errorTitle'),
+          description: getErrorMessage(err),
+        }),
+      )
       .finally(() => {
         if (!cancelled) {
           setSlotsLoading(false);
@@ -147,7 +190,7 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
     return () => {
       cancelled = true;
     };
-  }, [selectedClinic, selectedDoctor, selectedDate, mode, editingAppointment]);
+  }, [selectedClinic, selectedDoctor, selectedDate, mode, editingAppointment, pushToast, t]);
 
   const handleRefreshAppointments = async () => {
     try {
@@ -156,7 +199,11 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
         setAppointments(data);
       }
     } catch (err) {
-      setError(getErrorMessage(err));
+      pushToast({
+        variant: 'error',
+        title: t('appointments.errorTitle'),
+        description: getErrorMessage(err),
+      });
     }
   };
 
@@ -176,8 +223,6 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
   };
 
   const startBooking = () => {
-    setError(null);
-    setSuccess(null);
     setMode('create');
     setStep(0);
     setSelectedClinic(null);
@@ -188,8 +233,6 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
   };
 
   const startReschedule = async (appointment: PatientAppointmentSummary) => {
-    setError(null);
-    setSuccess(null);
     setMode('reschedule');
     setEditingAppointment(appointment);
     let clinic = clinics.find((entry) => entry.id === appointment.clinic.id) ?? null;
@@ -205,7 +248,6 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
 
   const handleClinicSearch = async (): Promise<ClinicBookingSummary[] | null> => {
     setClinicsLoading(true);
-    setError(null);
     try {
       const results = await searchPatientClinics({
         q: clinicSearch.trim() || undefined,
@@ -215,7 +257,11 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
       setClinics(results);
       return results;
     } catch (err) {
-      setError(getErrorMessage(err));
+      pushToast({
+        variant: 'error',
+        title: t('appointments.errorTitle'),
+        description: getErrorMessage(err),
+      });
       return null;
     } finally {
       setClinicsLoading(false);
@@ -224,13 +270,19 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
 
   const handleConfirm = async () => {
     if (!selectedClinic || !selectedDoctor || !selectedSlot || !selectedPatient) {
-      setError('Please complete all steps.');
+      pushToast({
+        variant: 'error',
+        title: t('appointments.errorTitle'),
+        description: t('appointments.completeSteps'),
+      });
       return;
     }
 
     setSubmitting(true);
-    setError(null);
     try {
+      if (isOffline) {
+        pushToast({ variant: 'info', title: t('appointments.offlineQueue') });
+      }
       if (mode === 'create') {
         await createPatientAppointment({
           clinicId: selectedClinic.id,
@@ -239,34 +291,53 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
           reason: reason.trim() || undefined,
           patientId: selectedPatient.id,
         });
-        setSuccess('Appointment request sent successfully.');
+        pushToast({
+          variant: 'success',
+          title: t('appointments.successCreateTitle'),
+          description: t('appointments.successCreateDescription'),
+        });
       } else if (mode === 'reschedule' && editingAppointment) {
         await reschedulePatientAppointment(editingAppointment.id, {
           slotStart: selectedSlot.start,
           reason: reason.trim() || undefined,
         });
-        setSuccess('Appointment updated successfully.');
+        pushToast({
+          variant: 'success',
+          title: t('appointments.successUpdateTitle'),
+          description: t('appointments.successUpdateDescription'),
+        });
       }
       await handleRefreshAppointments();
       resetWizard();
     } catch (err) {
-      setError(getErrorMessage(err));
+      pushToast({
+        variant: 'error',
+        title: t('appointments.errorTitle'),
+        description: getErrorMessage(err),
+      });
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleCancelAppointment = async (appointment: PatientAppointmentSummary) => {
-    if (!window.confirm('Cancel this appointment?')) {
+    if (!window.confirm(t('appointments.cancelConfirmation'))) {
       return;
     }
-    setError(null);
     try {
       await cancelPatientAppointment(appointment.id);
-      setSuccess('Appointment cancelled.');
+      pushToast({
+        variant: 'success',
+        title: t('appointments.successCancelTitle'),
+        description: t('appointments.successCancelDescription'),
+      });
       await handleRefreshAppointments();
     } catch (err) {
-      setError(getErrorMessage(err));
+      pushToast({
+        variant: 'error',
+        title: t('appointments.errorTitle'),
+        description: getErrorMessage(err),
+      });
     }
   };
 
@@ -276,21 +347,28 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
     }
 
     return (
-      <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <header className="mb-4 flex items-start justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Booking wizard</p>
-            <h2 className="text-xl font-semibold text-slate-900">{STEP_TITLES[step]}</h2>
+      <section className="rounded-3xl border border-brand-100/40 bg-white/90 p-6 shadow-lg backdrop-blur dark:border-brand-900/40 dark:bg-slate-900/80">
+        <header className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-500/10 text-brand-600 dark:bg-brand-900/40 dark:text-brand-200">
+              <CalendarDays className="h-5 w-5" aria-hidden />
+            </span>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-brand-500 dark:text-brand-300">
+                {t('appointments.wizardTitle')}
+              </p>
+              <h2 className="text-xl font-semibold text-surface-foreground dark:text-slate-100">{stepLabels[step]}</h2>
+            </div>
           </div>
           <button
             type="button"
-            className="text-sm font-medium text-slate-500 hover:text-slate-900"
+            className="inline-flex items-center gap-1 rounded-full border border-brand-100/60 px-3 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-900/40 dark:text-brand-200 dark:hover:bg-brand-900/30"
             onClick={resetWizard}
           >
-            Close
+            {t('appointments.close')}
           </button>
         </header>
-        <ProgressIndicator currentStep={step} />
+        <ProgressIndicator currentStep={step} labels={stepLabels} />
         <div className="mt-6 space-y-6">
           {step === 0 ? renderClinicStep() : null}
           {step === 1 ? renderDoctorStep() : null}
@@ -303,7 +381,7 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
   };
 
   const renderClinicStep = () => (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <form
         className="grid gap-3 sm:grid-cols-3"
         onSubmit={(event) => {
@@ -313,83 +391,103 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
       >
         <input
           type="text"
-          placeholder="Search clinics"
+          placeholder={t('appointments.searchPlaceholder')}
           value={clinicSearch}
           onChange={(event) => setClinicSearch(event.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          className="rounded-xl border border-brand-100/50 bg-white/95 px-3 py-2 text-sm text-surface-foreground shadow-sm transition focus:border-brand-400 focus:outline-none dark:border-brand-900/40 dark:bg-slate-950/60 dark:text-slate-100"
         />
         <input
           type="text"
-          placeholder="City"
+          placeholder={t('appointments.cityPlaceholder')}
           value={clinicCity}
           onChange={(event) => setClinicCity(event.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          className="rounded-xl border border-brand-100/50 bg-white/95 px-3 py-2 text-sm text-surface-foreground shadow-sm transition focus:border-brand-400 focus:outline-none dark:border-brand-900/40 dark:bg-slate-950/60 dark:text-slate-100"
         />
         <input
           type="text"
-          placeholder="Specialty"
+          placeholder={t('appointments.specialtyPlaceholder')}
           value={clinicSpecialty}
           onChange={(event) => setClinicSpecialty(event.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          className="rounded-xl border border-brand-100/50 bg-white/95 px-3 py-2 text-sm text-surface-foreground shadow-sm transition focus:border-brand-400 focus:outline-none dark:border-brand-900/40 dark:bg-slate-950/60 dark:text-slate-100"
         />
         <div className="sm:col-span-3 flex justify-end">
           <button
             type="submit"
-            className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90"
+            className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={clinicsLoading}
           >
-            {clinicsLoading ? 'Searching…' : 'Search'}
+            {clinicsLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                {t('appointments.searching')}
+              </>
+            ) : (
+              <>
+                <CalendarDays className="h-4 w-4" aria-hidden />
+                {t('appointments.search')}
+              </>
+            )}
           </button>
         </div>
       </form>
       <div className="grid gap-4 md:grid-cols-2">
-        {clinics.map((clinic) => (
-          <button
-            key={clinic.id}
-            type="button"
-            onClick={() => {
-              setSelectedClinic(clinic);
-              setStep(1);
-            }}
-            className="flex flex-col items-start gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-brand hover:shadow"
-          >
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">Clinic</span>
-            <span className="text-lg font-semibold text-slate-900">{clinic.name}</span>
-            {clinic.city ? <span className="text-sm text-slate-500">{clinic.city}</span> : null}
-            {clinic.specialties.length ? (
-              <span className="text-xs font-medium uppercase tracking-wider text-brand">
-                {clinic.specialties.join(' • ')}
-              </span>
-            ) : null}
-            {clinic.patients.length ? (
-              <span className="text-xs text-slate-500">{clinic.patients.map((patient) => patient.name).join(', ')}</span>
-            ) : null}
-          </button>
-        ))}
+        {clinicsLoading
+          ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-32 rounded-2xl" />)
+          : clinics.map((clinic) => (
+              <button
+                key={clinic.id}
+                type="button"
+                onClick={() => {
+                  setSelectedClinic(clinic);
+                  setStep(1);
+                }}
+                className="flex flex-col items-start gap-2 rounded-2xl border border-brand-100/50 bg-white/90 p-4 text-left shadow-sm transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-900/40 dark:bg-slate-900/80"
+              >
+                <span className="text-xs font-semibold uppercase tracking-wider text-brand-500 dark:text-brand-300">
+                  {t('appointments.reviewClinic')}
+                </span>
+                <span className="text-lg font-semibold text-surface-foreground dark:text-slate-100">{clinic.name}</span>
+                {clinic.city ? <span className="text-sm text-surface-muted dark:text-slate-400">{clinic.city}</span> : null}
+                {clinic.specialties.length ? (
+                  <span className="text-xs font-medium uppercase tracking-wider text-brand-600 dark:text-brand-300">
+                    {clinic.specialties.join(' • ')}
+                  </span>
+                ) : null}
+                {clinic.patients.length ? (
+                  <span className="text-xs text-surface-muted dark:text-slate-400">
+                    {clinic.patients.map((patient) => patient.name).join(', ')}
+                  </span>
+                ) : null}
+              </button>
+            ))}
       </div>
       {clinics.length === 0 && !clinicsLoading ? (
-        <p className="text-sm text-slate-500">No clinics available for booking right now.</p>
+        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-brand-200/60 bg-brand-50/60 p-8 text-center text-sm text-brand-700 dark:border-brand-900/40 dark:bg-brand-900/20 dark:text-brand-100">
+          <CalendarClock className="h-6 w-6" aria-hidden />
+          <p>{t('appointments.noClinics')}</p>
+        </div>
       ) : null}
     </div>
   );
 
   const renderDoctorStep = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">Clinic</p>
-          <p className="text-sm font-semibold text-slate-900">{selectedClinic?.name}</p>
+          <p className="text-xs uppercase tracking-wide text-brand-500 dark:text-brand-300">{t('appointments.reviewClinic')}</p>
+          <p className="text-sm font-semibold text-surface-foreground dark:text-slate-100">{selectedClinic?.name}</p>
         </div>
         <button
           type="button"
-          className="text-sm font-medium text-brand hover:underline"
+          className="text-sm font-semibold text-brand-600 transition hover:underline dark:text-brand-300"
           onClick={() => setStep(0)}
         >
-          Change clinic
+          {t('appointments.changeClinic')}
         </button>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <label className="text-sm font-medium text-slate-700" htmlFor="patient-select">
-          Patient
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <label className="text-sm font-medium text-surface-foreground dark:text-slate-100" htmlFor="patient-select">
+          {t('appointments.patientLabel')}
         </label>
         <select
           id="patient-select"
@@ -399,7 +497,7 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
             const match = clinicPatients.find((patient) => patient.id === value) ?? null;
             setSelectedPatient(match);
           }}
-          className="min-w-[200px] rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          className="min-w-[200px] rounded-xl border border-brand-100/50 bg-white/95 px-3 py-2 text-sm text-surface-foreground shadow-sm transition focus:border-brand-400 focus:outline-none dark:border-brand-900/40 dark:bg-slate-950/60 dark:text-slate-100"
         >
           {clinicPatients.map((patient) => (
             <option key={patient.id} value={patient.id}>
@@ -409,74 +507,79 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
         </select>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
-        {doctorsLoading ? (
-          <p className="text-sm text-slate-500">Loading doctors…</p>
-        ) : (
-          doctors.map((doctor) => {
-            const active = selectedDoctor?.id === doctor.id;
-            return (
-              <button
-                key={doctor.id}
-                type="button"
-                onClick={() => {
-                  setSelectedDoctor(doctor);
-                  setStep(2);
-                }}
-                className={`flex flex-col items-start rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
-                  active
-                    ? 'border-brand bg-brand/10 text-brand'
-                    : 'border-slate-200 bg-white text-slate-900 hover:border-brand'
-                }`}
-              >
-                <span className="text-sm font-semibold">{doctor.name}</span>
-                {doctor.department ? (
-                  <span className="text-xs uppercase tracking-wide text-slate-500">{doctor.department}</span>
-                ) : null}
-              </button>
-            );
-          })
-        )}
+        {doctorsLoading
+          ? Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-24 rounded-2xl" />)
+          : doctors.map((doctor) => {
+              const active = selectedDoctor?.id === doctor.id;
+              return (
+                <button
+                  key={doctor.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedDoctor(doctor);
+                    setStep(2);
+                  }}
+                  className={cn(
+                    'flex flex-col items-start rounded-2xl border px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg dark:border-brand-900/40 dark:bg-slate-900/80',
+                    active
+                      ? 'border-brand-400 bg-brand-500/10 text-brand-700 dark:border-brand-500/50 dark:text-brand-200'
+                      : 'border-brand-100/60 bg-white/90 text-surface-foreground'
+                  )}
+                >
+                  <span className="text-sm font-semibold">{doctor.name}</span>
+                  {doctor.department ? (
+                    <span className="text-xs uppercase tracking-wide text-surface-muted dark:text-slate-400">{doctor.department}</span>
+                  ) : null}
+                </button>
+              );
+            })}
       </div>
-      {doctors.length === 0 && !doctorsLoading ? (
-        <p className="text-sm text-slate-500">This clinic has no doctors available for online booking.</p>
+      {!doctorsLoading && doctors.length === 0 ? (
+        <p className="text-sm text-surface-muted dark:text-slate-400">{t('appointments.noDoctors')}</p>
       ) : null}
     </div>
   );
 
   const renderDateStep = () => (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
-          className="text-sm font-medium text-brand hover:underline"
+          className="text-sm font-semibold text-brand-600 transition hover:underline dark:text-brand-300"
           onClick={() => setStep(1)}
         >
-          Back to doctor selection
+          {t('appointments.backToDoctor')}
         </button>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              selectedDate === todayKey ? 'bg-brand text-white' : 'bg-slate-100 text-slate-600'
-            }`}
+            className={cn(
+              'rounded-full px-3 py-1 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500',
+              selectedDate === todayKey
+                ? 'bg-brand-500 text-white shadow-sm'
+                : 'bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-900/30 dark:text-brand-200'
+            )}
             onClick={() => setSelectedDate(todayKey)}
           >
-            Today
+            {t('appointments.today')}
           </button>
           <button
             type="button"
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              selectedDate === tomorrowKey ? 'bg-brand text-white' : 'bg-slate-100 text-slate-600'
-            }`}
+            className={cn(
+              'rounded-full px-3 py-1 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500',
+              selectedDate === tomorrowKey
+                ? 'bg-brand-500 text-white shadow-sm'
+                : 'bg-brand-50 text-brand-600 hover:bg-brand-100 dark:bg-brand-900/30 dark:text-brand-200'
+            )}
             onClick={() => setSelectedDate(tomorrowKey)}
           >
-            Tomorrow
+            {t('appointments.tomorrow')}
           </button>
         </div>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <label className="text-sm font-medium text-slate-700" htmlFor="appointment-date">
-          Appointment date
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <label className="text-sm font-medium text-surface-foreground dark:text-slate-100" htmlFor="appointment-date">
+          {t('appointments.dateLabel')}
         </label>
         <input
           id="appointment-date"
@@ -484,121 +587,125 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
           min={todayKey}
           value={selectedDate}
           onChange={(event) => setSelectedDate(event.target.value)}
-          className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
+          className="rounded-xl border border-brand-100/50 bg-white/95 px-3 py-2 text-sm text-surface-foreground shadow-sm transition focus:border-brand-400 focus:outline-none dark:border-brand-900/40 dark:bg-slate-950/60 dark:text-slate-100"
         />
       </div>
       <div className="flex justify-end">
         <button
           type="button"
-          className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90"
+          className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
           onClick={() => setStep(3)}
         >
-          See available times
+          {t('appointments.seeTimes')}
         </button>
       </div>
     </div>
   );
 
   const renderSlotStep = () => (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <button
         type="button"
-        className="text-sm font-medium text-brand hover:underline"
+        className="text-sm font-semibold text-brand-600 transition hover:underline dark:text-brand-300"
         onClick={() => setStep(2)}
       >
-        Change date
+        {t('appointments.changeDate')}
       </button>
-      {slotsLoading ? (
-        <p className="text-sm text-slate-500">Loading available times…</p>
-      ) : null}
       <div className="grid gap-3 md:grid-cols-3">
-        {slots.map((slot) => {
-          const active = selectedSlot?.start === slot.start;
-          return (
-            <button
-              key={slot.start}
-              type="button"
-              onClick={() => {
-                setSelectedSlot(slot);
-                setStep(4);
-              }}
-              className={`rounded-xl border px-4 py-3 text-sm font-medium transition ${
-                active ? 'border-brand bg-brand/10 text-brand' : 'border-slate-200 bg-white text-slate-900 hover:border-brand'
-              }`}
-            >
-              <span className="block text-xs uppercase tracking-wide text-slate-500">
-                {describeYangonDate(selectedDate)}
-              </span>
-              <span>{formatYangonTimeRange(slot.start, slot.end)}</span>
-            </button>
-          );
-        })}
+        {slotsLoading
+          ? Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-24 rounded-2xl" />)
+          : slots.map((slot) => {
+              const active = selectedSlot?.start === slot.start;
+              return (
+                <button
+                  key={slot.start}
+                  type="button"
+                  onClick={() => {
+                    setSelectedSlot(slot);
+                    setStep(4);
+                  }}
+                  className={cn(
+                    'rounded-2xl border px-4 py-3 text-sm font-semibold transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-lg dark:border-brand-900/40 dark:bg-slate-900/80',
+                    active
+                      ? 'border-brand-500 bg-brand-500 text-white shadow-lg'
+                      : 'border-brand-100/60 bg-white/90 text-brand-700'
+                  )}
+                >
+                  <span className="block text-xs uppercase tracking-wide text-brand-500/80 dark:text-brand-300">
+                    {describeYangonDate(selectedDate)}
+                  </span>
+                  <span>{formatYangonTimeRange(slot.start, slot.end)}</span>
+                </button>
+              );
+            })}
       </div>
       {!slotsLoading && slots.length === 0 ? (
-        <p className="text-sm text-slate-500">No open slots on this day. Try another date.</p>
+        <p className="text-sm text-surface-muted dark:text-slate-400">{t('appointments.noSlots')}</p>
       ) : null}
     </div>
   );
 
   const renderConfirmStep = () => (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <button
         type="button"
-        className="text-sm font-medium text-brand hover:underline"
+        className="text-sm font-semibold text-brand-600 transition hover:underline dark:text-brand-300"
         onClick={() => setStep(3)}
       >
-        Back to time selection
+        {t('appointments.back')}
       </button>
-      <dl className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+      <dl className="grid gap-3 rounded-2xl border border-brand-100/50 bg-white/90 p-4 text-sm text-surface-foreground shadow-sm dark:border-brand-900/40 dark:bg-slate-900/70">
         <div className="flex justify-between">
-          <dt className="font-medium text-slate-500">Clinic</dt>
-          <dd className="text-right font-semibold text-slate-900">{selectedClinic?.name}</dd>
+          <dt className="font-medium text-surface-muted dark:text-slate-400">{t('appointments.reviewClinic')}</dt>
+          <dd className="text-right font-semibold">{selectedClinic?.name}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="font-medium text-slate-500">Doctor</dt>
-          <dd className="text-right text-slate-900">
+          <dt className="font-medium text-surface-muted dark:text-slate-400">{t('appointments.reviewDoctor')}</dt>
+          <dd className="text-right">
             <span className="font-semibold">{selectedDoctor?.name}</span>
-            {selectedDoctor?.department ? <span className="ml-1 text-xs uppercase text-slate-500">{selectedDoctor.department}</span> : null}
+            {selectedDoctor?.department ? (
+              <span className="ml-1 text-xs uppercase text-surface-muted dark:text-slate-400">{selectedDoctor.department}</span>
+            ) : null}
           </dd>
         </div>
         <div className="flex justify-between">
-          <dt className="font-medium text-slate-500">Date</dt>
-          <dd className="text-right text-slate-900">{selectedSlot ? formatYangonLongDate(selectedSlot.start) : '—'}</dd>
+          <dt className="font-medium text-surface-muted dark:text-slate-400">{t('appointments.reviewDate')}</dt>
+          <dd className="text-right">{selectedSlot ? formatYangonLongDate(selectedSlot.start) : '—'}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="font-medium text-slate-500">Time</dt>
-          <dd className="text-right text-slate-900">{selectedSlot ? formatYangonTimeRange(selectedSlot.start, selectedSlot.end) : '—'}</dd>
+          <dt className="font-medium text-surface-muted dark:text-slate-400">{t('appointments.reviewTime')}</dt>
+          <dd className="text-right">{selectedSlot ? formatYangonTimeRange(selectedSlot.start, selectedSlot.end) : '—'}</dd>
         </div>
         <div className="flex justify-between">
-          <dt className="font-medium text-slate-500">Patient</dt>
-          <dd className="text-right text-slate-900">{selectedPatient?.name ?? '—'}</dd>
+          <dt className="font-medium text-surface-muted dark:text-slate-400">{t('appointments.reviewPatient')}</dt>
+          <dd className="text-right">{selectedPatient?.name ?? '—'}</dd>
         </div>
       </dl>
-      <label className="block text-sm font-medium text-slate-700">
-        Appointment reason (optional)
+      <label className="block text-sm font-medium text-surface-foreground dark:text-slate-100">
+        {t('appointments.reasonLabel')}
         <textarea
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           rows={3}
-          className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-brand focus:outline-none"
-          placeholder="Describe symptoms or questions for your doctor"
+          className="mt-1 w-full rounded-xl border border-brand-100/50 bg-white/95 px-3 py-2 text-sm text-surface-foreground shadow-sm transition focus:border-brand-400 focus:outline-none dark:border-brand-900/40 dark:bg-slate-950/60 dark:text-slate-100"
+          placeholder={t('appointments.reasonPlaceholder')}
         />
       </label>
       <div className="flex justify-end gap-3">
         <button
           type="button"
-          className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400"
+          className="inline-flex items-center gap-2 rounded-full border border-brand-100/60 px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-900/40 dark:text-brand-200 dark:hover:bg-brand-900/30"
           onClick={() => setStep(3)}
         >
-          Back
+          {t('appointments.back')}
         </button>
         <button
           type="button"
           onClick={() => void handleConfirm()}
           disabled={submitting}
-          className="rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {submitting ? 'Submitting…' : mode === 'create' ? 'Confirm booking' : 'Confirm changes'}
+          {submitting ? t('appointments.submitting') : mode === 'create' ? t('appointments.confirmCreate') : t('appointments.confirmUpdate')}
         </button>
       </div>
     </div>
@@ -606,71 +713,100 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
 
   return (
     <section className="space-y-6">
-      <header className="rounded-3xl bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <header className="rounded-3xl border border-brand-100/40 bg-white/90 p-6 shadow-lg backdrop-blur dark:border-brand-900/40 dark:bg-slate-900/80">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Appointments</h1>
-            <p className="text-sm text-slate-500">Manage upcoming visits, request new slots, and keep track of past bookings.</p>
+            <h1 className="text-2xl font-semibold text-surface-foreground dark:text-slate-100">{t('appointments.heading')}</h1>
+            <p className="text-sm text-surface-muted dark:text-slate-300">{t('appointments.intro')}</p>
           </div>
-          <button
-            type="button"
-            onClick={startBooking}
-            className="inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand/90"
-          >
-            Book appointment
-            <span aria-hidden>→</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void handleRefreshAppointments()}
+              className="inline-flex items-center gap-2 rounded-full border border-brand-100/60 px-4 py-2 text-sm font-semibold text-brand-700 transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-900/40 dark:text-brand-200 dark:hover:bg-brand-900/30"
+            >
+              <RefreshCw className="h-4 w-4" aria-hidden />
+              {t('appointments.refresh')}
+            </button>
+            <button
+              type="button"
+              onClick={startBooking}
+              className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+            >
+              <CalendarDays className="h-4 w-4" aria-hidden />
+              {t('appointments.bookCta')}
+            </button>
+          </div>
         </div>
-        {error ? <p className="mt-4 rounded-lg bg-rose-100 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
-        {success ? <p className="mt-4 rounded-lg bg-emerald-100 px-3 py-2 text-sm text-emerald-700">{success}</p> : null}
+        {isOffline ? (
+          <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200/70 bg-amber-50/80 px-4 py-3 text-sm text-amber-800 dark:border-amber-400/40 dark:bg-amber-900/40 dark:text-amber-100">
+            <WifiOff className="mt-0.5 h-4 w-4" aria-hidden />
+            <p>{t('appointments.offlineQueue')}</p>
+          </div>
+        ) : null}
       </header>
 
       {renderWizard()}
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">Upcoming</h2>
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-surface-foreground dark:text-slate-100">{t('appointments.upcomingHeading')}</h2>
         {appointments.upcoming.length === 0 ? (
-          <p className="text-sm text-slate-500">No upcoming appointments yet. Schedule one to get started.</p>
+          <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-brand-200/60 bg-brand-50/50 p-8 text-center text-sm text-brand-700 dark:border-brand-900/40 dark:bg-brand-900/20 dark:text-brand-100">
+            <CalendarClock className="h-6 w-6" aria-hidden />
+            <p>{t('appointments.emptyUpcoming')}</p>
+            <button
+              type="button"
+              onClick={startBooking}
+              className="inline-flex items-center gap-2 rounded-full bg-brand-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+            >
+              <CalendarDays className="h-4 w-4" aria-hidden />
+              {t('appointments.bookCta')}
+            </button>
+          </div>
         ) : (
           <div className="space-y-3">
             {appointments.upcoming.map((appointment) => (
               <article
                 key={appointment.id}
-                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+                className="rounded-3xl border border-brand-100/40 bg-white/90 p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-brand-900/40 dark:bg-slate-900/80"
               >
-                <header className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-brand">{appointment.status}</p>
-                    <h3 className="text-lg font-semibold text-slate-900">
+                    <p className="text-xs uppercase tracking-wide text-brand-500 dark:text-brand-300">
+                      {t('appointments.status')}: {appointment.status}
+                    </p>
+                    <h3 className="text-lg font-semibold text-surface-foreground dark:text-slate-100">
                       {formatYangonDate(appointment.slotStart)} · {formatYangonTimeRange(appointment.slotStart, appointment.slotEnd)}
                     </h3>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-surface-muted dark:text-slate-400">
                       {appointment.clinic.name} • {appointment.doctor.name}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {appointment.canReschedule ? (
                       <button
                         type="button"
-                        className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 hover:border-slate-400"
+                        className="inline-flex items-center gap-1 rounded-full border border-brand-100/60 px-3 py-1 text-xs font-semibold text-brand-700 transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-900/40 dark:text-brand-200 dark:hover:bg-brand-900/30"
                         onClick={() => void startReschedule(appointment)}
                       >
-                        Reschedule
+                        {t('appointments.reschedule')}
                       </button>
                     ) : null}
                     {appointment.canCancel ? (
                       <button
                         type="button"
-                        className="rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 hover:border-rose-300"
+                        className="inline-flex items-center gap-1 rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold text-rose-600 transition hover:bg-rose-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400 dark:border-rose-400/40 dark:text-rose-200 dark:hover:bg-rose-900/30"
                         onClick={() => void handleCancelAppointment(appointment)}
                       >
-                        Cancel
+                        {t('appointments.cancel')}
                       </button>
                     ) : null}
                   </div>
                 </header>
                 {appointment.reason ? (
-                  <p className="mt-3 text-sm text-slate-600">Reason: {appointment.reason}</p>
+                  <p className="mt-3 text-sm text-surface-muted dark:text-slate-300">
+                    {t('appointments.reviewReason')}: {appointment.reason}
+                  </p>
                 ) : null}
               </article>
             ))}
@@ -678,30 +814,39 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
         )}
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-slate-900">Past appointments</h2>
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-surface-foreground dark:text-slate-100">{t('appointments.pastHeading')}</h2>
         {appointments.past.length === 0 ? (
-          <p className="text-sm text-slate-500">You have no past appointments yet.</p>
+          <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-brand-200/60 bg-white/80 p-8 text-center text-sm text-surface-muted dark:border-brand-900/40 dark:bg-slate-900/70 dark:text-slate-300">
+            <CalendarDays className="h-6 w-6" aria-hidden />
+            <p>{t('appointments.emptyPast')}</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {appointments.past.map((appointment) => (
-              <article key={appointment.id} className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                <header className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <article key={appointment.id} className="rounded-3xl border border-brand-100/40 bg-white/90 p-5 shadow-sm dark:border-brand-900/40 dark:bg-slate-900/80">
+                <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-500">{appointment.status}</p>
-                    <h3 className="text-lg font-semibold text-slate-900">
+                    <p className="text-xs uppercase tracking-wide text-brand-500 dark:text-brand-300">
+                      {t('appointments.status')}: {appointment.status}
+                    </p>
+                    <h3 className="text-lg font-semibold text-surface-foreground dark:text-slate-100">
                       {formatYangonDate(appointment.slotStart)} · {formatYangonTimeRange(appointment.slotStart, appointment.slotEnd)}
                     </h3>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-sm text-surface-muted dark:text-slate-400">
                       {appointment.clinic.name} • {appointment.doctor.name}
                     </p>
                   </div>
                 </header>
                 {appointment.reason ? (
-                  <p className="mt-3 text-sm text-slate-600">Reason: {appointment.reason}</p>
+                  <p className="mt-3 text-sm text-surface-muted dark:text-slate-300">
+                    {t('appointments.reviewReason')}: {appointment.reason}
+                  </p>
                 ) : null}
                 {appointment.cancelReason ? (
-                  <p className="mt-2 text-xs text-rose-600">Cancelled: {appointment.cancelReason}</p>
+                  <p className="mt-2 text-xs text-rose-600 dark:text-rose-300">
+                    {t('appointments.reviewCancelReason')}: {appointment.cancelReason}
+                  </p>
                 ) : null}
               </article>
             ))}
@@ -712,24 +857,37 @@ export function PatientAppointmentsDashboard({ initialAppointments, initialClini
   );
 }
 
-function ProgressIndicator({ currentStep }: { currentStep: WizardStep }) {
+function ProgressIndicator({
+  currentStep,
+  labels,
+}: {
+  currentStep: WizardStep;
+  labels: Record<WizardStep, string>;
+}) {
   return (
-    <ol className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-      {Object.entries(STEP_TITLES).map(([key, label]) => {
+    <ol className="flex items-center gap-3 text-xs font-semibold uppercase tracking-wide text-brand-500/70 dark:text-brand-300/70">
+      {Object.entries(labels).map(([key, label]) => {
         const step = Number(key) as WizardStep;
         const active = step === currentStep;
         const completed = step < currentStep;
         return (
           <li key={key} className="flex items-center gap-2">
             <span
-              className={`flex h-6 w-6 items-center justify-center rounded-full border ${
-                active ? 'border-brand bg-brand text-white' : completed ? 'border-brand bg-brand/20 text-brand' : 'border-slate-300 bg-white text-slate-500'
-              }`}
+              className={cn(
+                'flex h-7 w-7 items-center justify-center rounded-full border text-xs transition',
+                active
+                  ? 'border-brand-500 bg-brand-500 text-white shadow-sm'
+                  : completed
+                  ? 'border-brand-300 bg-brand-100 text-brand-600 dark:bg-brand-900/30 dark:text-brand-200'
+                  : 'border-brand-100 bg-white text-brand-500 dark:border-brand-900/40 dark:bg-slate-900/70'
+              )}
             >
               {step + 1}
             </span>
-            <span className={active ? 'text-brand' : 'text-slate-500'}>{label}</span>
-            {step < 4 ? <span className="text-slate-300">›</span> : null}
+            <span className={cn('text-xs', active ? 'text-brand-600 dark:text-brand-200' : 'text-surface-muted dark:text-slate-400')}>
+              {label}
+            </span>
+            {step < 4 ? <span className="text-brand-200 dark:text-brand-700">•</span> : null}
           </li>
         );
       })}
