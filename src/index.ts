@@ -103,7 +103,7 @@ const shouldEnablePatientPortal =
 
 if (shouldEnablePatientPortal) {
   const patientPortalDir = path.resolve(process.cwd(), 'patient-portal');
-  const createNextApp = next as unknown as (options: NextServerOptions) => NextServer;
+  const createNextApp: (options: NextServerOptions) => NextServer = next;
   const patientPortalApp = createNextApp({
     dev: process.env.NODE_ENV !== 'production',
     dir: patientPortalDir,
