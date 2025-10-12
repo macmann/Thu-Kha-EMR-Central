@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { fetchClinics } from '@/lib/api';
 import { PatientHomeContent } from '@/components/PatientHomeContent';
 

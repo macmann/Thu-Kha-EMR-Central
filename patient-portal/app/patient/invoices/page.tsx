@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import InvoicesPage from '@/components/patient-billing/InvoicesPage';
 import { fetchPatientInvoices, type PatientInvoiceSummary } from '@/lib/api';
 
