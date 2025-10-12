@@ -31,6 +31,10 @@ export const resources = {
         clinicCount: '{{count}} clinic',
         clinicCount_one: '{{count}} clinic',
         clinicCount_other: '{{count}} clinics',
+        bookingPaused: 'Bookings are currently paused for this clinic.',
+        policyCancelWindow: 'Cancel up to {{hours}} hours before your visit.',
+        policyFlexible: 'Flexible cancellation window—contact the clinic if you need to adjust.',
+        policyNoShow: 'No-show policy: {{text}}',
       },
       appointments: {
         heading: 'Appointments',
@@ -134,6 +138,10 @@ export const resources = {
         clinicCount: 'ဆေးခန်း {{count}} ခု',
         clinicCount_one: 'ဆေးခန်း {{count}} ခု',
         clinicCount_other: 'ဆေးခန်း {{count}} ခု',
+        bookingPaused: 'ဤဆေးခန်းအတွက် ရက်ချိန်းများကို ယာယီရပ်နားထားပါသည်။',
+        policyCancelWindow: 'ရက်ချိန်းမတိုင်မီ နာရီ {{hours}} အနည်းဆုံးတွင် ပယ်ဖျက်နိုင်ပါသည်။',
+        policyFlexible: 'ပယ်ဖျက်ချိန် အကန့်အသတ် မရှိပါ။ လိုအပ်ပါက ဆေးခန်းနှင့် ဆက်သွယ်ပါ။',
+        policyNoShow: 'မလာပါက စည်းမျဉ်း: {{text}}',
       },
       appointments: {
         heading: 'ချိန်းဆိုမှုများ',

@@ -3,17 +3,21 @@ import {
   createDoctor,
   createUserAccount,
   getClinicConfiguration,
+  getPatientPortalSettings,
   assignUserToActiveTenant,
   listDoctors,
   listUsers,
   updateClinicConfiguration,
+  updatePatientPortalSettings,
   updateUserAccount,
   removeUserFromActiveTenant,
   type CreateUserPayload,
   type Doctor,
   type UpdateClinicConfigurationPayload,
+  type UpdatePatientPortalSettingsPayload,
   type UpdateUserPayload,
   type UserAccount,
+  type PatientPortalSettings,
 } from '../api/client';
 import { useAuth } from './AuthProvider';
 import { useTenant } from '../contexts/TenantContext';
@@ -33,6 +37,10 @@ interface SettingsContextType {
   setWidgetEnabled: (enabled: boolean) => void;
   assignExistingUser: (userId: string) => Promise<UserAccount>;
   removeUserFromClinic: (userId: string) => Promise<void>;
+  patientPortalSettings: PatientPortalSettings | null;
+  updatePatientPortal: (data: UpdatePatientPortalSettingsPayload) => Promise<PatientPortalSettings>;
+  togglePortalEnabled: (enabled: boolean) => Promise<PatientPortalSettings>;
+  toggleBookingEnabled: (enabled: boolean) => Promise<PatientPortalSettings>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -45,6 +53,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [widgetEnabled, setWidgetEnabledState] = useState<boolean>(false);
+  const [patientPortalSettings, setPatientPortalSettings] = useState<PatientPortalSettings | null>(null);
   const { accessToken } = useAuth();
   const { activeTenant } = useTenant();
 
@@ -55,6 +64,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setContactAddress(null);
       setContactPhone(null);
       setWidgetEnabledState(false);
+      setPatientPortalSettings(null);
       return;
     }
 
@@ -75,6 +85,16 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setContactAddress(null);
         setContactPhone(null);
         setWidgetEnabledState(false);
+      });
+
+    getPatientPortalSettings()
+      .then((settings) => {
+        if (!active) return;
+        setPatientPortalSettings(settings);
+      })
+      .catch(() => {
+        if (!active) return;
+        setPatientPortalSettings(null);
       });
 
     return () => {
@@ -167,6 +187,20 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setWidgetEnabledState(Boolean(updated.widgetEnabled));
   };
 
+  const updatePortal = async (data: UpdatePatientPortalSettingsPayload) => {
+    const updated = await updatePatientPortalSettings(data);
+    setPatientPortalSettings(updated);
+    return updated;
+  };
+
+  const togglePortalEnabled = async (enabled: boolean) => {
+    return updatePortal({ enabledForPatientPortal: enabled });
+  };
+
+  const toggleBookingEnabled = async (enabled: boolean) => {
+    return updatePortal({ enabledForPatientBooking: enabled });
+  };
+
   const addUser = async (user: CreateUserPayload) => {
     const created = await createUserAccount(user);
     setUsers((prev) => [...prev, created].sort((a, b) => a.email.localeCompare(b.email)));
@@ -221,6 +255,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setWidgetEnabled,
         assignExistingUser,
         removeUserFromClinic,
+        patientPortalSettings,
+        updatePatientPortal: updatePortal,
+        togglePortalEnabled,
+        toggleBookingEnabled,
       }}
     >
       {children}

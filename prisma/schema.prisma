@@ -163,6 +163,7 @@ model Tenant {
   enabledForPatientPortal Boolean  @default(false)
   enabledForPatientBooking Boolean  @default(false)
   portalBranding          Json?
+  bookingPolicy           Json?
 
   userMemberships    UserTenant[]
   patientMemberships PatientTenant[]

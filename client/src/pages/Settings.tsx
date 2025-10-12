@@ -11,6 +11,7 @@ import {
   listAssignableUsers,
   type Role,
   type UserAccount,
+  type UpdatePatientPortalSettingsPayload,
 } from '../api/client';
 import { useAuth } from '../context/AuthProvider';
 import { useTenant } from '../contexts/TenantContext';
@@ -108,6 +109,10 @@ export default function Settings() {
     setWidgetEnabled,
     assignExistingUser,
     removeUserFromClinic,
+    patientPortalSettings,
+    updatePatientPortal,
+    togglePortalEnabled,
+    toggleBookingEnabled,
   } = useSettings();
   const { t, language, setLanguage } = useTranslation();
   const { user } = useAuth();
@@ -145,6 +150,20 @@ export default function Settings() {
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [tenantSwitchError, setTenantSwitchError] = useState<string | null>(null);
   const [tenantSwitchingId, setTenantSwitchingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'general' | 'patientPortal'>('general');
+  const [portalPrimaryColor, setPortalPrimaryColor] = useState('#14b8a6');
+  const [portalAccentColor, setPortalAccentColor] = useState('#0f766e');
+  const [portalHeroTitle, setPortalHeroTitle] = useState('');
+  const [portalHeroSubtitle, setPortalHeroSubtitle] = useState('');
+  const [portalCancelWindow, setPortalCancelWindow] = useState<number | ''>('');
+  const [portalNoShowText, setPortalNoShowText] = useState('');
+  const [portalLogo, setPortalLogo] = useState<string | null>(null);
+  const [portalSaving, setPortalSaving] = useState(false);
+  const [portalMessage, setPortalMessage] = useState<string | null>(null);
+  const [portalError, setPortalError] = useState<string | null>(null);
+  const [portalLogoUploading, setPortalLogoUploading] = useState(false);
+  const [portalToggleLoading, setPortalToggleLoading] = useState(false);
+  const [bookingToggleLoading, setBookingToggleLoading] = useState(false);
 
   const totalUsers = users.length;
   const totalDoctors = doctors.length;
@@ -197,6 +216,31 @@ export default function Settings() {
     setAddress(contactAddress ?? '');
     setPhone(contactPhone ?? '');
   }, [appName, contactAddress, contactPhone]);
+
+  useEffect(() => {
+    if (!patientPortalSettings) {
+      setPortalLogo(null);
+      setPortalPrimaryColor('#14b8a6');
+      setPortalAccentColor('#0f766e');
+      setPortalHeroTitle('');
+      setPortalHeroSubtitle('');
+      setPortalCancelWindow('');
+      setPortalNoShowText('');
+      setPortalMessage(null);
+      setPortalError(null);
+      return;
+    }
+
+    setPortalLogo(patientPortalSettings.branding.logo ?? null);
+    setPortalPrimaryColor(patientPortalSettings.branding.primaryColor ?? '#14b8a6');
+    setPortalAccentColor(patientPortalSettings.branding.accentColor ?? '#0f766e');
+    setPortalHeroTitle(patientPortalSettings.branding.heroTitle ?? '');
+    setPortalHeroSubtitle(patientPortalSettings.branding.heroSubtitle ?? '');
+    setPortalCancelWindow(
+      patientPortalSettings.bookingPolicy.cancelWindowHours ?? ''
+    );
+    setPortalNoShowText(patientPortalSettings.bookingPolicy.noShowPolicyText ?? '');
+  }, [patientPortalSettings]);
 
   useEffect(() => {
     if (isSystemAdmin || user?.role !== 'ITAdmin') {
@@ -367,6 +411,123 @@ export default function Settings() {
       setBrandingError(parseErrorMessage(error, t('Unable to update branding.')));
     } finally {
       setBrandingSaving(false);
+    }
+  }
+
+  async function handlePortalToggle(event: ChangeEvent<HTMLInputElement>) {
+    if (!canManageBranding) return;
+    if (!hasActiveTenant) {
+      setPortalError(t('Select a clinic before updating branding.'));
+      return;
+    }
+
+    const enabled = event.target.checked;
+    setPortalToggleLoading(true);
+    setPortalError(null);
+    setPortalMessage(null);
+
+    try {
+      const updated = await togglePortalEnabled(enabled);
+      setPortalLogo(updated.branding.logo ?? null);
+      setPortalMessage(
+        enabled ? t('Patient portal enabled.') : t('Patient portal disabled.'),
+      );
+    } catch (error) {
+      setPortalError(parseErrorMessage(error, t('Unable to update portal settings.')));
+    } finally {
+      setPortalToggleLoading(false);
+    }
+  }
+
+  async function handleBookingToggle(event: ChangeEvent<HTMLInputElement>) {
+    if (!canManageBranding) return;
+    if (!hasActiveTenant) {
+      setPortalError(t('Select a clinic before updating branding.'));
+      return;
+    }
+
+    const enabled = event.target.checked;
+    setBookingToggleLoading(true);
+    setPortalError(null);
+    setPortalMessage(null);
+
+    try {
+      const updated = await toggleBookingEnabled(enabled);
+      setPortalLogo(updated.branding.logo ?? null);
+      setPortalMessage(
+        enabled ? t('Patient self-booking enabled.') : t('Patient self-booking disabled.'),
+      );
+    } catch (error) {
+      setPortalError(parseErrorMessage(error, t('Unable to update portal settings.')));
+    } finally {
+      setBookingToggleLoading(false);
+    }
+  }
+
+  async function handlePortalLogoChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file || !canManageBranding) return;
+
+    if (!hasActiveTenant) {
+      setPortalError(t('Select a clinic before updating branding.'));
+      event.target.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const nextLogo = reader.result as string;
+      setPortalLogoUploading(true);
+      setPortalError(null);
+      setPortalMessage(null);
+      try {
+        const updated = await updatePatientPortal({ branding: { logo: nextLogo } });
+        setPortalLogo(updated.branding.logo ?? null);
+        setPortalMessage(t('Patient portal branding updated.'));
+      } catch (error) {
+        setPortalError(parseErrorMessage(error, t('Unable to update portal settings.')));
+      } finally {
+        setPortalLogoUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function handlePortalSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!canManageBranding) return;
+
+    if (!hasActiveTenant) {
+      setPortalError(t('Select a clinic before updating branding.'));
+      return;
+    }
+
+    setPortalSaving(true);
+    setPortalError(null);
+    setPortalMessage(null);
+
+    try {
+      const cancelWindow = portalCancelWindow === '' ? null : Number(portalCancelWindow);
+      const payload = {
+        branding: {
+          primaryColor: portalPrimaryColor.toLowerCase(),
+          accentColor: portalAccentColor.toLowerCase(),
+          heroTitle: portalHeroTitle.trim() || null,
+          heroSubtitle: portalHeroSubtitle.trim() || null,
+        },
+        bookingPolicy: {
+          cancelWindowHours: cancelWindow,
+          noShowPolicyText: portalNoShowText.trim() || null,
+        },
+      } satisfies UpdatePatientPortalSettingsPayload;
+
+      const updated = await updatePatientPortal(payload);
+      setPortalLogo(updated.branding.logo ?? null);
+      setPortalMessage(t('Patient portal settings updated.'));
+    } catch (error) {
+      setPortalError(parseErrorMessage(error, t('Unable to update portal settings.')));
+    } finally {
+      setPortalSaving(false);
     }
   }
 
@@ -649,7 +810,33 @@ export default function Settings() {
           </section>
         )}
 
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 flex flex-wrap gap-2 rounded-2xl bg-white p-2 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setActiveTab('general')}
+            className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              activeTab === 'general'
+                ? 'bg-blue-600 text-white shadow'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {t('General Settings')}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('patientPortal')}
+            className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              activeTab === 'patientPortal'
+                ? 'bg-blue-600 text-white shadow'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {t('Patient Portal')}
+          </button>
+        </div>
+
+        <div className={activeTab === 'general' ? 'space-y-6' : 'hidden'}>
+          <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="flex flex-col rounded-2xl bg-white p-5 shadow-sm">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
@@ -734,8 +921,8 @@ export default function Settings() {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1.1fr]">
-          <section className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1.1fr]">
+            <section className="space-y-6">
             <div className="rounded-2xl bg-white p-6 shadow-sm">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
@@ -1415,6 +1602,265 @@ export default function Settings() {
               </p>
             </div>
           </aside>
+
+          </div>
+        </div>
+
+        <div className={activeTab === 'patientPortal' ? 'space-y-6' : 'hidden'}>
+          {patientPortalSettings ? (
+            <>
+              <section className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-2xl bg-white p-6 shadow-sm">
+                  <div className="flex flex-col gap-3">
+                    <h2 className="text-lg font-semibold text-gray-900">{t('Patient Portal Access')}</h2>
+                    <p className="text-sm text-gray-600">
+                      {t('Control when patients can view the portal, request bookings, and review your cancellation policy.')}
+                    </p>
+                    {!canManageBranding && (
+                      <p className="text-xs font-semibold text-amber-600">
+                        {t('Only system or IT administrators can update branding details.')}
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-6 space-y-4">
+                    <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{t('Patient portal')}</p>
+                        <p className="text-xs text-gray-500">
+                          {t('Toggle overall visibility for patients linked to this clinic.')}
+                        </p>
+                      </div>
+                      <label className={`inline-flex items-center gap-2 ${!canManageBranding || !hasActiveTenant ? 'opacity-60' : ''}`}>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          checked={Boolean(patientPortalSettings?.enabledForPatientPortal)}
+                          onChange={handlePortalToggle}
+                          disabled={!canManageBranding || !hasActiveTenant || portalToggleLoading}
+                        />
+                        <span className="text-sm font-semibold text-gray-700">
+                          {portalToggleLoading
+                            ? t('Saving…')
+                            : patientPortalSettings?.enabledForPatientPortal
+                              ? t('Enabled')
+                              : t('Disabled')}
+                        </span>
+                      </label>
+                    </div>
+                    <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900">{t('Patient self-booking')}</p>
+                        <p className="text-xs text-gray-500">
+                          {t('Allow patients to request and reschedule appointments online.')}
+                        </p>
+                      </div>
+                      <label className={`inline-flex items-center gap-2 ${!canManageBranding || !hasActiveTenant ? 'opacity-60' : ''}`}>
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          checked={Boolean(patientPortalSettings?.enabledForPatientBooking)}
+                          onChange={handleBookingToggle}
+                          disabled={!canManageBranding || !hasActiveTenant || bookingToggleLoading}
+                        />
+                        <span className="text-sm font-semibold text-gray-700">
+                          {bookingToggleLoading
+                            ? t('Saving…')
+                            : patientPortalSettings?.enabledForPatientBooking
+                              ? t('Enabled')
+                              : t('Disabled')}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                  {portalError && (
+                    <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{portalError}</div>
+                  )}
+                  {portalMessage && (
+                    <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                      {portalMessage}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-2xl bg-white p-6 shadow-sm">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500">{t('Live Preview')}</h3>
+                  <div
+                    className="mt-4 rounded-2xl border border-gray-200 p-4"
+                    style={{
+                      background: `linear-gradient(135deg, ${portalPrimaryColor} 0%, ${portalAccentColor} 100%)`,
+                    }}
+                  >
+                    <div className="rounded-xl bg-white/90 p-4 shadow">
+                      <div className="flex items-center gap-3">
+                        {portalLogo ? (
+                          <img src={portalLogo} alt="Portal logo" className="h-10 w-10 rounded-full object-cover" />
+                        ) : (
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-lg font-semibold text-gray-600">
+                            {appName.at(0) ?? 'C'}
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-gray-500">Patient Portal</p>
+                          <p className="text-sm font-semibold text-gray-900">{appName}</p>
+                        </div>
+                      </div>
+                      <div className="mt-4 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+                        {portalCancelWindow === ''
+                          ? t('Bookings are open. Configure a cancellation window to provide guidance to patients.')
+                          : t('Cancel up to {{hours}} hours before the visit.', { hours: portalCancelWindow })}
+                        {portalNoShowText ? (
+                          <p className="mt-2 text-xs text-gray-500">
+                            {t('No-show policy: {{text}}', { text: portalNoShowText })}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-2xl bg-white p-6 shadow-sm">
+                <form onSubmit={handlePortalSave} className="space-y-6">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700" htmlFor="portal-primary-color">
+                        {t('Primary color')}
+                      </label>
+                      <input
+                        id="portal-primary-color"
+                        type="color"
+                        value={portalPrimaryColor}
+                        onChange={(event) => setPortalPrimaryColor(event.target.value)}
+                        disabled={!canManageBranding || !hasActiveTenant}
+                        className="mt-2 h-11 w-full cursor-pointer rounded-xl border border-gray-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700" htmlFor="portal-accent-color">
+                        {t('Accent color')}
+                      </label>
+                      <input
+                        id="portal-accent-color"
+                        type="color"
+                        value={portalAccentColor}
+                        onChange={(event) => setPortalAccentColor(event.target.value)}
+                        disabled={!canManageBranding || !hasActiveTenant}
+                        className="mt-2 h-11 w-full cursor-pointer rounded-xl border border-gray-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700" htmlFor="portal-hero-title">
+                        {t('Hero title')}
+                      </label>
+                      <input
+                        id="portal-hero-title"
+                        type="text"
+                        value={portalHeroTitle}
+                        onChange={(event) => setPortalHeroTitle(event.target.value)}
+                        disabled={!canManageBranding || !hasActiveTenant}
+                        className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700" htmlFor="portal-hero-subtitle">
+                        {t('Hero subtitle')}
+                      </label>
+                      <textarea
+                        id="portal-hero-subtitle"
+                        value={portalHeroSubtitle}
+                        onChange={(event) => setPortalHeroSubtitle(event.target.value)}
+                        disabled={!canManageBranding || !hasActiveTenant}
+                        rows={3}
+                        className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700" htmlFor="portal-cancel-window">
+                        {t('Cancellation window (hours)')}
+                      </label>
+                      <input
+                        id="portal-cancel-window"
+                        type="number"
+                        min={0}
+                        max={168}
+                        value={portalCancelWindow === '' ? '' : portalCancelWindow}
+                        onChange={(event) => {
+                          const next = event.target.value;
+                          setPortalCancelWindow(next === '' ? '' : Number(next));
+                        }}
+                        disabled={!canManageBranding || !hasActiveTenant}
+                        className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      />
+                      <p className="mt-1 text-xs text-gray-500">
+                        {t('Patients will see how many hours before a visit they can cancel without calling the clinic.')}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700" htmlFor="portal-logo-upload">
+                        {t('Portal logo')}
+                      </label>
+                      <input
+                        id="portal-logo-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePortalLogoChange}
+                        disabled={!canManageBranding || !hasActiveTenant || portalLogoUploading}
+                        className={`mt-2 block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:px-4 file:py-2 file:text-sm file:font-semibold ${
+                          !canManageBranding || !hasActiveTenant
+                            ? 'file:bg-gray-200 file:text-gray-500'
+                            : 'file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100'
+                        } ${portalLogoUploading ? 'opacity-70' : ''}`}
+                      />
+                      <p className="mt-1 text-xs text-gray-500">{t('PNG, JPG or SVG up to 1MB.')}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700" htmlFor="portal-no-show">
+                      {t('No-show policy text')}
+                    </label>
+                    <textarea
+                      id="portal-no-show"
+                      value={portalNoShowText}
+                      onChange={(event) => setPortalNoShowText(event.target.value)}
+                      disabled={!canManageBranding || !hasActiveTenant}
+                      rows={4}
+                      className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      {t('Let patients know what happens if they miss an appointment. This text appears in the patient portal.')}
+                    </p>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={!canManageBranding || !hasActiveTenant || portalSaving}
+                      className={`inline-flex items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white shadow ${
+                        !canManageBranding || !hasActiveTenant
+                          ? 'bg-gray-400'
+                          : portalSaving
+                            ? 'bg-blue-400'
+                            : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                    >
+                      {portalSaving ? t('Saving…') : t('Save Changes')}
+                    </button>
+                  </div>
+                  {portalError && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{portalError}</div>
+                  )}
+                  {portalMessage && (
+                    <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                      {portalMessage}
+                    </div>
+                  )}
+                </form>
+              </section>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-6 text-sm text-gray-600">
+              {t('Select a clinic before updating branding.')}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

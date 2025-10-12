@@ -43,18 +43,41 @@ export default async function ClinicLayout({
   const allowBilling = !clinicRevoked && isGranted('BILLING');
 
   const primaryColor = clinic.branding?.primaryColor ?? '#14b8a6';
+  const accentColor = clinic.branding?.accentColor ?? primaryColor;
+  const heroTitle = clinic.branding?.heroTitle ?? 'Hello!';
+  const heroSubtitle = clinic.branding?.heroSubtitle;
+  const defaultSubtitle =
+    'View your visit history, manage appointments, and update your personal details. This patient portal is tailored for';
+  const cancelWindowMessage =
+    clinic.bookingPolicy.cancelWindowHours !== null
+      ? `Cancel up to ${clinic.bookingPolicy.cancelWindowHours} hours before your visit.`
+      : null;
 
   return (
-    <div className="flex min-h-screen flex-col" style={{ ['--primary-color' as string]: primaryColor }}>
+    <div
+      className="flex min-h-screen flex-col"
+      style={{ ['--primary-color' as string]: primaryColor, ['--accent-color' as string]: accentColor }}
+    >
       <PatientHeader clinicName={clinic.name} logoUrl={clinic.branding?.logoUrl ?? null} />
       <main className="flex flex-1 flex-col gap-6 bg-slate-50 px-6 py-8">
         <section id="home" className="mx-auto w-full max-w-3xl">
           <div className="rounded-3xl bg-white p-8 shadow-sm">
-            <h1 className="text-2xl font-semibold text-slate-900">Hello!</h1>
+            <h1 className="text-2xl font-semibold text-slate-900">{heroTitle}</h1>
             <p className="mt-2 text-sm text-slate-500">
-              View your visit history, manage appointments, and update your personal details. This patient portal is tailored for
-              <span className="ml-1 font-medium text-brand">{clinic.name}</span>.
+              {heroSubtitle ?? defaultSubtitle}
+              {heroSubtitle ? null : (
+                <>
+                  {' '}
+                  <span className="font-medium text-brand">{clinic.name}</span>.
+                </>
+              )}
             </p>
+            {cancelWindowMessage ? (
+              <p className="mt-3 text-xs font-medium text-brand-600">{cancelWindowMessage}</p>
+            ) : null}
+            {clinic.bookingPolicy.noShowPolicyText ? (
+              <p className="mt-2 text-xs text-slate-500">No-show policy: {clinic.bookingPolicy.noShowPolicyText}</p>
+            ) : null}
             {clinicRevoked ? (
               <div className="mt-4 space-y-3 rounded-md bg-rose-100 p-3 text-sm text-rose-700">
                 <p>
