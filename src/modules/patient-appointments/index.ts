@@ -118,12 +118,24 @@ async function resolveClinicAccess(
     select: {
       clinicId: true,
       patientId: true,
-      patient: { select: { patientId: true, name: true } },
     },
   });
 
   if (!links.length) {
     return new Map();
+  }
+
+  const patientIds = Array.from(new Set(links.map((link) => link.patientId)));
+  const patientRecords = patientIds.length
+    ? await prisma.patient.findMany({
+        where: { patientId: { in: patientIds } },
+        select: { patientId: true, name: true },
+      })
+    : [];
+
+  const patientsById = new Map<string, ClinicPatient>();
+  for (const record of patientRecords) {
+    patientsById.set(record.patientId, { id: record.patientId, name: record.name });
   }
 
   const clinics = await prisma.tenant.findMany({
@@ -145,12 +157,13 @@ async function resolveClinicAccess(
 
   const grouped = new Map<string, ClinicPatient[]>();
   for (const link of links) {
-    if (!link.patient) {
+    const clinicPatients = grouped.get(link.clinicId) ?? [];
+    const patient = patientsById.get(link.patientId);
+    if (!patient) {
       continue;
     }
-    const patients = grouped.get(link.clinicId) ?? [];
-    patients.push({ id: link.patient.patientId, name: link.patient.name });
-    grouped.set(link.clinicId, patients);
+    clinicPatients.push(patient);
+    grouped.set(link.clinicId, clinicPatients);
   }
 
   const access = new Map<string, ClinicBookingAccess>();

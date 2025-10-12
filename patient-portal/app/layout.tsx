@@ -7,7 +7,12 @@ import { Providers } from '@/components/Providers';
 import { OfflineBanner } from '@/components/OfflineBanner';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
-const notoMyanmar = Noto_Sans_Myanmar({ subsets: ['myanmar'], variable: '--font-myanmar', display: 'swap' });
+const notoMyanmar = Noto_Sans_Myanmar({
+  subsets: ['myanmar'],
+  variable: '--font-myanmar',
+  display: 'swap',
+  weight: ['400'],
+});
 
 export const metadata: Metadata = {
   title: 'Patient Portal',

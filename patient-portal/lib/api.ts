@@ -175,15 +175,20 @@ export type PatientVisitDetail = {
 };
 
 export async function fetchClinics(): Promise<ClinicSummary[]> {
-  const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
-  const response = await fetch(`${baseUrl}/api/public/clinics`, { next: { revalidate: 60 } });
+  try {
+    const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
+    const response = await fetch(`${baseUrl}/api/public/clinics`, { next: { revalidate: 60 } });
 
-  if (!response.ok) {
-    throw new Error('Unable to load clinics');
+    if (!response.ok) {
+      throw new Error('Unable to load clinics');
+    }
+
+    const data = (await response.json()) as { clinics: ClinicSummary[] };
+    return data.clinics;
+  } catch (error) {
+    console.error('Failed to fetch clinics for patient portal', error);
+    return [];
   }
-
-  const data = (await response.json()) as { clinics: ClinicSummary[] };
-  return data.clinics;
 }
 
 export async function fetchClinicById(clinicId: string): Promise<ClinicSummary | null> {
@@ -234,52 +239,62 @@ async function patientApiRequest(path: string, options: PatientApiRequestOptions
 export async function searchPatientClinics(
   options: { q?: string; city?: string; specialty?: string; cookie?: string } = {},
 ): Promise<ClinicBookingSummary[]> {
-  const response = await patientApiRequest('/api/patient/clinics/search', {
-    query: {
-      q: options.q,
-      city: options.city,
-      specialty: options.specialty,
-    },
-    cookie: options.cookie,
-  });
+  try {
+    const response = await patientApiRequest('/api/patient/clinics/search', {
+      query: {
+        q: options.q,
+        city: options.city,
+        specialty: options.specialty,
+      },
+      cookie: options.cookie,
+    });
 
-  if (response.status === 401) {
+    if (response.status === 401) {
+      return [];
+    }
+
+    if (!response.ok) {
+      throw new Error('Unable to load clinics');
+    }
+
+    const data = (await response.json()) as { clinics: Array<ClinicBookingSummary> };
+    return data.clinics;
+  } catch (error) {
+    console.error('Failed to search clinics for patient portal', error);
     return [];
   }
-
-  if (!response.ok) {
-    throw new Error('Unable to load clinics');
-  }
-
-  const data = (await response.json()) as { clinics: Array<ClinicBookingSummary> };
-  return data.clinics;
 }
 
 export async function fetchClinicDoctors(
   clinicId: string,
   options: { cookie?: string } = {},
 ): Promise<{ clinic: { id: string; name: string }; doctors: PatientDoctorSummary[]; patients: ClinicPatientProfile[] } | null> {
-  const response = await patientApiRequest(`/api/patient/clinics/${clinicId}/doctors`, {
-    cookie: options.cookie,
-  });
+  try {
+    const response = await patientApiRequest(`/api/patient/clinics/${clinicId}/doctors`, {
+      cookie: options.cookie,
+    });
 
-  if (response.status === 401) {
+    if (response.status === 401) {
+      return null;
+    }
+
+    if (response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error('Unable to load doctors');
+    }
+
+    return (await response.json()) as {
+      clinic: { id: string; name: string };
+      doctors: PatientDoctorSummary[];
+      patients: ClinicPatientProfile[];
+    };
+  } catch (error) {
+    console.error('Failed to fetch clinic doctors for patient portal', error);
     return null;
   }
-
-  if (response.status === 404) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error('Unable to load doctors');
-  }
-
-  return (await response.json()) as {
-    clinic: { id: string; name: string };
-    doctors: PatientDoctorSummary[];
-    patients: ClinicPatientProfile[];
-  };
 }
 
 export async function fetchDoctorSlots(
@@ -287,20 +302,25 @@ export async function fetchDoctorSlots(
   date: string,
   options: { clinicId: string; cookie?: string },
 ): Promise<{ date: string; slots: PatientSlotSummary[] } | null> {
-  const response = await patientApiRequest(`/api/patient/appointments/doctors/${doctorId}/slots`, {
-    query: { date, clinicId: options.clinicId },
-    cookie: options.cookie,
-  });
+  try {
+    const response = await patientApiRequest(`/api/patient/appointments/doctors/${doctorId}/slots`, {
+      query: { date, clinicId: options.clinicId },
+      cookie: options.cookie,
+    });
 
-  if (response.status === 401 || response.status === 404) {
+    if (response.status === 401 || response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error('Unable to load availability');
+    }
+
+    return (await response.json()) as { date: string; slots: PatientSlotSummary[] };
+  } catch (error) {
+    console.error('Failed to fetch doctor slots for patient portal', error);
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error('Unable to load availability');
-  }
-
-  return (await response.json()) as { date: string; slots: PatientSlotSummary[] };
 }
 
 export async function createPatientAppointment(
@@ -371,84 +391,104 @@ export async function cancelPatientAppointment(
 export async function fetchPatientAppointments(
   options: { cookie?: string } = {},
 ): Promise<PatientAppointmentsResponse | null> {
-  const response = await patientApiRequest('/api/patient/appointments', {
-    cookie: options.cookie,
-  });
+  try {
+    const response = await patientApiRequest('/api/patient/appointments', {
+      cookie: options.cookie,
+    });
 
-  if (response.status === 401) {
+    if (response.status === 401) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error('Unable to load appointments');
+    }
+
+    return (await response.json()) as PatientAppointmentsResponse;
+  } catch (error) {
+    console.error('Failed to fetch patient appointments for portal', error);
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error('Unable to load appointments');
-  }
-
-  return (await response.json()) as PatientAppointmentsResponse;
 }
 
 export async function fetchPatientInvoices(
   options: { status?: 'PAID' | 'UNPAID'; cookie?: string } = {},
 ): Promise<PatientInvoiceSummary[]> {
-  const response = await patientApiRequest('/api/patient/invoices', {
-    cookie: options.cookie,
-    query: { status: options.status },
-  });
+  try {
+    const response = await patientApiRequest('/api/patient/invoices', {
+      cookie: options.cookie,
+      query: { status: options.status },
+    });
 
-  if (response.status === 401) {
+    if (response.status === 401) {
+      return [];
+    }
+
+    if (!response.ok) {
+      throw new Error('Unable to load invoices');
+    }
+
+    const data = (await response.json()) as { invoices: PatientInvoiceSummary[] };
+    return data.invoices;
+  } catch (error) {
+    console.error('Failed to fetch patient invoices for portal', error);
     return [];
   }
-
-  if (!response.ok) {
-    throw new Error('Unable to load invoices');
-  }
-
-  const data = (await response.json()) as { invoices: PatientInvoiceSummary[] };
-  return data.invoices;
 }
 
 export async function fetchPatientConsents(options: { cookie?: string } = {}): Promise<PatientConsentResponse | null> {
-  const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  try {
+    const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
+    const headers: Record<string, string> = { Accept: 'application/json' };
 
-  if (options.cookie) {
-    headers.cookie = options.cookie;
-  }
+    if (options.cookie) {
+      headers.cookie = options.cookie;
+    }
 
-  const response = await fetch(`${baseUrl}/api/patient/consent`, {
-    method: 'GET',
-    headers,
-    credentials: 'include',
-    cache: 'no-store',
-  });
+    const response = await fetch(`${baseUrl}/api/patient/consent`, {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+      cache: 'no-store',
+    });
 
-  if (response.status === 401) {
+    if (response.status === 401) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error('Unable to load consent settings');
+    }
+
+    return (await response.json()) as PatientConsentResponse;
+  } catch (error) {
+    console.error('Failed to fetch patient consent settings for portal', error);
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error('Unable to load consent settings');
-  }
-
-  return (await response.json()) as PatientConsentResponse;
 }
 
 export async function fetchPatientNotifications(
   options: { cookie?: string; limit?: number } = {},
 ): Promise<PatientNotificationsResponse | null> {
-  const response = await patientApiRequest('/api/patient/notifications', {
-    cookie: options.cookie,
-    query: options.limit ? { limit: String(options.limit) } : undefined,
-  });
+  try {
+    const response = await patientApiRequest('/api/patient/notifications', {
+      cookie: options.cookie,
+      query: options.limit ? { limit: String(options.limit) } : undefined,
+    });
 
-  if (response.status === 401) {
+    if (response.status === 401) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error('Unable to load notifications');
+    }
+
+    return (await response.json()) as PatientNotificationsResponse;
+  } catch (error) {
+    console.error('Failed to fetch patient notifications for portal', error);
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error('Unable to load notifications');
-  }
-
-  return (await response.json()) as PatientNotificationsResponse;
 }
 
 export async function markPatientNotificationRead(notificationId: string): Promise<PatientNotification> {
@@ -480,64 +520,74 @@ export async function markAllPatientNotificationsRead(): Promise<number> {
 export async function fetchPatientVisitHistory(
   options: { cursor?: string; limit?: number; cookie?: string } = {},
 ): Promise<PatientVisitHistoryResponse | null> {
-  const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
-  const url = new URL('/api/patient/history/visits', baseUrl);
-  if (options.cursor) {
-    url.searchParams.set('cursor', options.cursor);
-  }
-  if (options.limit) {
-    url.searchParams.set('limit', options.limit.toString());
-  }
+  try {
+    const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
+    const url = new URL('/api/patient/history/visits', baseUrl);
+    if (options.cursor) {
+      url.searchParams.set('cursor', options.cursor);
+    }
+    if (options.limit) {
+      url.searchParams.set('limit', options.limit.toString());
+    }
 
-  const headers: Record<string, string> = { Accept: 'application/json' };
-  if (options.cookie) {
-    headers.cookie = options.cookie;
-  }
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (options.cookie) {
+      headers.cookie = options.cookie;
+    }
 
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers,
-    credentials: 'include',
-    cache: 'no-store',
-  });
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+      cache: 'no-store',
+    });
 
-  if (response.status === 401) {
+    if (response.status === 401) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error('Unable to load visit history');
+    }
+
+    return (await response.json()) as PatientVisitHistoryResponse;
+  } catch (error) {
+    console.error('Failed to fetch patient visit history for portal', error);
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error('Unable to load visit history');
-  }
-
-  return (await response.json()) as PatientVisitHistoryResponse;
 }
 
 export async function fetchPatientVisitDetail(
   visitId: string,
   options: { cookie?: string } = {},
 ): Promise<PatientVisitDetail | null> {
-  const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
-  const url = new URL(`/api/patient/history/visit/${visitId}`, baseUrl);
+  try {
+    const baseUrl = DEFAULT_API_BASE_URL ?? 'http://localhost:8080';
+    const url = new URL(`/api/patient/history/visit/${visitId}`, baseUrl);
 
-  const headers: Record<string, string> = { Accept: 'application/json' };
-  if (options.cookie) {
-    headers.cookie = options.cookie;
-  }
+    const headers: Record<string, string> = { Accept: 'application/json' };
+    if (options.cookie) {
+      headers.cookie = options.cookie;
+    }
 
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers,
-    credentials: 'include',
-    cache: 'no-store',
-  });
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers,
+      credentials: 'include',
+      cache: 'no-store',
+    });
 
-  if (response.status === 401 || response.status === 404) {
+    if (response.status === 401 || response.status === 404) {
+      return null;
+    }
+
+    if (!response.ok) {
+      throw new Error('Unable to load visit detail');
+    }
+
+    return (await response.json()) as PatientVisitDetail;
+  } catch (error) {
+    console.error('Failed to fetch patient visit detail for portal', error);
     return null;
   }
-
-  if (!response.ok) {
-    throw new Error('Unable to load visit detail');
-  }
-
-  return (await response.json()) as PatientVisitDetail;
 }
