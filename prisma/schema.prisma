@@ -54,6 +54,26 @@ enum DoctorNoteStorageType {
   LOCAL
 }
 
+enum NotificationChannel {
+  SMS
+  WHATSAPP
+  EMAIL
+  INAPP
+}
+
+enum NotificationType {
+  APPT_BOOKED
+  APPT_REMINDER
+  FOLLOWUP_DUE
+  INVOICE_DUE
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
 model GlobalPatient {
   id           String    @id @default(cuid())
   primaryPhone String?   @unique
@@ -75,6 +95,7 @@ model PatientUser {
   lastLoginAt     DateTime? @default(now())
 
   globalPatient GlobalPatient @relation(fields: [globalPatientId], references: [id], onDelete: Cascade)
+  notifications Notification[]
 }
 
 model PatientLink {
@@ -674,6 +695,21 @@ model Payment {
 
   @@index([invoiceId])
   @@index([tenantId, paidAt])
+}
+
+model Notification {
+  id            String              @id @default(uuid())
+  patientUserId String
+  channel       NotificationChannel @default(INAPP)
+  type          NotificationType
+  payload       Json
+  status        NotificationStatus  @default(QUEUED)
+  readAt        DateTime?
+  createdAt     DateTime            @default(now())
+
+  patientUser PatientUser @relation(fields: [patientUserId], references: [id], onDelete: Cascade)
+
+  @@index([patientUserId, createdAt(sort: Desc)])
 }
 
 model PaymentAllocation {

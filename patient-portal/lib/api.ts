@@ -87,6 +87,29 @@ export type PatientConsentResponse = {
   clinics: ClinicConsentSummary[];
 };
 
+export type PatientNotificationChannel = 'SMS' | 'WHATSAPP' | 'EMAIL' | 'INAPP';
+export type PatientNotificationType =
+  | 'APPT_BOOKED'
+  | 'APPT_REMINDER'
+  | 'FOLLOWUP_DUE'
+  | 'INVOICE_DUE';
+export type PatientNotificationStatus = 'QUEUED' | 'SENT' | 'FAILED';
+
+export type PatientNotification = {
+  id: string;
+  channel: PatientNotificationChannel;
+  type: PatientNotificationType;
+  status: PatientNotificationStatus;
+  payload: Record<string, unknown>;
+  createdAt: string;
+  readAt: string | null;
+};
+
+export type PatientNotificationsResponse = {
+  notifications: PatientNotification[];
+  unreadCount: number;
+};
+
 export type PatientVisitSummary = {
   id: string;
   visitDate: string;
@@ -397,6 +420,51 @@ export async function fetchPatientConsents(options: { cookie?: string } = {}): P
   }
 
   return (await response.json()) as PatientConsentResponse;
+}
+
+export async function fetchPatientNotifications(
+  options: { cookie?: string; limit?: number } = {},
+): Promise<PatientNotificationsResponse | null> {
+  const response = await patientApiRequest('/api/patient/notifications', {
+    cookie: options.cookie,
+    query: options.limit ? { limit: String(options.limit) } : undefined,
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error('Unable to load notifications');
+  }
+
+  return (await response.json()) as PatientNotificationsResponse;
+}
+
+export async function markPatientNotificationRead(notificationId: string): Promise<PatientNotification> {
+  const response = await patientApiRequest(`/api/patient/notifications/${notificationId}/read`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('Unable to mark notification as read');
+  }
+
+  const data = (await response.json()) as { notification: PatientNotification };
+  return data.notification;
+}
+
+export async function markAllPatientNotificationsRead(): Promise<number> {
+  const response = await patientApiRequest('/api/patient/notifications/read-all', {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('Unable to mark notifications as read');
+  }
+
+  const data = (await response.json()) as { updated: number };
+  return data.updated;
 }
 
 export async function fetchPatientVisitHistory(
