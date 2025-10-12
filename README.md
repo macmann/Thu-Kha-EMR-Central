@@ -39,6 +39,7 @@ Thu Kha (သုခ) EMR is a reference implementation of an electronic medical r
    ```bash
    npm run migrate:deploy
    npm run seed:csv
+   npm run seed:demo
    ```
 5. **Start the development servers**
    ```bash
@@ -55,6 +56,17 @@ npm run tenant:create -- --name "Downtown Clinic" --code downtown --admin admin@
 ```
 
 You can repeat `--admin` to associate multiple staff members. The command creates the clinic, ensures the slug/code is unique, and then grants the listed users access with their existing roles. IT Administrators without a clinic membership will see a "No clinics available" banner until they are assigned to at least one clinic.
+
+## Patient Portal Quick Start
+
+The Next.js patient portal lives in [`patient-portal/`](patient-portal/). After running the seed commands above (including `npm run seed:demo`), launch it with:
+
+```bash
+npm run dev:api               # in a dedicated terminal
+cd patient-portal && npm run dev
+```
+
+Visit `http://localhost:3000` and sign in with the OTP sent to `+95 9 7777 8888`. The demo data links a `GlobalPatient` record to two branded clinics, so you can walk through visit history, invoices, and appointments immediately. For detailed configuration guidance, see [`docs/PATIENT-PORTAL.md`](docs/PATIENT-PORTAL.md) and review the feature highlights in [`docs/PATIENT-PORTAL-FEATURES.md`](docs/PATIENT-PORTAL-FEATURES.md).
 
 ## Neon PostgreSQL Setup
 Provision a PostgreSQL instance on [Neon](https://neon.tech) and set the `DATABASE_URL` and `DIRECT_URL` in `.env` (include `sslmode=require` for both). Enable the required extensions:

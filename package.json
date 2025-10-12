@@ -16,6 +16,7 @@
     "migrate": "node scripts/migrate-deploy.js",
     "migrate:deploy": "node scripts/migrate-deploy.js",
     "seed:csv": "tsx scripts/loadCsv.ts",
+    "seed:demo": "tsx prisma/seed-demo.mts",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand",
     "lint": "eslint .",
     "prisma:generate": "prisma generate",
