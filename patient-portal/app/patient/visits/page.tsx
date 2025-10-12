@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { cookies } from 'next/headers';
 import { fetchPatientVisitHistory } from '@/lib/api';
 import VisitsPage from '@/components/patient-history/VisitsPage';
