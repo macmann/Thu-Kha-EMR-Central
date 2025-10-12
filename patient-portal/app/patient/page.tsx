@@ -1,79 +1,12 @@
-import Link from 'next/link';
 import { fetchClinics } from '@/lib/api';
+import { PatientHomeContent } from '@/components/PatientHomeContent';
 
 export default async function PatientHome() {
   const clinics = await fetchClinics();
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-10">
-      <section className="rounded-3xl bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-slate-900">Welcome to your patient portal</h1>
-        <p className="mt-2 text-sm text-slate-500">
-          Choose your clinic to access upcoming visits, appointment requests, and health information.
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Link
-            href="/patient/consent"
-            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700"
-          >
-            Manage consent
-            <span aria-hidden>→</span>
-          </Link>
-          <Link
-            href="/patient/visits"
-            className="inline-flex items-center gap-2 rounded-full border border-brand px-4 py-2 text-sm font-semibold text-brand shadow-sm transition hover:bg-brand hover:text-white"
-          >
-            View visit history
-            <span aria-hidden>→</span>
-          </Link>
-          <Link
-            href="/patient/appointments"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-brand hover:text-brand"
-          >
-            Manage appointments
-            <span aria-hidden>→</span>
-          </Link>
-          <Link
-            href="/patient/invoices"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:border-brand hover:text-brand"
-          >
-            Review invoices
-            <span aria-hidden>→</span>
-          </Link>
-          <p className="text-sm text-slate-500">
-            Adjust sharing settings for each clinic. ဆေးခန်းတစ်ခုချင်းစီအတွက် မျှဝေမှုများကို ဤနေရာတွင် ပြင်ဆင်ပါ။
-          </p>
-        </div>
-      </section>
-
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-slate-900">Available clinics</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          {clinics.map((clinic) => (
-            <Link
-              key={clinic.id}
-              href={`/patient/${clinic.id}`}
-              className="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-brand hover:shadow-lg"
-            >
-              <p className="text-sm uppercase tracking-wide text-slate-500">Clinic</p>
-              <p className="mt-1 text-xl font-semibold text-slate-900">{clinic.name}</p>
-              {clinic.city ? <p className="text-sm text-slate-500">{clinic.city}</p> : null}
-              {clinic.specialties.length > 0 ? (
-                <p className="mt-3 text-xs font-medium uppercase tracking-wide text-brand">
-                  {clinic.specialties.join(' • ')}
-                </p>
-              ) : null}
-              <p className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-brand">
-                Enter portal
-                <span aria-hidden>→</span>
-              </p>
-            </Link>
-          ))}
-        </div>
-        {clinics.length === 0 ? (
-          <p className="text-sm text-slate-500">Patient access is not yet enabled for any clinics.</p>
-        ) : null}
-      </section>
+    <main className="flex w-full flex-1 flex-col">
+      <PatientHomeContent clinics={clinics} />
     </main>
   );
 }

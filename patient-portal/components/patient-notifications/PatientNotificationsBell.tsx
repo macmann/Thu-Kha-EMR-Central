@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { BellIcon } from '@heroicons/react/24/outline';
+import { Bell } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { PATIENT_NOTIFICATIONS_UNREAD_EVENT } from '@/lib/notificationsEvents';
 
 export function PatientNotificationsBell() {
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const { t } = useTranslation();
 
   useEffect(() => {
     let cancelled = false;
@@ -51,13 +53,15 @@ export function PatientNotificationsBell() {
     };
   }, []);
 
+  const label = unreadCount > 0 ? `${t('nav.notifications')} (${unreadCount})` : t('nav.notifications');
+
   return (
     <Link
       href="/patient/notifications"
-      className="relative inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 p-2 text-white transition hover:bg-white/20"
-      aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+      className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-400/40 bg-white/80 text-brand-700 shadow-sm backdrop-blur transition hover:bg-brand-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-400/60 dark:bg-slate-900/70 dark:text-brand-200 dark:hover:bg-brand-900/40"
+      aria-label={label}
     >
-      <BellIcon className="h-5 w-5" aria-hidden="true" />
+      <Bell className="h-4 w-4" aria-hidden />
       {unreadCount > 0 ? (
         <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-xs font-semibold text-white shadow-sm">
           {unreadCount > 99 ? '99+' : unreadCount}
