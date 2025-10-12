@@ -238,6 +238,12 @@ router.get('/', async (req: PatientAuthRequest, res: Response) => {
     take: 200,
   });
 
+  const nonPayableStatuses: InvoiceStatus[] = [
+    InvoiceStatus.PAID,
+    InvoiceStatus.REFUNDED,
+    InvoiceStatus.VOID,
+  ];
+
   const response = invoices.map((invoice) => ({
     id: invoice.invoiceId,
     number: invoice.invoiceNo,
@@ -251,7 +257,7 @@ router.get('/', async (req: PatientAuthRequest, res: Response) => {
     currency: invoice.currency,
     canPay:
       invoice.amountDue.greaterThan(0) &&
-      ![InvoiceStatus.PAID, InvoiceStatus.REFUNDED, InvoiceStatus.VOID].includes(invoice.status),
+      !nonPayableStatuses.includes(invoice.status),
   }));
 
   await Promise.all(

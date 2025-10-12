@@ -22,6 +22,27 @@ export type CreatePatientNotificationOptions = {
   dedupeFields?: NotificationDedupeField[];
 };
 
+function buildJsonPathEqualsFilter(
+  field: NotificationDedupeField,
+): Prisma.JsonFilter<'Notification'> {
+  return {
+    path: field.path,
+    equals: field.equals as Prisma.InputJsonValue,
+    mode: undefined,
+    string_contains: undefined,
+    string_starts_with: undefined,
+    string_ends_with: undefined,
+    array_starts_with: undefined,
+    array_ends_with: undefined,
+    array_contains: undefined,
+    lt: undefined,
+    lte: undefined,
+    gt: undefined,
+    gte: undefined,
+    not: undefined,
+  };
+}
+
 export async function createPatientNotification({
   prisma,
   patientUserId,
@@ -42,7 +63,7 @@ export async function createPatientNotification({
         type,
         channel: resolvedChannel,
         AND: dedupeFields.map((field) => ({
-          payload: { path: field.path, equals: field.equals },
+          payload: buildJsonPathEqualsFilter(field),
         })),
       },
     });

@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 import { ArrowRight, Building2, CalendarCheck, ClipboardList, FileText, HeartPulse } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import type { ClinicSummary } from '@/lib/api';
@@ -31,7 +33,11 @@ const QUICK_ACTIONS = [
     icon: HeartPulse,
     translationKey: 'actions.reviewInvoices',
   },
-];
+] as const satisfies ReadonlyArray<{
+  href: Route;
+  icon: LucideIcon;
+  translationKey: string;
+}>;
 
 export function PatientHomeContent({ clinics }: Props) {
   const { t } = useTranslation();
@@ -70,7 +76,7 @@ export function PatientHomeContent({ clinics }: Props) {
           {clinics.map((clinic) => (
             <Link
               key={clinic.id}
-              href={`/patient/${clinic.id}`}
+              href={{ pathname: '/patient/[clinicId]', query: { clinicId: clinic.id } }}
               className="group relative overflow-hidden rounded-2xl border border-brand-100/40 bg-white/80 p-5 shadow-sm transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-900/40 dark:bg-slate-900/70"
             >
               <div className="flex items-center gap-3">

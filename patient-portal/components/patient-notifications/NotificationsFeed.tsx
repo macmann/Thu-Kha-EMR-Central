@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import type { Route } from 'next';
 import { CheckIcon } from '@heroicons/react/24/outline';
 
 import {
@@ -19,7 +20,7 @@ type NotificationsFeedProps = {
 type NotificationContent = {
   title: string;
   body: string;
-  href: string | null;
+  href: Route | null;
   cta: string | null;
 };
 

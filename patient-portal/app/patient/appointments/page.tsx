@@ -20,13 +20,10 @@ function serializeCookies(): string | undefined {
 export default async function PatientAppointmentsPage() {
   const cookieHeader = serializeCookies();
 
-  const [appointments, clinics] = await Promise.all<[
-    PatientAppointmentsResponse | null,
-    ClinicBookingSummary[],
-  ]>([
+  const [appointments, clinics] = await Promise.all([
     fetchPatientAppointments({ cookie: cookieHeader }),
     searchPatientClinics({ cookie: cookieHeader }),
-  ]);
+  ] as const);
 
   if (!appointments) {
     redirect('/patient/login');

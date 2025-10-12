@@ -1,8 +1,8 @@
 import 'dotenv/config';
 import path from 'path';
 import express, { Request, Response, Router } from 'express';
-import next from 'next';
-import type { NextServer, NextServerOptions } from 'next/dist/server/next';
+import next from 'next/dist/server/next.js';
+import type { NextServer, NextServerOptions } from 'next/dist/server/next.js';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
