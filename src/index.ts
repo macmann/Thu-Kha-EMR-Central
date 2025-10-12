@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import path from 'path';
 import express, { Request, Response, Router } from 'express';
+import next from 'next';
+import type { NextServer, NextServerOptions } from 'next/dist/server/next';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
@@ -94,6 +96,37 @@ protectedApi.use(apiRouter);
 
 app.use('/api', protectedApi);
 
+const readinessPromises: Promise<void>[] = [];
+
+const shouldEnablePatientPortal =
+  process.env.ENABLE_PATIENT_PORTAL !== 'false' && process.env.NODE_ENV !== 'test';
+
+if (shouldEnablePatientPortal) {
+  const patientPortalDir = path.resolve(process.cwd(), 'patient-portal');
+  const createNextApp = next as unknown as (options: NextServerOptions) => NextServer;
+  const patientPortalApp = createNextApp({
+    dev: process.env.NODE_ENV !== 'production',
+    dir: patientPortalDir,
+  });
+
+  const patientPortalHandler = patientPortalApp.getRequestHandler();
+  const patientPortalReady = patientPortalApp.prepare();
+
+  readinessPromises.push(
+    patientPortalReady.catch((error: unknown) => {
+      console.error('Failed to prepare patient portal', error);
+      throw error;
+    })
+  );
+
+  const patientPortalRoutes = ['/patient', '/patient/*', '/_next', '/_next/*'];
+
+  app.all(patientPortalRoutes, async (req: Request, res: Response) => {
+    await patientPortalReady;
+    return patientPortalHandler(req, res);
+  });
+}
+
 const clientDir = path.resolve(process.cwd(), 'dist_client');
 app.use(express.static(clientDir));
 app.get('*', (req: Request, res: Response) =>
@@ -106,8 +139,15 @@ app.use('/api', errorHandler);
 startAppointmentReminderCron();
 
 if (process.env.NODE_ENV !== 'test') {
-  const port = process.env.PORT || 8080;
-  app.listen(port, () => {
-    console.log(`Server listening on port ${port}`);
-  });
+  Promise.all(readinessPromises)
+    .catch((error) => {
+      console.error('Server failed to start', error);
+      process.exit(1);
+    })
+    .then(() => {
+      const port = process.env.PORT || 8080;
+      app.listen(port, () => {
+        console.log(`Server listening on port ${port}`);
+      });
+    });
 }
