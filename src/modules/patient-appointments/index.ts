@@ -38,6 +38,35 @@ type ClinicBookingAccess = {
   patients: ClinicPatient[];
 };
 
+type TenantBookingPolicy = {
+  cancelWindowHours: number | null;
+  noShowPolicyText: string | null;
+};
+
+function parseBookingPolicy(raw: unknown): TenantBookingPolicy {
+  if (!raw || typeof raw !== 'object') {
+    return { cancelWindowHours: null, noShowPolicyText: null };
+  }
+
+  const record = raw as Record<string, unknown>;
+  return {
+    cancelWindowHours:
+      typeof record.cancelWindowHours === 'number' && Number.isFinite(record.cancelWindowHours)
+        ? Math.max(0, Math.min(168, Math.trunc(record.cancelWindowHours)))
+        : null,
+    noShowPolicyText:
+      typeof record.noShowPolicyText === 'string' ? record.noShowPolicyText : null,
+  };
+}
+
+function resolveCancelWindowMinutes(rawPolicy: unknown): number {
+  const policy = parseBookingPolicy(rawPolicy);
+  if (policy.cancelWindowHours === null) {
+    return MIN_BOOKING_LEAD_MINUTES;
+  }
+  return Math.max(0, policy.cancelWindowHours) * 60;
+}
+
 type AppointmentSummary = {
   id: string;
   clinic: { id: string; name: string };
@@ -401,7 +430,7 @@ appointmentsRouter.post('/', async (req: PatientAuthRequest, res: Response, next
       },
       include: {
         doctor: { select: { doctorId: true, name: true, department: true } },
-        tenant: { select: { tenantId: true, name: true } },
+        tenant: { select: { tenantId: true, name: true, bookingPolicy: true } },
         patient: { select: { patientId: true, name: true } },
       },
     });
@@ -468,7 +497,7 @@ appointmentsRouter.post(
         where: { appointmentId: params.appointmentId },
         include: {
           doctor: { select: { doctorId: true, name: true, department: true } },
-          tenant: { select: { tenantId: true, name: true } },
+          tenant: { select: { tenantId: true, name: true, bookingPolicy: true } },
           patient: { select: { patientId: true, name: true } },
         },
       });
@@ -510,7 +539,7 @@ appointmentsRouter.post(
         },
         include: {
           doctor: { select: { doctorId: true, name: true, department: true } },
-          tenant: { select: { tenantId: true, name: true } },
+          tenant: { select: { tenantId: true, name: true, bookingPolicy: true } },
           patient: { select: { patientId: true, name: true } },
         },
       });
@@ -537,7 +566,7 @@ appointmentsRouter.post(
         where: { appointmentId: params.appointmentId },
         include: {
           doctor: { select: { doctorId: true, name: true, department: true } },
-          tenant: { select: { tenantId: true, name: true } },
+          tenant: { select: { tenantId: true, name: true, bookingPolicy: true } },
           patient: { select: { patientId: true, name: true } },
         },
       });
@@ -561,7 +590,7 @@ appointmentsRouter.post(
         },
         include: {
           doctor: { select: { doctorId: true, name: true, department: true } },
-          tenant: { select: { tenantId: true, name: true } },
+          tenant: { select: { tenantId: true, name: true, bookingPolicy: true } },
           patient: { select: { patientId: true, name: true } },
         },
       });
@@ -594,7 +623,7 @@ appointmentsRouter.get('/', async (req: PatientAuthRequest, res: Response, next:
       },
       orderBy: [{ date: 'asc' }, { startTimeMin: 'asc' }],
       include: {
-        tenant: { select: { tenantId: true, name: true } },
+        tenant: { select: { tenantId: true, name: true, bookingPolicy: true } },
         doctor: { select: { doctorId: true, name: true, department: true } },
         patient: { select: { patientId: true, name: true } },
       },
@@ -849,7 +878,7 @@ function convertBlackoutToSegment(
 
 function mapAppointmentToSummary(appointment: {
   appointmentId: string;
-  tenant: { tenantId: string; name: string } | null;
+  tenant: { tenantId: string; name: string; bookingPolicy?: unknown } | null;
   doctor: { doctorId: string; name: string; department: string | null } | null;
   patient: { patientId: string; name: string } | null;
   date: Date;
@@ -865,6 +894,8 @@ function mapAppointmentToSummary(appointment: {
   const now = getCurrentYangonDateTime();
   const appointmentInstant = yangonDateTimeToInstant(dateKey, appointment.startTimeMin);
   const timeUntil = (appointmentInstant.getTime() - now.instant.getTime()) / (60 * 1000);
+
+  const cancelWindowMinutes = resolveCancelWindowMinutes(appointment.tenant?.bookingPolicy ?? null);
 
   return {
     id: appointment.appointmentId,
@@ -886,8 +917,8 @@ function mapAppointmentToSummary(appointment: {
     status: appointment.status,
     reason: appointment.reason,
     cancelReason: appointment.cancelReason,
-    canCancel: appointment.status === 'Scheduled' && timeUntil > MIN_BOOKING_LEAD_MINUTES,
-    canReschedule: appointment.status === 'Scheduled' && timeUntil > MIN_BOOKING_LEAD_MINUTES,
+    canCancel: appointment.status === 'Scheduled' && timeUntil > cancelWindowMinutes,
+    canReschedule: appointment.status === 'Scheduled' && timeUntil > cancelWindowMinutes,
   };
 }
 

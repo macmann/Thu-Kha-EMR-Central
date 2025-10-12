@@ -437,3 +437,31 @@ We could not find billing details for that visit.,We could not find billing deta
 e.g. Jane Doe,e.g. Jane Doe,ဥပမာ။ Jane Doe
 e.g. RX-2024-00123,e.g. RX-2024-00123,ဥပမာ။ RX-2024-00123
 e.g. VIS-2024-00042,e.g. VIS-2024-00042,ဥပမာ။ VIS-2024-00042
+General Settings,General Settings,အထွေထွေ ဆက်တင်များ
+Patient Portal,Patient Portal,လူနာ ပို့တယ်
+Patient Portal Access,Patient Portal Access,လူနာ ပို့တယ် ဝင်ရောက်ခွင့်
+Control when patients can view the portal, request bookings, and review your cancellation policy.,Control when patients can view the portal, request bookings, and review your cancellation policy.,လူနာများ ပို့တယ်ကို ကြည့်ရှုခြင်း၊ ရက်ချိန်း တင်ခြင်းနှင့် ပယ်ဖျက်မူ စည်းမျဉ်းကို ကြည့်ရှုနိုင်စေရန် ထိန်းချုပ်ပါ။
+Toggle overall visibility for patients linked to this clinic.,Toggle overall visibility for patients linked to this clinic.,ဤဆေးခန်းနှင့် ချိတ်ဆက်ထားသော လူနာများအတွက် ပို့တယ်ကို ဖွင့်/ပိတ်နိုင်ပါသည်။
+Patient portal,Patient portal,လူနာ ပို့တယ်
+Patient self-booking,Patient self-booking,လူနာ မိမိတိုင် ရက်ချိန်းချိန်းမှု
+Allow patients to request and reschedule appointments online.,Allow patients to request and reschedule appointments online.,လူနာများအား အွန်လိုင်းမှ ရက်ချိန်းတင်ခြင်းနှင့် ပြန်ချိန်းခြင်းကို ခွင့်ပြုပါ။
+Live Preview,Live Preview,အသင့် ကြည့်ရှုချက်
+Bookings are open. Configure a cancellation window to provide guidance to patients.,Bookings are open. Configure a cancellation window to provide guidance to patients.,ရက်ချိန်း တင်သွင်းမှုများ ဖွင့်ထားသည်။ လူနာများအား အကြံပေးရန် ပယ်ဖျက်ချိန် အကန့်အသတ်ကို သတ်မှတ်ပါ။
+Cancel up to {{hours}} hours before the visit.,Cancel up to {{hours}} hours before the visit.,ရက်ချိန်းမတိုင်မီ နာရီ {{hours}} အထိ ပယ်ဖျက်နိုင်ပါသည်။
+No-show policy: {{text}},No-show policy: {{text}},မတက်ရောက်ပါက စည်းမျဉ်း: {{text}}
+Primary color,Primary color,အခြေခံ အရောင်
+Accent color,Accent color,တင်ပြ အရောင်
+Hero title,Hero title,ပို့တယ် ခေါင်းစဉ်
+Hero subtitle,Hero subtitle,ပို့တယ် အသေးစိတ် ခေါင်းစဉ်
+Cancellation window (hours),Cancellation window (hours),ပယ်ဖျက်ချိန် (နာရီ)
+Patients will see how many hours before a visit they can cancel without calling the clinic.,Patients will see how many hours before a visit they can cancel without calling the clinic.,လူနာများသည် ဆေးခန်းသို့ ဆက်သွယ်ရန်မလိုဘဲ ပယ်ဖျက်နိုင်သည့် နာရီအကန့်အသတ်ကို တွေ့မြင်နိုင်သည်။
+Portal logo,Portal logo,ပို့တယ် လိုဂို
+No-show policy text,No-show policy text,မတက်ရောက်ပါက စည်းမျဉ်းစာသား
+Let patients know what happens if they miss an appointment. This text appears in the patient portal.,Let patients know what happens if they miss an appointment. This text appears in the patient portal.,လူနာများ မလာရောက်ပါက ဖြစ်ပေါ်မည့်အချက်အလက်ကို အသိပေးပါ။ ဤစာသားကို လူနာ ပို့တယ်တွင် ပြသမည်ဖြစ်သည်။
+Patient portal enabled.,Patient portal enabled.,လူနာ ပို့တယ်ကို ဖွင့်ထားပါပြီ။
+Patient portal disabled.,Patient portal disabled.,လူနာ ပို့တယ်ကို ပိတ်ထားပါသည်။
+Patient self-booking enabled.,Patient self-booking enabled.,လူနာ မိမိတိုင် ရက်ချိန်းချိန်းမှုကို ဖွင့်ထားပါသည်။
+Patient self-booking disabled.,Patient self-booking disabled.,လူနာ မိမိတိုင် ရက်ချိန်းချိန်းမှုကို ပိတ်ထားပါသည်။
+Patient portal branding updated.,Patient portal branding updated.,လူနာ ပို့တယ် တံဆိပ်အသွင်ကို ပြင်ဆင်ပြီးပါပြီ။
+Patient portal settings updated.,Patient portal settings updated.,လူနာ ပို့တယ် ဆက်တင်များကို ပြင်ဆင်ပြီးပါပြီ။
+Select a clinic before updating branding.,Select a clinic before updating branding.,တံဆိပ် ပြင်ဆင်ရန် မတိုင်မီ ဆေးခန်းတစ်ခုကို ရွေးချယ်ပါ။

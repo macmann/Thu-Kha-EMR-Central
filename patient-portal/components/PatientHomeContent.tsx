@@ -90,6 +90,22 @@ export function PatientHomeContent({ clinics }: Props) {
                   {clinic.specialties.join(' • ')}
                 </p>
               ) : null}
+              <div className="mt-3 text-xs">
+                {clinic.bookingEnabled ? (
+                  <p className="font-medium text-brand-600 dark:text-brand-300">
+                    {clinic.bookingPolicy.cancelWindowHours !== null
+                      ? t('home.policyCancelWindow', { hours: clinic.bookingPolicy.cancelWindowHours })
+                      : t('home.policyFlexible')}
+                  </p>
+                ) : (
+                  <p className="font-semibold text-amber-600 dark:text-amber-400">{t('home.bookingPaused')}</p>
+                )}
+                {clinic.bookingPolicy.noShowPolicyText ? (
+                  <p className="mt-1 text-[11px] text-surface-muted dark:text-slate-400">
+                    {t('home.policyNoShow', { text: clinic.bookingPolicy.noShowPolicyText })}
+                  </p>
+                ) : null}
+              </div>
               <div className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-brand-600 transition group-hover:translate-x-1 group-hover:text-brand-500 dark:text-brand-300 dark:group-hover:text-brand-200">
                 {t('actions.enterPortal')}
                 <ArrowRight className="h-4 w-4" aria-hidden />

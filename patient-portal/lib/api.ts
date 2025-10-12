@@ -1,13 +1,23 @@
 const DEFAULT_API_BASE_URL = process.env.NEXT_PUBLIC_PATIENT_PORTAL_API_BASE_URL ?? process.env.PATIENT_PORTAL_API_BASE_URL;
 
+export type BookingPolicy = {
+  cancelWindowHours: number | null;
+  noShowPolicyText: string | null;
+};
+
 export type ClinicSummary = {
   id: string;
   name: string;
   city: string | null;
   specialties: string[];
+  bookingEnabled: boolean;
+  bookingPolicy: BookingPolicy;
   branding: {
     logoUrl: string | null;
     primaryColor: string | null;
+    accentColor: string | null;
+    heroTitle: string | null;
+    heroSubtitle: string | null;
   } | null;
 };
 
