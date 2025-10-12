@@ -1,5 +1,5 @@
 import { Router, type NextFunction, type Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { NotificationStatus, NotificationType, PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 
 import { requirePatientAuth, type PatientAuthRequest } from '../../middleware/patientAuth.js';
@@ -21,6 +21,7 @@ import {
   ForbiddenError,
   NotFoundError,
 } from '../../utils/httpErrors.js';
+import { createPatientNotification } from '../../services/patientNotifications.js';
 
 const prisma = new PrismaClient();
 
@@ -404,6 +405,44 @@ appointmentsRouter.post('/', async (req: PatientAuthRequest, res: Response, next
         patient: { select: { patientId: true, name: true } },
       },
     });
+
+    const dateKey = appointment.date.toISOString().slice(0, 10);
+    const slotStart = formatYangonIso(dateKey, appointment.startTimeMin);
+    const slotEnd = formatYangonIso(dateKey, appointment.endTimeMin);
+
+    try {
+      await createPatientNotification({
+        prisma,
+        patientUserId: req.patient!.patientUserId,
+        type: NotificationType.APPT_BOOKED,
+        status: NotificationStatus.SENT,
+        payload: {
+          resourceType: 'appointment',
+          resourceId: appointment.appointmentId,
+          clinicId: appointment.tenantId,
+          clinicName: appointment.tenant?.name ?? null,
+          doctorId: appointment.doctorId,
+          doctorName: appointment.doctor?.name ?? null,
+          doctorDepartment: appointment.doctor?.department ?? null,
+          patientId,
+          patientName: appointment.patient?.name ?? null,
+          slotStart,
+          slotEnd,
+          reason: appointment.reason ?? null,
+          event: 'booked',
+        },
+        dedupeFields: [
+          { path: ['resourceType'], equals: 'appointment' },
+          { path: ['resourceId'], equals: appointment.appointmentId },
+          { path: ['event'], equals: 'booked' },
+        ],
+      });
+    } catch (error) {
+      console.warn('Failed to record appointment booking notification', {
+        appointmentId: appointment.appointmentId,
+        error,
+      });
+    }
 
     res.status(201).json(mapAppointmentToSummary(appointment));
   } catch (error) {

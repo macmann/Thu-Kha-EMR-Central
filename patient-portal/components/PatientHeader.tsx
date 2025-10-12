@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { LanguageSwitcher } from './LanguageSwitcher';
 
 type PatientHeaderProps = {
   clinicName: string;
@@ -31,7 +30,6 @@ export function PatientHeader({ clinicName, logoUrl }: PatientHeaderProps) {
             <p className="text-lg font-semibold text-white">{clinicName}</p>
           </div>
         </Link>
-        <LanguageSwitcher />
       </div>
     </header>
   );
