@@ -101,6 +101,8 @@ const readinessPromises: Promise<void>[] = [];
 const shouldEnablePatientPortal =
   process.env.ENABLE_PATIENT_PORTAL !== 'false' && process.env.NODE_ENV !== 'test';
 
+const patientPortalWarmupRoutes = ['/patient/login'];
+
 if (shouldEnablePatientPortal) {
   const patientPortalDir = path.resolve(process.cwd(), 'patient-portal');
   const createNextApp: (options: NextServerOptions) => NextServer = next;
@@ -148,6 +150,22 @@ if (process.env.NODE_ENV !== 'test') {
       const port = process.env.PORT || 8080;
       app.listen(port, () => {
         console.log(`Server listening on port ${port}`);
+
+        if (shouldEnablePatientPortal) {
+          void (async () => {
+            for (const route of patientPortalWarmupRoutes) {
+              try {
+                const response = await fetch(`http://127.0.0.1:${port}${route}`, {
+                  headers: { 'x-internal-warmup': 'true' },
+                });
+                await response.arrayBuffer();
+                console.log(`Warmed patient portal route: ${route}`);
+              } catch (error) {
+                console.warn(`Failed to warm patient portal route: ${route}`, error);
+              }
+            }
+          })();
+        }
       });
     });
 }
