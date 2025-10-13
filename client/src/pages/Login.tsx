@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ClinicBrand from '../components/ClinicBrand';
 import LoginCard from '../components/LoginCard';
 import { CheckIcon } from '../components/icons';
@@ -115,14 +115,14 @@ export default function Login() {
           </p>
           <p className="mt-2 text-center text-sm text-slate-500">
             {t('Need the patient portal?')}{' '}
-            <Link
-              to={patientPortalUrl}
+            <a
+              href={patientPortalUrl}
               className="font-semibold text-blue-600 hover:text-blue-700"
               target={patientPortalUrl.startsWith('http') ? '_blank' : undefined}
               rel={patientPortalUrl.startsWith('http') ? 'noreferrer' : undefined}
             >
               {t('Sign in as a patient.')}
-            </Link>
+            </a>
           </p>
         </section>
       </div>
