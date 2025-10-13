@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 
 interface FormError {
@@ -15,6 +16,7 @@ export default function PatientLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FormError | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
+  const staffPortalUrl = process.env.NEXT_PUBLIC_STAFF_PORTAL_URL ?? 'http://localhost:5173/login';
 
   const handleStart = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -176,6 +178,31 @@ export default function PatientLoginPage() {
             </p>
           </div>
         )}
+
+        <div className="mt-8 space-y-1 text-center text-sm text-slate-500">
+          <p>
+            Clinic team member?{' '}
+            <Link
+              href={staffPortalUrl}
+              className="font-semibold text-emerald-600 hover:text-emerald-700"
+              target={staffPortalUrl.startsWith('http') ? '_blank' : undefined}
+              rel={staffPortalUrl.startsWith('http') ? 'noreferrer' : undefined}
+            >
+              Sign in to the staff portal
+            </Link>
+          </p>
+          <p>
+            ကလင်း ဝန်ထမ်းတစ်ဦးလား။{' '}
+            <Link
+              href={staffPortalUrl}
+              className="font-semibold text-emerald-600 hover:text-emerald-700"
+              target={staffPortalUrl.startsWith('http') ? '_blank' : undefined}
+              rel={staffPortalUrl.startsWith('http') ? 'noreferrer' : undefined}
+            >
+              ဝန်ထမ်း ပေါ်တယ်သို့ ဝင်ရောက်ပါ
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
