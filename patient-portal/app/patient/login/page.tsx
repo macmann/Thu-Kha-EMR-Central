@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import type { Route } from 'next';
+import { useState, type ReactNode } from 'react';
 
 interface FormError {
   message: string;
@@ -17,6 +18,28 @@ export default function PatientLoginPage() {
   const [error, setError] = useState<FormError | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
   const staffPortalUrl = process.env.NEXT_PUBLIC_STAFF_PORTAL_URL ?? 'http://localhost:5173/login';
+  const isExternalStaffPortalUrl = staffPortalUrl.startsWith('http');
+
+  const StaffPortalLink = ({ children }: { children: ReactNode }) => {
+    if (isExternalStaffPortalUrl) {
+      return (
+        <a
+          href={staffPortalUrl}
+          className="font-semibold text-emerald-600 hover:text-emerald-700"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {children}
+        </a>
+      );
+    }
+
+    return (
+      <Link href={staffPortalUrl as Route} className="font-semibold text-emerald-600 hover:text-emerald-700">
+        {children}
+      </Link>
+    );
+  };
 
   const handleStart = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -182,25 +205,15 @@ export default function PatientLoginPage() {
         <div className="mt-8 space-y-1 text-center text-sm text-slate-500">
           <p>
             Clinic team member?{' '}
-            <Link
-              href={staffPortalUrl}
-              className="font-semibold text-emerald-600 hover:text-emerald-700"
-              target={staffPortalUrl.startsWith('http') ? '_blank' : undefined}
-              rel={staffPortalUrl.startsWith('http') ? 'noreferrer' : undefined}
-            >
+            <StaffPortalLink>
               Sign in to the staff portal
-            </Link>
+            </StaffPortalLink>
           </p>
           <p>
             ကလင်း ဝန်ထမ်းတစ်ဦးလား။{' '}
-            <Link
-              href={staffPortalUrl}
-              className="font-semibold text-emerald-600 hover:text-emerald-700"
-              target={staffPortalUrl.startsWith('http') ? '_blank' : undefined}
-              rel={staffPortalUrl.startsWith('http') ? 'noreferrer' : undefined}
-            >
+            <StaffPortalLink>
               ဝန်ထမ်း ပေါ်တယ်သို့ ဝင်ရောက်ပါ
-            </Link>
+            </StaffPortalLink>
           </p>
         </div>
       </div>
