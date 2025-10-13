@@ -17,7 +17,7 @@ export default function Login() {
   const { appName, logo } = useSettings();
   const { t } = useTranslation();
   const patientPortalUrl =
-    import.meta.env.VITE_PATIENT_PORTAL_URL ?? 'http://localhost:3000/patient/login';
+    import.meta.env.VITE_PATIENT_PORTAL_URL ?? '/patient/login';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
