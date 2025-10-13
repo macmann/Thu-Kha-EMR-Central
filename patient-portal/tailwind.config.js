@@ -1,5 +1,13 @@
 /** @type {import('tailwindcss').Config} */
-const withOpacityValue = (variable) => `hsl(var(${variable}) / <alpha-value>)`;
+const withOpacityValue = (variable) => {
+  return ({ opacityValue } = {}) => {
+    if (opacityValue === undefined) {
+      return `hsl(var(${variable}))`;
+    }
+
+    return `hsl(var(${variable}) / ${opacityValue})`;
+  };
+};
 
 module.exports = {
   content: [
