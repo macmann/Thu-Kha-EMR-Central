@@ -1,5 +1,7 @@
 import type { Config } from 'tailwindcss';
 
+const withOpacityValue = (variable: string) => `hsl(var(${variable}) / <alpha-value>)`;
+
 const config: Config = {
   content: ['./app/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}', './lib/**/*.{js,ts,jsx,tsx}'],
   theme: {
@@ -19,13 +21,13 @@ const config: Config = {
           DEFAULT: '#14b8a6',
         },
         surface: {
-          DEFAULT: 'hsl(var(--surface))',
-          foreground: 'hsl(var(--surface-foreground))',
-          muted: 'hsl(var(--surface-muted))',
+          DEFAULT: withOpacityValue('--surface'),
+          foreground: withOpacityValue('--surface-foreground'),
+          muted: withOpacityValue('--surface-muted'),
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: withOpacityValue('--accent'),
+          foreground: withOpacityValue('--accent-foreground'),
         },
       },
       fontFamily: {
