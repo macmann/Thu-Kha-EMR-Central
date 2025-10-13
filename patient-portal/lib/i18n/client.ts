@@ -29,6 +29,9 @@ export function getI18nClient(options: CreateInstanceOptions = {}): i18n {
     fallbackLng: 'en',
     lng: options.lng ?? 'en',
     supportedLngs: Object.keys(resources),
+    react: {
+      useSuspense: false,
+    },
     detection: {
       order: ['localStorage', 'navigator'],
       caches: ['localStorage'],
