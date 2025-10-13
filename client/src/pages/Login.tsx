@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import ClinicBrand from '../components/ClinicBrand';
 import LoginCard from '../components/LoginCard';
 import { CheckIcon } from '../components/icons';
@@ -16,6 +16,8 @@ export default function Login() {
   const navigate = useNavigate();
   const { appName, logo } = useSettings();
   const { t } = useTranslation();
+  const patientPortalUrl =
+    import.meta.env.VITE_PATIENT_PORTAL_URL ?? 'http://localhost:3000/patient/login';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +112,17 @@ export default function Login() {
           </div>
           <p className="mt-6 text-center text-sm text-slate-500">
             {t('Need help? Contact your administrator.')}
+          </p>
+          <p className="mt-2 text-center text-sm text-slate-500">
+            {t('Need the patient portal?')}{' '}
+            <Link
+              to={patientPortalUrl}
+              className="font-semibold text-blue-600 hover:text-blue-700"
+              target={patientPortalUrl.startsWith('http') ? '_blank' : undefined}
+              rel={patientPortalUrl.startsWith('http') ? 'noreferrer' : undefined}
+            >
+              {t('Sign in as a patient.')}
+            </Link>
           </p>
         </section>
       </div>
