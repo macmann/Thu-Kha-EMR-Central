@@ -1,9 +1,12 @@
-import type { Config } from 'tailwindcss';
+/** @type {import('tailwindcss').Config} */
+const withOpacityValue = (variable) => `hsl(var(${variable}) / <alpha-value>)`;
 
-const withOpacityValue = (variable: string) => `hsl(var(${variable}) / <alpha-value>)`;
-
-const config: Config = {
-  content: ['./app/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}', './lib/**/*.{js,ts,jsx,tsx}'],
+module.exports = {
+  content: [
+    './app/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
+    './lib/**/*.{js,ts,jsx,tsx}',
+  ],
   theme: {
     extend: {
       colors: {
@@ -54,5 +57,3 @@ const config: Config = {
   },
   plugins: [],
 };
-
-export default config;
