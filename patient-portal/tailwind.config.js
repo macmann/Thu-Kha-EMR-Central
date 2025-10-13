@@ -1,7 +1,10 @@
-import type { Config } from 'tailwindcss';
-
-const config: Config = {
-  content: ['./app/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}', './lib/**/*.{js,ts,jsx,tsx}'],
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
+    './lib/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
   theme: {
     extend: {
       colors: {
@@ -19,13 +22,13 @@ const config: Config = {
           DEFAULT: '#14b8a6',
         },
         surface: {
-          DEFAULT: 'hsl(var(--surface))',
-          foreground: 'hsl(var(--surface-foreground))',
-          muted: 'hsl(var(--surface-muted))',
+          DEFAULT: 'hsl(var(--surface) / <alpha-value>)',
+          foreground: 'hsl(var(--surface-foreground) / <alpha-value>)',
+          muted: 'hsl(var(--surface-muted) / <alpha-value>)',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: 'hsl(var(--accent) / <alpha-value>)',
+          foreground: 'hsl(var(--accent-foreground) / <alpha-value>)',
         },
       },
       fontFamily: {
@@ -52,5 +55,3 @@ const config: Config = {
   },
   plugins: [],
 };
-
-export default config;

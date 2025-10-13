@@ -3,6 +3,7 @@ dist
 dist_client
 tsconfig.tsbuildinfo
 .env
+.next
 
 # Optional: lockfile generated during testing
 npm-debug.log*
