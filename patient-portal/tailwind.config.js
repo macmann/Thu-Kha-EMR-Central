@@ -1,14 +1,4 @@
 /** @type {import('tailwindcss').Config} */
-const withOpacityValue = (variable) => {
-  return ({ opacityValue } = {}) => {
-    if (opacityValue === undefined) {
-      return `hsl(var(${variable}))`;
-    }
-
-    return `hsl(var(${variable}) / ${opacityValue})`;
-  };
-};
-
 module.exports = {
   content: [
     './app/**/*.{js,ts,jsx,tsx}',
@@ -32,13 +22,13 @@ module.exports = {
           DEFAULT: '#14b8a6',
         },
         surface: {
-          DEFAULT: withOpacityValue('--surface'),
-          foreground: withOpacityValue('--surface-foreground'),
-          muted: withOpacityValue('--surface-muted'),
+          DEFAULT: 'hsl(var(--surface) / <alpha-value>)',
+          foreground: 'hsl(var(--surface-foreground) / <alpha-value>)',
+          muted: 'hsl(var(--surface-muted) / <alpha-value>)',
         },
         accent: {
-          DEFAULT: withOpacityValue('--accent'),
-          foreground: withOpacityValue('--accent-foreground'),
+          DEFAULT: 'hsl(var(--accent) / <alpha-value>)',
+          foreground: 'hsl(var(--accent-foreground) / <alpha-value>)',
         },
       },
       fontFamily: {
