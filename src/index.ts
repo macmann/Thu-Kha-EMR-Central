@@ -44,7 +44,9 @@ app.use((req: Request, res: Response, nextMiddleware: NextFunction) => {
   const nonce = crypto.randomBytes(16).toString('base64');
   res.locals.cspNonce = nonce;
   res.locals.nonce = nonce;
-  Object.assign(req.headers, { 'x-csp-nonce': nonce });
+  Object.assign(req.headers, { 'x-csp-nonce': nonce, 'x-nonce': nonce });
+  res.setHeader('x-csp-nonce', nonce);
+  res.setHeader('x-nonce', nonce);
   nextMiddleware();
 });
 
@@ -83,11 +85,18 @@ app.use((req: Request, res: Response, nextMiddleware: NextFunction) => {
     scriptSrcDirectives.push("'unsafe-eval'");
   }
 
+  const styleSrcDirectives = [
+    "'self'",
+    nonce ? `'nonce-${nonce}'` : undefined,
+    "'unsafe-inline'",
+  ].filter((value): value is string => Boolean(value));
+
   return helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"],
       frameSrc: ["'self'", 'https://demo.atenxion.ai'],
       scriptSrc: scriptSrcDirectives,
+      styleSrc: styleSrcDirectives,
     },
   })(req, res, nextMiddleware);
 });
