@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { Inter, Noto_Sans_Myanmar } from 'next/font/google';
 
 import './globals.css';
@@ -20,10 +21,12 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonce = headers().get('x-csp-nonce') ?? undefined;
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${notoMyanmar.variable} font-sans antialiased`}> 
-        <Providers>
+      <body className={`${inter.variable} ${notoMyanmar.variable} font-sans antialiased`}>
+        <Providers cspNonce={nonce}>
           <div className="flex min-h-screen flex-col bg-surface text-surface-foreground transition-colors dark:bg-slate-950 dark:text-slate-100">
             <OfflineBanner />
             <div className="flex flex-1 flex-col">{children}</div>
