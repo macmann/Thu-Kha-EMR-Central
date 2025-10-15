@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import path from 'path';
 import express, { Request, Response, Router } from 'express';
+import crypto from 'node:crypto';
 import next from 'next/dist/server/next.js';
 import type { NextServer, NextServerOptions } from 'next/dist/server/next.js';
 import helmet from 'helmet';
@@ -39,6 +40,14 @@ if (
 export const app = express();
 app.disable('x-powered-by');
 
+app.use((req, res, nextMiddleware) => {
+  const nonce = crypto.randomBytes(16).toString('base64');
+  res.locals.cspNonce = nonce;
+  res.locals.nonce = nonce;
+  Object.assign(req.headers, { 'x-csp-nonce': nonce });
+  nextMiddleware();
+});
+
 const trustProxy = process.env.TRUST_PROXY;
 if (trustProxy) {
   const normalizedTrustProxy =
@@ -57,24 +66,31 @@ if (trustProxy) {
 const shouldEnablePatientPortal =
   process.env.ENABLE_PATIENT_PORTAL !== 'false' && process.env.NODE_ENV !== 'test';
 
-const scriptSrcDirectives = ["'self'"];
-
-if (shouldEnablePatientPortal && process.env.NODE_ENV !== 'production') {
-  scriptSrcDirectives.push("'unsafe-eval'");
-}
-
 app.use(
   helmet({
     frameguard: false,
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        frameSrc: ["'self'", 'https://demo.atenxion.ai'],
-        scriptSrc: scriptSrcDirectives,
-      },
-    },
+    contentSecurityPolicy: false,
   })
 );
+
+app.use((req, res, nextMiddleware) => {
+  const nonce = res.locals.cspNonce as string | undefined;
+  const scriptSrcDirectives = ["'self'", nonce ? `'nonce-${nonce}'` : undefined].filter(
+    (value): value is string => Boolean(value)
+  );
+
+  if (shouldEnablePatientPortal && process.env.NODE_ENV !== 'production') {
+    scriptSrcDirectives.push("'unsafe-eval'");
+  }
+
+  return helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      frameSrc: ["'self'", 'https://demo.atenxion.ai'],
+      scriptSrc: scriptSrcDirectives,
+    },
+  })(req, res, nextMiddleware);
+});
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
