@@ -54,6 +54,15 @@ if (trustProxy) {
   app.set('trust proxy', 1);
 }
 
+const shouldEnablePatientPortal =
+  process.env.ENABLE_PATIENT_PORTAL !== 'false' && process.env.NODE_ENV !== 'test';
+
+const scriptSrcDirectives = ["'self'"];
+
+if (shouldEnablePatientPortal && process.env.NODE_ENV !== 'production') {
+  scriptSrcDirectives.push("'unsafe-eval'");
+}
+
 app.use(
   helmet({
     frameguard: false,
@@ -61,6 +70,7 @@ app.use(
       directives: {
         defaultSrc: ["'self'"],
         frameSrc: ["'self'", 'https://demo.atenxion.ai'],
+        scriptSrc: scriptSrcDirectives,
       },
     },
   })
@@ -97,9 +107,6 @@ protectedApi.use(apiRouter);
 app.use('/api', protectedApi);
 
 const readinessPromises: Promise<void>[] = [];
-
-const shouldEnablePatientPortal =
-  process.env.ENABLE_PATIENT_PORTAL !== 'false' && process.env.NODE_ENV !== 'test';
 
 const patientPortalWarmupRoutes = ['/patient/login'];
 
