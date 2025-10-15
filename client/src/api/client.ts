@@ -457,6 +457,23 @@ export async function createPatient(payload: CreatePatientPayload): Promise<Pati
   });
 }
 
+export interface UpdatePatientPayload {
+  name?: string;
+  dob?: string;
+  contact?: string | null;
+  gender?: string | null;
+  insurance?: string | null;
+  drugAllergies?: string | null;
+}
+
+export async function updatePatient(id: string, payload: UpdatePatientPayload): Promise<Patient> {
+  return fetchJSON(`/patients/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function searchPatients(query: string): Promise<Patient[]> {
   return fetchJSON(`/patients?query=${encodeURIComponent(query)}`);
 }
