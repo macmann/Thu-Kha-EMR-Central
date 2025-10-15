@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, Gender } from '@prisma/client';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { requireAuth, type AuthRequest } from '../auth/index.js';
@@ -171,11 +171,22 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
   if (contact !== undefined) data.contact = contact ? contact.trim() : null;
   if (gender !== undefined) {
     if (!gender) {
-      data.gender = null;
-    } else {
-      const trimmedGender = gender.trim();
-      data.gender = trimmedGender.length === 1 ? trimmedGender.toUpperCase() : trimmedGender;
+      return res.status(400).json({ error: { message: 'Gender cannot be null' } });
     }
+
+    const trimmedGender = gender.trim();
+    if (!trimmedGender) {
+      return res.status(400).json({ error: { message: 'Gender cannot be empty' } });
+    }
+
+    const normalizedGender =
+      trimmedGender.length === 1 ? trimmedGender.toUpperCase() : trimmedGender[0].toUpperCase();
+
+    if (normalizedGender !== 'M' && normalizedGender !== 'F') {
+      return res.status(400).json({ error: { message: 'Invalid gender value' } });
+    }
+
+    data.gender = normalizedGender as Gender;
   }
   if (insurance !== undefined) data.insurance = insurance ? insurance.trim() : null;
   if (drugAllergies !== undefined) data.drugAllergies = drugAllergies ? drugAllergies.trim() : null;
