@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import path from 'path';
-import express, { Request, Response, Router } from 'express';
+import express, { NextFunction, Request, Response, Router } from 'express';
 import crypto from 'node:crypto';
 import next from 'next/dist/server/next.js';
 import type { NextServer, NextServerOptions } from 'next/dist/server/next.js';
@@ -40,7 +40,7 @@ if (
 export const app = express();
 app.disable('x-powered-by');
 
-app.use((req, res, nextMiddleware) => {
+app.use((req: Request, res: Response, nextMiddleware: NextFunction) => {
   const nonce = crypto.randomBytes(16).toString('base64');
   res.locals.cspNonce = nonce;
   res.locals.nonce = nonce;
@@ -73,7 +73,7 @@ app.use(
   })
 );
 
-app.use((req, res, nextMiddleware) => {
+app.use((req: Request, res: Response, nextMiddleware: NextFunction) => {
   const nonce = res.locals.cspNonce as string | undefined;
   const scriptSrcDirectives = ["'self'", nonce ? `'nonce-${nonce}'` : undefined].filter(
     (value): value is string => Boolean(value)
