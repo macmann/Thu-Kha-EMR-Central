@@ -634,7 +634,7 @@ export default function PatientDetail() {
                 </button>
                 <div className="min-w-[12rem] rounded-xl bg-gray-50 p-4">
                   <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    {t('Primary contact')}
+                    {t('Primary Contact (Login ID)')}
                   </div>
                   <div className="mt-2 text-base font-semibold text-gray-900">{contact}</div>
                 </div>
@@ -824,7 +824,7 @@ export default function PatientDetail() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700" htmlFor="edit-patient-contact">
-                    {t('Primary contact')}
+                    {t('Primary Contact (Login ID)')}
                   </label>
                   <input
                     id="edit-patient-contact"

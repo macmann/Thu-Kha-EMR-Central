@@ -50,7 +50,7 @@ export default function PatientLoginPage() {
     try {
       const trimmedContact = contact.trim();
       if (!trimmedContact) {
-        throw new Error('Please enter your phone number or email address.');
+        throw new Error('Please enter the phone number listed as your Primary Contact.');
       }
 
       if (trimmedContact !== contact) {
@@ -66,7 +66,7 @@ export default function PatientLoginPage() {
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.error ?? 'Unable to send OTP.');
+        throw new Error(payload?.error ?? 'Unable to send OTP. Confirm your Primary Contact number in the EMR.');
       }
 
       setStep('verify');
@@ -111,10 +111,10 @@ export default function PatientLoginPage() {
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg shadow-slate-200/60">
         <h1 className="text-3xl font-semibold text-slate-900">Patient Login</h1>
         <p className="mt-3 text-base text-slate-600">
-          Enter your phone number or email address to receive a one-time passcode.
+          Enter the phone number from your Primary Contact to receive a one-time passcode.
         </p>
         <p className="mt-1 text-base text-slate-600">
-          သင်၏ဖုန်းနံပါတ် (သို့မဟုတ်) အီးမေးလ်လိပ်စာကို ထည့်ပါ၊ OTP ကုဒ်တစ်ခုကို လက်ခံရရှိပါမည်။
+          သင်၏ Primary Contact တွင် ဖော်ပြထားသော ဖုန်းနံပါတ်ကို ထည့်ပါ၊ OTP ကုဒ်တစ်ခုကို လက်ခံရရှိပါမည်။
         </p>
 
         {error && <p className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error.message}</p>}
@@ -126,7 +126,7 @@ export default function PatientLoginPage() {
           <form onSubmit={handleStart} className="mt-8 space-y-6">
             <div>
               <label htmlFor="contact" className="block text-sm font-medium text-slate-700">
-                Phone number or email
+                Phone number (Primary Contact)
               </label>
               <input
                 id="contact"
@@ -157,8 +157,9 @@ export default function PatientLoginPage() {
                 Enter the 6-digit OTP
               </label>
               <p className="mt-1 text-sm text-slate-500">{contact}</p>
+              <p className="mt-1 text-sm text-slate-500">Enter 111111 to bypass OTP during development.</p>
               <p className="mt-1 text-sm text-slate-500">
-                OTP ၆ လုံးကို ထည့်ပါ။ စမ်းသပ်ခြင်းအတွက် 000000 ကို အသုံးပြုနိုင်သည်။
+                OTP ၆ လုံးကို ထည့်ပါ။ စမ်းသပ်ခြင်းအတွက် 111111 ကို အသုံးပြုနိုင်သည်။
               </p>
               <input
                 id="otp"
