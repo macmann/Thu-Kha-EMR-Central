@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 const router = Router();
 
 const OTP_EXPIRATION_MINUTES = 5;
-const OTP_BYPASS_CODE = '000000';
+const OTP_BYPASS_CODE = '111111';
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const REFRESH_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60;
 
@@ -31,6 +31,62 @@ function normalizeContact(raw: string): string {
 
 function isEmail(value: string): boolean {
   return value.includes('@');
+}
+
+async function linkPatientRecords(
+  tx: Prisma.TransactionClient,
+  params: { contact: string; globalPatientId: string },
+) {
+  const matches = await tx.$queryRaw<Array<{ patientId: string; tenantId: string; patientName: string | null }>>`
+    SELECT pt."patientId", pt."tenantId", p."name" AS "patientName"
+    FROM "Patient" p
+    INNER JOIN "PatientTenant" pt ON pt."patientId" = p."patientId"
+    INNER JOIN "Tenant" t ON t."tenantId" = pt."tenantId"
+    WHERE p."contact" IS NOT NULL
+      AND t."enabledForPatientPortal" = true
+      AND regexp_replace(p."contact", '[^0-9+]', '', 'g') = ${params.contact}
+  `;
+
+  if (matches.length === 0) {
+    await tx.globalPatient.update({
+      where: { id: params.globalPatientId },
+      data: { primaryPhone: params.contact },
+    });
+    return;
+  }
+
+  const now = new Date();
+
+  for (const match of matches) {
+    await tx.patientLink.upsert({
+      where: {
+        clinicId_patientId: {
+          clinicId: match.tenantId,
+          patientId: match.patientId,
+        },
+      },
+      update: {
+        globalPatientId: params.globalPatientId,
+        verifiedAt: now,
+      },
+      create: {
+        clinicId: match.tenantId,
+        patientId: match.patientId,
+        globalPatientId: params.globalPatientId,
+        verifiedAt: now,
+      },
+    });
+  }
+
+  const displayName = matches.find((match) => match.patientName)?.patientName ?? null;
+
+  await tx.globalPatient.update({
+    where: { id: params.globalPatientId },
+    data: {
+      primaryPhone: params.contact,
+      fullName: displayName ?? undefined,
+    },
+  });
 }
 
 function generateOtp(): string {
@@ -173,30 +229,39 @@ async function handleVerify(req: Request, res: Response, next: NextFunction) {
 
       const existing = await tx.patientUser.findUnique({ where });
 
-      if (existing) {
-        return tx.patientUser.update({
+      const userRecord = existing
+        ? await tx.patientUser.update({
           where: { id: existing.id },
           data: {
             lastLoginAt: now,
             loginPhone: isEmailLogin ? existing.loginPhone : contact,
             loginEmail: isEmailLogin ? contact : existing.loginEmail,
           },
+        })
+        : await (async () => {
+            const globalPatient = await tx.globalPatient.create({
+              data: {
+                primaryPhone: isEmailLogin ? null : contact,
+              },
+            });
+
+            return tx.patientUser.create({
+              data: {
+                globalPatientId: globalPatient.id,
+                loginPhone: isEmailLogin ? null : contact,
+                loginEmail: isEmailLogin ? contact : null,
+              },
+            });
+          })();
+
+      if (!isEmailLogin) {
+        await linkPatientRecords(tx, {
+          contact,
+          globalPatientId: userRecord.globalPatientId,
         });
       }
 
-      const globalPatient = await tx.globalPatient.create({
-        data: {
-          primaryPhone: isEmailLogin ? null : contact,
-        },
-      });
-
-      return tx.patientUser.create({
-        data: {
-          globalPatientId: globalPatient.id,
-          loginPhone: isEmailLogin ? null : contact,
-          loginEmail: isEmailLogin ? contact : null,
-        },
-      });
+      return userRecord;
     });
 
     if (otpRecord && otp !== OTP_BYPASS_CODE) {
