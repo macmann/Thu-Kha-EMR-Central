@@ -1,5 +1,5 @@
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { PatientsIcon, SearchIcon } from '../components/icons';
@@ -9,7 +9,9 @@ import { useTenant } from '../contexts/TenantContext';
 import {
   getPatient,
   listPatientVisits,
+  updatePatient,
   type PatientSummary,
+  type UpdatePatientPayload,
   type Visit,
 } from '../api/client';
 import { useTranslation } from '../hooks/useTranslation';
@@ -24,6 +26,22 @@ function calculateAge(dob: string) {
     age -= 1;
   }
   return age;
+}
+
+function formatDateForInput(value: string | Date | null | undefined) {
+  if (!value) return '';
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toISOString().split('T')[0];
+}
+
+interface EditFormState {
+  name: string;
+  dob: string;
+  contact: string;
+  gender: string;
+  insurance: string;
+  drugAllergies: string;
 }
 
 export default function PatientDetail() {
@@ -45,6 +63,17 @@ export default function PatientDetail() {
   const [visits, setVisits] = useState<Visit[] | null>(null);
   const [visitsLoading, setVisitsLoading] = useState(false);
   const [visitsError, setVisitsError] = useState<string | null>(null);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<EditFormState>({
+    name: '',
+    dob: '',
+    contact: '',
+    gender: '',
+    insurance: '',
+    drugAllergies: '',
+  });
 
   const formatDateValue = useCallback((value: string | Date | null | undefined) => {
     if (!value) return '—';
@@ -207,6 +236,115 @@ export default function PatientDetail() {
       : error
         ? t(error)
         : t('Patient details unavailable.');
+
+  const handleOpenEditModal = useCallback(() => {
+    if (!patient) return;
+    setEditForm({
+      name: patient.name ?? '',
+      dob: formatDateForInput(patient.dob),
+      contact: patient.contact ?? '',
+      gender: patient.gender ?? '',
+      insurance: patient.insurance ?? '',
+      drugAllergies: patient.drugAllergies ?? '',
+    });
+    setEditError(null);
+    setEditModalOpen(true);
+  }, [patient]);
+
+  const handleCloseEditModal = useCallback(() => {
+    setEditModalOpen(false);
+    setEditError(null);
+  }, []);
+
+  const handleEditInputChange = useCallback(
+    (field: keyof EditFormState) =>
+      (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { value } = event.target;
+        setEditForm((prev) => ({ ...prev, [field]: value }));
+      },
+    [],
+  );
+
+  const handleEditSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!patient) return;
+
+      setEditSaving(true);
+      setEditError(null);
+
+      const payload: UpdatePatientPayload = {};
+      const trimmedName = editForm.name.trim();
+      if (!trimmedName) {
+        setEditError(t('Name is required.'));
+        setEditSaving(false);
+        return;
+      }
+      if (trimmedName !== patient.name) {
+        payload.name = trimmedName;
+      }
+
+      if (!editForm.dob) {
+        setEditError(t('Date of birth is required.'));
+        setEditSaving(false);
+        return;
+      }
+      const normalizedDob = editForm.dob;
+      if (normalizedDob !== formatDateForInput(patient.dob)) {
+        payload.dob = normalizedDob;
+      }
+
+      const normalizedContact = editForm.contact.trim();
+      const existingContact = patient.contact ?? '';
+      if (normalizedContact !== existingContact) {
+        payload.contact = normalizedContact ? normalizedContact : null;
+      }
+
+      const normalizedGender = editForm.gender.trim();
+      const existingGender = patient.gender ?? '';
+      if (normalizedGender !== existingGender) {
+        payload.gender = normalizedGender ? normalizedGender : null;
+      }
+
+      const normalizedInsurance = editForm.insurance.trim();
+      const existingInsurance = patient.insurance ?? '';
+      if (normalizedInsurance !== existingInsurance) {
+        payload.insurance = normalizedInsurance ? normalizedInsurance : null;
+      }
+
+      const normalizedAllergies = editForm.drugAllergies.trim();
+      const existingAllergies = patient.drugAllergies ?? '';
+      if (normalizedAllergies !== existingAllergies) {
+        payload.drugAllergies = normalizedAllergies ? normalizedAllergies : null;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        setEditError(t('No changes to save.'));
+        setEditSaving(false);
+        return;
+      }
+
+      try {
+        const updated = await updatePatient(patient.patientId, payload);
+        setPatient((prev) => {
+          if (!prev) return prev;
+          const merged: PatientSummary = {
+            ...prev,
+            ...updated,
+            visits: prev.visits,
+          };
+          return merged;
+        });
+        setEditModalOpen(false);
+      } catch (err) {
+        console.error(err);
+        setEditError(t('Failed to update patient.'));
+      } finally {
+        setEditSaving(false);
+      }
+    },
+    [editForm, patient, t],
+  );
 
   function renderSummary(p: PatientSummary) {
     const latestVisitId = p.visits && p.visits.length > 0 ? p.visits[0].visitId : '';
@@ -486,11 +624,20 @@ export default function PatientDetail() {
                   {t('Review demographic details and the latest clinical activity for this patient.')}
                 </p>
               </div>
-              <div className="min-w-[12rem] rounded-xl bg-gray-50 p-4">
-                <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  {t('Primary contact')}
+              <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:items-end">
+                <button
+                  type="button"
+                  onClick={handleOpenEditModal}
+                  className="inline-flex items-center justify-center rounded-full border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+                >
+                  {t('Edit patient')}
+                </button>
+                <div className="min-w-[12rem] rounded-xl bg-gray-50 p-4">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    {t('Primary contact')}
+                  </div>
+                  <div className="mt-2 text-base font-semibold text-gray-900">{contact}</div>
                 </div>
-                <div className="mt-2 text-base font-semibold text-gray-900">{contact}</div>
               </div>
             </div>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -602,6 +749,146 @@ export default function PatientDetail() {
           </section>
         </div>
       ) : null}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 px-4 py-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-patient-title"
+            className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="edit-patient-title" className="text-lg font-semibold text-gray-900">
+                  {t('Edit patient details')}
+                </h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  {t('Update demographic information and share the latest changes with the care team.')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleCloseEditModal}
+                className="inline-flex items-center justify-center rounded-full border border-gray-200 px-3 py-1 text-sm font-medium text-gray-600 transition hover:bg-gray-100"
+              >
+                {t('Close')}
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="mt-6 space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700" htmlFor="edit-patient-name">
+                    {t('Full name')}
+                  </label>
+                  <input
+                    id="edit-patient-name"
+                    type="text"
+                    value={editForm.name}
+                    onChange={handleEditInputChange('name')}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700" htmlFor="edit-patient-dob">
+                    {t('Date of Birth')}
+                  </label>
+                  <input
+                    id="edit-patient-dob"
+                    type="date"
+                    value={editForm.dob}
+                    onChange={handleEditInputChange('dob')}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700" htmlFor="edit-patient-gender">
+                    {t('Gender')}
+                  </label>
+                  <select
+                    id="edit-patient-gender"
+                    value={editForm.gender}
+                    onChange={handleEditInputChange('gender')}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  >
+                    <option value="">{t('Not recorded')}</option>
+                    <option value="M">{t('Male')}</option>
+                    <option value="F">{t('Female')}</option>
+                    <option value="O">{t('Other')}</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700" htmlFor="edit-patient-contact">
+                    {t('Primary contact')}
+                  </label>
+                  <input
+                    id="edit-patient-contact"
+                    type="text"
+                    value={editForm.contact}
+                    onChange={handleEditInputChange('contact')}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                    placeholder={t('e.g. +95 1 234 567 890')}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700" htmlFor="edit-patient-insurance">
+                    {t('Insurance partner')}
+                  </label>
+                  <input
+                    id="edit-patient-insurance"
+                    type="text"
+                    value={editForm.insurance}
+                    onChange={handleEditInputChange('insurance')}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700" htmlFor="edit-patient-allergies">
+                    {t('Drug allergies')}
+                  </label>
+                  <textarea
+                    id="edit-patient-allergies"
+                    value={editForm.drugAllergies}
+                    onChange={handleEditInputChange('drugAllergies')}
+                    rows={3}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  />
+                </div>
+              </div>
+
+              {editError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-600">
+                  {editError}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={handleCloseEditModal}
+                  className="inline-flex items-center justify-center rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50"
+                >
+                  {t('Cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {editSaving ? t('Saving...') : t('Save changes')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
