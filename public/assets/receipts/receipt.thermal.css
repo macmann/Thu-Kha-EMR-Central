@@ -1,0 +1,93 @@
+@page {
+  size: 80mm auto;
+  margin: 4mm;
+}
+
+.receipt--thermal {
+  width: 76mm;
+  margin: 0 auto;
+  padding: 8px 0 16px;
+  font-size: 12px;
+}
+
+.receipt--thermal .receipt__header {
+  flex-direction: column;
+  text-align: center;
+  gap: 6px;
+  border-bottom: 1px dashed #d1d5db;
+  padding-bottom: 8px;
+}
+
+.receipt--thermal .receipt__header-logo {
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.receipt--thermal .receipt__header-logo img {
+  max-height: 40px;
+}
+
+.receipt--thermal .receipt__header-name {
+  font-size: 14px;
+}
+
+.receipt--thermal .receipt__header-contact {
+  font-size: 11px;
+}
+
+.receipt--thermal .receipt__title {
+  font-size: 16px;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.receipt--thermal .receipt__meta {
+  margin-top: 8px;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.receipt--thermal .receipt__meta dd {
+  font-size: 11px;
+}
+
+.receipt--thermal .receipt__table {
+  font-size: 11px;
+  margin-top: 12px;
+}
+
+.receipt--thermal .receipt__table thead th {
+  padding: 4px 0;
+  border-bottom: 1px solid #d1d5db;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.receipt--thermal .receipt__table tbody td {
+  padding: 4px 0;
+  border-bottom: 1px dashed #d1d5db;
+}
+
+.receipt--thermal .receipt__table tfoot td {
+  padding: 6px 0 0;
+}
+
+.receipt--thermal .receipt__table td:nth-child(2) {
+  text-align: center;
+}
+
+.receipt--thermal .receipt__table td:nth-child(3),
+.receipt--thermal .receipt__table td:nth-child(4) {
+  text-align: right;
+}
+
+.receipt--thermal .receipt__notes {
+  margin-top: 12px;
+  font-size: 10px;
+}
+
+.receipt--thermal .receipt__notes--detail {
+  font-size: 10px;
+  margin-top: 8px;
+}

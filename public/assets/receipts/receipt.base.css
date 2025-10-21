@@ -1,0 +1,146 @@
+:root {
+  color: #111827;
+  background: #fff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  margin: 0;
+  background: #fff;
+  color: #111827;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+}
+
+.receipt {
+  display: block;
+}
+
+.receipt__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 12px;
+}
+
+.receipt__header-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #fff;
+  padding: 6px;
+  max-height: 64px;
+}
+
+.receipt__header-logo img {
+  max-height: 52px;
+  max-width: 140px;
+  object-fit: contain;
+}
+
+.receipt__header-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.receipt__header-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.receipt__header-contact {
+  font-size: 12px;
+  color: #4b5563;
+  line-height: 1.4;
+}
+
+.receipt__title {
+  margin-top: 16px;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: left;
+  color: #111827;
+}
+
+.receipt__meta {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.receipt__meta dt {
+  font-weight: 600;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.receipt__meta dd {
+  margin: 0;
+  color: #111827;
+  font-size: 13px;
+}
+
+.receipt__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.receipt__table thead th {
+  font-weight: 600;
+  color: #111827;
+}
+
+.receipt__table tfoot td {
+  font-weight: 600;
+}
+
+.receipt__table td,
+.receipt__table th {
+  text-align: left;
+}
+
+.receipt__empty td {
+  text-align: center;
+  color: #6b7280;
+  font-style: italic;
+  padding: 24px 12px;
+}
+
+.receipt__notes {
+  color: #6b7280;
+  text-align: center;
+  margin-top: 16px;
+  font-size: 12px;
+}
+
+.receipt__notes--detail {
+  color: #374151;
+  text-align: left;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+}

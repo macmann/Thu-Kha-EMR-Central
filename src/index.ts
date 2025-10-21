@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import path from 'path';
+import fs from 'node:fs';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import crypto from 'node:crypto';
 import next from 'next/dist/server/next.js';
@@ -77,26 +78,44 @@ app.use(
 
 app.use((req: Request, res: Response, nextMiddleware: NextFunction) => {
   const nonce = res.locals.cspNonce as string | undefined;
-  const scriptSrcDirectives = ["'self'", nonce ? `'nonce-${nonce}'` : undefined].filter(
-    (value): value is string => Boolean(value)
-  );
 
-  if (shouldEnablePatientPortal && process.env.NODE_ENV !== 'production') {
+  const scriptSrcDirectives = ["'self'", nonce ? `'nonce-${nonce}'` : undefined];
+  if (process.env.NODE_ENV !== 'production') {
     scriptSrcDirectives.push("'unsafe-eval'");
   }
 
-  const styleSrcDirectives = [
-    "'self'",
-    nonce ? `'nonce-${nonce}'` : undefined,
-    "'unsafe-inline'",
-  ].filter((value): value is string => Boolean(value));
+  const styleSrcDirectives = ["'self'", nonce ? `'nonce-${nonce}'` : undefined];
+  if (process.env.NODE_ENV !== 'production') {
+    styleSrcDirectives.push("'unsafe-inline'");
+  }
+
+  const connectSrcDirectives = ["'self'", 'https:', 'wss:', 'ws:'];
+  if (process.env.NODE_ENV !== 'production') {
+    connectSrcDirectives.push('http://localhost:5173', 'ws://localhost:5173');
+  }
+
+  const imgSrcDirectives = ["'self'", 'data:', 'https:', 'blob:'];
+  const fontSrcDirectives = ["'self'", 'data:'];
+
+  const mapNonEmpty = (value: (string | undefined)[]) =>
+    value.filter((entry): entry is string => Boolean(entry));
 
   return helmet.contentSecurityPolicy({
     directives: {
       defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"],
       frameSrc: ["'self'", 'https://demo.atenxion.ai'],
-      scriptSrc: scriptSrcDirectives,
-      styleSrc: styleSrcDirectives,
+      connectSrc: connectSrcDirectives,
+      scriptSrc: mapNonEmpty([...scriptSrcDirectives]),
+      scriptSrcElem: mapNonEmpty([...scriptSrcDirectives]),
+      styleSrc: mapNonEmpty([...styleSrcDirectives]),
+      styleSrcElem: mapNonEmpty([...styleSrcDirectives]),
+      imgSrc: imgSrcDirectives,
+      fontSrc: fontSrcDirectives,
+      manifestSrc: ["'self'"],
+      formAction: ["'self'"],
     },
   })(req, res, nextMiddleware);
 });
@@ -158,6 +177,28 @@ if (shouldEnablePatientPortal) {
   app.all(patientPortalRoutes, async (req: Request, res: Response) => {
     await patientPortalReady;
     return patientPortalHandler(req, res);
+  });
+}
+
+const publicDir = path.resolve(process.cwd(), 'public');
+if (fs.existsSync(publicDir)) {
+  const publicAssetsDir = path.join(publicDir, 'assets');
+  if (fs.existsSync(publicAssetsDir)) {
+    app.use('/assets', express.static(publicAssetsDir, { immutable: true, maxAge: '1y' }));
+  }
+
+  app.get('/manifest.webmanifest', (req: Request, res: Response, nextMiddleware: NextFunction) => {
+    const manifestPath = path.join(publicDir, 'manifest.webmanifest');
+    res.type('application/manifest+json');
+    res.sendFile(manifestPath, (error) => {
+      if (error) {
+        if ('code' in error && error.code === 'ENOENT') {
+          res.status(404).end();
+          return;
+        }
+        nextMiddleware(error);
+      }
+    });
   });
 }
 

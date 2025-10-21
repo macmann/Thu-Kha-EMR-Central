@@ -1,0 +1,22 @@
+{
+  "name": "Thu Kha EMR",
+  "short_name": "ThuKha EMR",
+  "description": "Clinic and hospital staff portal for managing visits, billing, and care operations.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#14b8a6",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20128%20128%22%20role%3D%22img%22%20aria-label%3D%22Thu%20Kha%20EMR%20icon%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%25%22%20x2%3D%22100%25%22%20y1%3D%220%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2314b8a6%22%20/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230d9488%22%20/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2224%22%20fill%3D%22url(%23bg)%22%20/%3E%0A%20%20%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M64%2028c-16.016%200-29%2012.984-29%2029s12.984%2029%2029%2029%2029-12.984%2029-29S80.016%2028%2064%2028Zm0%2048c-10.493%200-19-8.507-19-19s8.507-19%2019-19%2019%208.507%2019%2019-8.507%2019-19%2019Zm0%2010c-18.225%200-34.392%209.507-43.477%2024.002A4%204%200%200%200%2024%20112h80a4%204%200%200%200%203.477-6.998C98.392%2095.507%2082.225%2086%2064%2086Z%22%20/%3E%0A%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20128%20128%22%20role%3D%22img%22%20aria-label%3D%22Thu%20Kha%20EMR%20icon%22%3E%0A%20%20%3Cdefs%3E%0A%20%20%20%20%3ClinearGradient%20id%3D%22bg%22%20x1%3D%220%25%22%20x2%3D%22100%25%22%20y1%3D%220%25%22%20y2%3D%22100%25%22%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2314b8a6%22%20/%3E%0A%20%20%20%20%20%20%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230d9488%22%20/%3E%0A%20%20%20%20%3C/linearGradient%3E%0A%20%20%3C/defs%3E%0A%20%20%3Crect%20width%3D%22128%22%20height%3D%22128%22%20rx%3D%2224%22%20fill%3D%22url(%23bg)%22%20/%3E%0A%20%20%3Cpath%20fill%3D%22%23ffffff%22%20d%3D%22M64%2028c-16.016%200-29%2012.984-29%2029s12.984%2029%2029%2029%2029-12.984%2029-29S80.016%2028%2064%2028Zm0%2048c-10.493%200-19-8.507-19-19s8.507-19%2019-19%2019%208.507%2019%2019-8.507%2019-19%2019Zm0%2010c-18.225%200-34.392%209.507-43.477%2024.002A4%204%200%200%200%2024%20112h80a4%204%200%200%200%203.477-6.998C98.392%2095.507%2082.225%2086%2064%2086Z%22%20/%3E%0A%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
