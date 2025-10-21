@@ -1,0 +1,69 @@
+@page {
+  size: B5 portrait;
+  margin: 15mm;
+}
+
+.receipt--b5 {
+  max-width: 100%;
+  padding: 32px;
+  font-size: 14px;
+}
+
+.receipt--b5 .receipt__header {
+  padding-bottom: 20px;
+}
+
+.receipt--b5 .receipt__header-logo {
+  max-height: 72px;
+}
+
+.receipt--b5 .receipt__header-name {
+  font-size: 24px;
+}
+
+.receipt--b5 .receipt__header-contact {
+  font-size: 13px;
+}
+
+.receipt--b5 .receipt__title {
+  font-size: 24px;
+  margin-top: 24px;
+}
+
+.receipt--b5 .receipt__meta {
+  margin-top: 16px;
+  font-size: 13px;
+}
+
+.receipt--b5 .receipt__table {
+  font-size: 13px;
+  margin-top: 24px;
+}
+
+.receipt--b5 .receipt__table th,
+.receipt--b5 .receipt__table td {
+  border: 1px solid #d1d5db;
+  padding: 8px 12px;
+}
+
+.receipt--b5 .receipt__table th:nth-child(2),
+.receipt--b5 .receipt__table td:nth-child(2) {
+  text-align: center;
+}
+
+.receipt--b5 .receipt__table th:nth-child(3),
+.receipt--b5 .receipt__table td:nth-child(3),
+.receipt--b5 .receipt__table th:nth-child(4),
+.receipt--b5 .receipt__table td:nth-child(4) {
+  text-align: right;
+}
+
+.receipt--b5 .receipt__notes {
+  margin-top: 24px;
+  font-size: 12px;
+}
+
+.receipt--b5 .receipt__notes--detail {
+  font-size: 12px;
+  margin-top: 16px;
+}

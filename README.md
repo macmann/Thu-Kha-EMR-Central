@@ -117,3 +117,9 @@ The OpenAPI specification is served at `/api/docs/openapi.json`.
 - TLS is enforced by using `sslmode=require` for database connections.
 - `express-rate-limit` protects patient and auth endpoints.
 - Patient contact details are masked in logs and API responses.
+
+## CSP & Nonce Setup
+- Each request receives a fresh 128-bit nonce generated in [`src/index.ts`](src/index.ts). The nonce is stored on `res.locals.cspNonce`, echoed to the request headers, and forwarded to the patient portal so both the Vite client and Next.js app can read it.
+- Helmet applies a strict Content Security Policy per request. Scripts and styles are limited to `'self'` plus the generated nonce, with `'unsafe-eval'` only enabled during development for React Fast Refresh and Vite tooling. In production the policy blocks inline execution entirely, while development keeps `'unsafe-inline'` for styles to accommodate HMR.
+- Receipt HTML renders with external stylesheets served from `/assets/receipts/...`, avoiding inline `<style>` blocks. The same nonce-based CSP therefore covers printed receipts without weakening the policy.
+- The manifest is hosted at `/manifest.webmanifest` with the correct `application/manifest+json` MIME type so browsers can install the PWA without tripping CSP.

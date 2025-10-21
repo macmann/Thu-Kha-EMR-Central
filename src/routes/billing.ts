@@ -32,6 +32,11 @@ const router = Router();
 
 type ReceiptFormat = 'b5' | 'thermal';
 
+const receiptStylesheets: Record<ReceiptFormat, readonly string[]> = {
+  b5: ['/assets/receipts/receipt.base.css', '/assets/receipts/receipt.b5.css'],
+  thermal: ['/assets/receipts/receipt.base.css', '/assets/receipts/receipt.thermal.css'],
+};
+
 function escapeHtml(value: unknown) {
   if (value === null || typeof value === 'undefined') {
     return '';
@@ -85,74 +90,8 @@ function formatCurrencyValue(value: unknown, currency: string) {
   }
 }
 
-function getReceiptStyles(format: ReceiptFormat) {
-  const baseStyles = `
-    :root { color: #111827; background: #fff; }
-    * { box-sizing: border-box; }
-    body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; background: #fff; color: #111827; }
-    h1, h2, h3, h4, h5, h6 { margin: 0; }
-    .receipt { display: block; }
-    .receipt__header { display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; }
-    .receipt__header-logo { display: flex; align-items: center; justify-content: center; border: 1px solid #d1d5db; border-radius: 12px; background: #fff; padding: 6px; max-height: 64px; }
-    .receipt__header-logo img { max-height: 52px; max-width: 140px; object-fit: contain; }
-    .receipt__header-details { display: flex; flex-direction: column; gap: 4px; }
-    .receipt__header-name { font-size: 18px; font-weight: 600; color: #111827; }
-    .receipt__header-contact { font-size: 12px; color: #4b5563; line-height: 1.4; }
-    .receipt__title { margin-top: 16px; font-size: 20px; font-weight: 600; text-align: left; color: #111827; }
-    .receipt__meta { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-    .receipt__meta dt { font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; font-size: 12px; color: #4b5563; }
-    .receipt__meta dd { margin: 0; color: #111827; font-size: 13px; }
-    .receipt__table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    .receipt__table thead th { font-weight: 600; color: #111827; }
-    .receipt__table tfoot td { font-weight: 600; }
-    .receipt__table td, .receipt__table th { text-align: left; }
-    .receipt__empty td { text-align: center; color: #6b7280; font-style: italic; padding: 24px 12px; }
-    .receipt__notes { color: #6b7280; text-align: center; margin-top: 16px; font-size: 12px; }
-    .receipt__notes--detail { color: #374151; text-align: left; }
-    @media print { body { background: #fff; } }
-  `;
-
-  if (format === 'thermal') {
-    return `
-      ${baseStyles}
-      @page { size: 80mm auto; margin: 4mm; }
-      .receipt--thermal { width: 76mm; margin: 0 auto; padding: 8px 0 16px; font-size: 12px; }
-      .receipt--thermal .receipt__header { flex-direction: column; text-align: center; gap: 6px; border-bottom: 1px dashed #d1d5db; padding-bottom: 8px; }
-      .receipt--thermal .receipt__header-logo { border-radius: 8px; padding: 4px; }
-      .receipt--thermal .receipt__header-logo img { max-height: 40px; }
-      .receipt--thermal .receipt__header-name { font-size: 14px; }
-      .receipt--thermal .receipt__header-contact { font-size: 11px; }
-      .receipt--thermal .receipt__title { font-size: 16px; text-align: center; margin-top: 10px; }
-      .receipt--thermal .receipt__meta { margin-top: 8px; gap: 6px; font-size: 11px; }
-      .receipt--thermal .receipt__meta dd { font-size: 11px; }
-      .receipt--thermal .receipt__table { font-size: 11px; margin-top: 12px; }
-      .receipt--thermal .receipt__table thead th { padding: 4px 0; border-bottom: 1px solid #d1d5db; text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
-      .receipt--thermal .receipt__table tbody td { padding: 4px 0; border-bottom: 1px dashed #d1d5db; }
-      .receipt--thermal .receipt__table tfoot td { padding: 6px 0 0; }
-      .receipt--thermal .receipt__table td:nth-child(2) { text-align: center; }
-      .receipt--thermal .receipt__table td:nth-child(3), .receipt--thermal .receipt__table td:nth-child(4) { text-align: right; }
-      .receipt--thermal .receipt__notes { margin-top: 12px; font-size: 10px; }
-      .receipt--thermal .receipt__notes--detail { font-size: 10px; margin-top: 8px; }
-    `;
-  }
-
-  return `
-    ${baseStyles}
-    @page { size: B5 portrait; margin: 15mm; }
-    .receipt--b5 { max-width: 100%; padding: 32px; font-size: 14px; }
-    .receipt--b5 .receipt__header { padding-bottom: 20px; }
-    .receipt--b5 .receipt__header-logo { max-height: 72px; }
-    .receipt--b5 .receipt__header-name { font-size: 24px; }
-    .receipt--b5 .receipt__header-contact { font-size: 13px; }
-    .receipt--b5 .receipt__title { font-size: 24px; margin-top: 24px; }
-    .receipt--b5 .receipt__meta { margin-top: 16px; font-size: 13px; }
-    .receipt--b5 .receipt__table { font-size: 13px; margin-top: 24px; }
-    .receipt--b5 .receipt__table th, .receipt--b5 .receipt__table td { border: 1px solid #d1d5db; padding: 8px 12px; }
-    .receipt--b5 .receipt__table th:nth-child(2), .receipt--b5 .receipt__table td:nth-child(2) { text-align: center; }
-    .receipt--b5 .receipt__table th:nth-child(3), .receipt--b5 .receipt__table td:nth-child(3), .receipt--b5 .receipt__table th:nth-child(4), .receipt--b5 .receipt__table td:nth-child(4) { text-align: right; }
-    .receipt--b5 .receipt__notes { margin-top: 24px; font-size: 12px; }
-    .receipt--b5 .receipt__notes--detail { font-size: 12px; margin-top: 16px; }
-  `;
+function getReceiptStylesheets(format: ReceiptFormat) {
+  return receiptStylesheets[format] ?? receiptStylesheets.b5;
 }
 
 const ModifyInvoiceItemsSchema = z
@@ -568,12 +507,16 @@ router.get(
             invoice.note,
           )}</p>`
         : '';
+      const stylesheetLinks = getReceiptStylesheets(format)
+        .map((href) => `<link rel="stylesheet" href="${href}" />`)
+        .join('');
+
       const receiptHtml = `<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8" />
     <title>Invoice ${invoiceNumber}</title>
-    <style>${getReceiptStyles(format)}</style>
+    ${stylesheetLinks}
   </head>
   <body>
     <main class="${receiptClass}">
