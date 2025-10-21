@@ -22,7 +22,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const incomingHeaders = headers();
-  const nonce = incomingHeaders.get('x-csp-nonce') ?? incomingHeaders.get('x-nonce') ?? undefined;
+  const nonceFromHeaders = incomingHeaders.get('x-csp-nonce') ?? incomingHeaders.get('x-nonce');
+  const nonce =
+    nonceFromHeaders ?? (process.env.NODE_ENV === 'development' ? 'dev-nonce' : undefined);
 
   return (
     <html lang="en" suppressHydrationWarning>
