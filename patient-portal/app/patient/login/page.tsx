@@ -107,7 +107,20 @@ export default function PatientLoginPage() {
   };
 
   return (
-    <div className="relative mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white/90 shadow-2xl ring-1 ring-slate-200 backdrop-blur-sm transition dark:bg-slate-900/90 dark:ring-slate-800 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+    <main className="relative flex flex-1 items-center justify-center overflow-hidden py-16 px-6 sm:px-10 md:px-12 lg:px-16">
+      <div
+        className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-slate-100 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-y-0 left-[-30%] -z-10 hidden w-[65%] rounded-full bg-emerald-400/10 blur-3xl md:block lg:left-[-20%]"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute bottom-[-25%] right-[-10%] -z-10 hidden h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl md:block"
+        aria-hidden
+      />
+      <div className="relative mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white/90 shadow-2xl ring-1 ring-slate-200 backdrop-blur-sm transition dark:bg-slate-900/90 dark:ring-slate-800 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
       <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 p-10 text-emerald-50 md:flex">
         <div className="space-y-6">
           <span className="inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-50">
@@ -263,6 +276,7 @@ export default function PatientLoginPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </main>
   );
 }
