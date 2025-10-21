@@ -31,15 +31,16 @@ export function middleware(_req: NextRequest) {
   if (process.env.NODE_ENV === 'development') {
     scriptSrc.push(`'unsafe-eval'`);
   }
-  const styleSrc = [`'self'`, `'nonce-${nonce}'`];
-  if (process.env.NODE_ENV === 'development') {
-    styleSrc.push(`'unsafe-inline'`);
-  }
+  const styleSrc = [`'self'`, `'unsafe-inline'`];
+  const styleSrcElem = [`'self'`, `'unsafe-inline'`];
+  const styleSrcAttr = [`'unsafe-inline'`];
 
   const csp = [
     `default-src 'self'`,
     `script-src ${scriptSrc.join(' ')}`,
     `style-src ${styleSrc.join(' ')}`,
+    `style-src-elem ${styleSrcElem.join(' ')}`,
+    `style-src-attr ${styleSrcAttr.join(' ')}`,
     `img-src 'self' data:`,
     `font-src 'self' data:`,
     `connect-src 'self' https: ws:`,
