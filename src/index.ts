@@ -1,11 +1,12 @@
 import 'dotenv/config';
 import path from 'path';
 import fs from 'node:fs';
+import { promises as fsPromises } from 'node:fs';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import crypto from 'node:crypto';
 import next from 'next/dist/server/next.js';
 import type { NextServer, NextServerOptions } from 'next/dist/server/next.js';
-import helmet from 'helmet';
+import helmet, { type ContentSecurityPolicyDirectiveValue } from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 import { apiRouter } from './server.js';
@@ -68,57 +69,49 @@ if (trustProxy) {
 
 const shouldEnablePatientPortal =
   process.env.ENABLE_PATIENT_PORTAL !== 'false' && process.env.NODE_ENV !== 'test';
+const isProduction = process.env.NODE_ENV === 'production';
+
+const nonceDirective = ((_: Request, res: Response) =>
+  `'nonce-${(res.locals.cspNonce as string | undefined) ?? ''}'`) as ContentSecurityPolicyDirectiveValue;
+
+const scriptSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", nonceDirective];
+if (!isProduction) {
+  scriptSrc.push("'unsafe-eval'");
+}
+
+const styleSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", nonceDirective];
+
+const connectSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'https:', 'ws:', 'wss:'];
+if (!isProduction) {
+  connectSrc.push('http://localhost:5173', 'ws://localhost:5173');
+}
+
+const imgSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'data:'];
+const fontSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'data:'];
+const frameSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'https://demo.atenxion.ai'];
+const swUnregisterFlagPath = path.resolve(process.cwd(), 'patient-portal', '.force-sw-unregister');
 
 app.use(
   helmet({
     frameguard: false,
-    contentSecurityPolicy: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        frameSrc,
+        connectSrc,
+        scriptSrc,
+        styleSrc,
+        imgSrc,
+        fontSrc,
+        manifestSrc: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
   })
 );
-
-app.use((req: Request, res: Response, nextMiddleware: NextFunction) => {
-  const nonce = res.locals.cspNonce as string | undefined;
-
-  const scriptSrcDirectives = ["'self'", nonce ? `'nonce-${nonce}'` : undefined];
-  if (process.env.NODE_ENV !== 'production') {
-    scriptSrcDirectives.push("'unsafe-eval'");
-  }
-
-  const styleSrcDirectives = ["'self'", nonce ? `'nonce-${nonce}'` : undefined];
-  if (process.env.NODE_ENV !== 'production') {
-    styleSrcDirectives.push("'unsafe-inline'");
-  }
-
-  const connectSrcDirectives = ["'self'", 'https:', 'wss:', 'ws:'];
-  if (process.env.NODE_ENV !== 'production') {
-    connectSrcDirectives.push('http://localhost:5173', 'ws://localhost:5173');
-  }
-
-  const imgSrcDirectives = ["'self'", 'data:', 'https:', 'blob:'];
-  const fontSrcDirectives = ["'self'", 'data:'];
-
-  const mapNonEmpty = (value: (string | undefined)[]) =>
-    value.filter((entry): entry is string => Boolean(entry));
-
-  return helmet.contentSecurityPolicy({
-    directives: {
-      defaultSrc: ["'self'"],
-      baseUri: ["'self'"],
-      objectSrc: ["'none'"],
-      frameAncestors: ["'none'"],
-      frameSrc: ["'self'", 'https://demo.atenxion.ai'],
-      connectSrc: connectSrcDirectives,
-      scriptSrc: mapNonEmpty([...scriptSrcDirectives]),
-      scriptSrcElem: mapNonEmpty([...scriptSrcDirectives]),
-      styleSrc: mapNonEmpty([...styleSrcDirectives]),
-      styleSrcElem: mapNonEmpty([...styleSrcDirectives]),
-      imgSrc: imgSrcDirectives,
-      fontSrc: fontSrcDirectives,
-      manifestSrc: ["'self'"],
-      formAction: ["'self'"],
-    },
-  })(req, res, nextMiddleware);
-});
 
 if (process.env.NODE_ENV !== 'production') {
   app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
@@ -130,6 +123,30 @@ app.use(express.json({ limit: '2mb' }));
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
+
+app.get(
+  '/api/public/sw/unregister-flag',
+  async (_req: Request, res: Response, nextMiddleware: NextFunction) => {
+    try {
+      await fsPromises.access(swUnregisterFlagPath);
+    } catch {
+      res.json({ shouldUnregister: false });
+      return;
+    }
+
+    try {
+      await fsPromises.rm(swUnregisterFlagPath);
+    } catch (error) {
+      const errorWithCode = error as NodeJS.ErrnoException;
+      if (errorWithCode?.code && errorWithCode.code !== 'ENOENT') {
+        nextMiddleware(error);
+        return;
+      }
+    }
+
+    res.json({ shouldUnregister: true });
+  }
+);
 
 app.use('/api/public', publicRouter);
 
@@ -203,10 +220,29 @@ if (fs.existsSync(publicDir)) {
 }
 
 const clientDir = path.resolve(process.cwd(), 'dist_client');
-app.use(express.static(clientDir));
-app.get('*', (req: Request, res: Response) =>
-  res.sendFile(path.join(clientDir, 'index.html'))
-);
+const clientIndexPath = path.join(clientDir, 'index.html');
+let cachedClientIndexHtml: string | undefined;
+
+app.use(express.static(clientDir, { index: false }));
+app.get('*', async (req: Request, res: Response, nextMiddleware: NextFunction) => {
+  if (!fs.existsSync(clientIndexPath)) {
+    nextMiddleware();
+    return;
+  }
+
+  try {
+    if (!cachedClientIndexHtml || !isProduction) {
+      cachedClientIndexHtml = await fsPromises.readFile(clientIndexPath, 'utf8');
+    }
+
+    const nonce = typeof res.locals.cspNonce === 'string' ? res.locals.cspNonce : '';
+    const renderedHtml = cachedClientIndexHtml.replaceAll('%CSP_NONCE%', nonce);
+
+    res.type('html').send(renderedHtml);
+  } catch (error) {
+    nextMiddleware(error);
+  }
+});
 
 // Error handler should be last and only apply to /api routes
 app.use('/api', errorHandler);
