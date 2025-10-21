@@ -21,10 +21,14 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const nonce = headers().get('x-nonce') ?? headers().get('x-csp-nonce') ?? undefined;
+  const incomingHeaders = headers();
+  const nonce = incomingHeaders.get('x-csp-nonce') ?? incomingHeaders.get('x-nonce') ?? undefined;
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head nonce={nonce as any}>
+        {nonce ? <meta name="csp-nonce" content={nonce} /> : null}
+      </head>
       <body className={`${inter.variable} ${notoMyanmar.variable} font-sans antialiased`}>
         <Providers cspNonce={nonce}>
           <div className="flex min-h-screen flex-col bg-surface text-surface-foreground transition-colors dark:bg-slate-950 dark:text-slate-100">
