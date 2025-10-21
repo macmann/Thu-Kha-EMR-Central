@@ -190,7 +190,7 @@ if (fs.existsSync(publicDir)) {
   app.get('/manifest.webmanifest', (req: Request, res: Response, nextMiddleware: NextFunction) => {
     const manifestPath = path.join(publicDir, 'manifest.webmanifest');
     res.type('application/manifest+json');
-    res.sendFile(manifestPath, (error) => {
+    res.sendFile(manifestPath, (error: NodeJS.ErrnoException | undefined) => {
       if (error) {
         if ('code' in error && error.code === 'ENOENT') {
           res.status(404).end();
@@ -215,7 +215,7 @@ startAppointmentReminderCron();
 
 if (process.env.NODE_ENV !== 'test') {
   Promise.all(readinessPromises)
-    .catch((error) => {
+    .catch((error: unknown) => {
       console.error('Server failed to start', error);
       process.exit(1);
     })
