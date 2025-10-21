@@ -13,8 +13,10 @@ function arrayToBase64(array: Uint8Array) {
   return btoa(binary);
 }
 
+const DEV_NONCE = 'devnonce';
+
 function genNonce() {
-  if (process.env.NODE_ENV === 'development') return 'dev-nonce';
+  if (process.env.NODE_ENV === 'development') return DEV_NONCE;
   const random = crypto.getRandomValues(new Uint8Array(16));
   return arrayToBase64(random);
 }
