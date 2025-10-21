@@ -37,7 +37,12 @@ function buildId() {
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const pushToast = useCallback((toast: Omit<Toast, 'id'>) => {
     setToasts((current) => [...current, { id: buildId(), ...toast }]);
@@ -68,7 +73,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={contextValue}>
       {children}
-      {typeof document !== 'undefined'
+      {isMounted
         ? createPortal(
             <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex flex-col items-center gap-3 px-4">
               {toasts.map((toast) => {
