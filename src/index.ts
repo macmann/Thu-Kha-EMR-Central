@@ -6,7 +6,8 @@ import express, { NextFunction, Request, Response, Router } from 'express';
 import crypto from 'node:crypto';
 import next from 'next/dist/server/next.js';
 import type { NextServer, NextServerOptions } from 'next/dist/server/next.js';
-import helmet, { type ContentSecurityPolicyDirectiveValue } from 'helmet';
+import helmet from 'helmet';
+import type { IncomingMessage, ServerResponse } from 'http';
 import cors from 'cors';
 import morgan from 'morgan';
 import { apiRouter } from './server.js';
@@ -71,8 +72,22 @@ const shouldEnablePatientPortal =
   process.env.ENABLE_PATIENT_PORTAL !== 'false' && process.env.NODE_ENV !== 'test';
 const isProduction = process.env.NODE_ENV === 'production';
 
-const nonceDirective = ((_: Request, res: Response) =>
-  `'nonce-${(res.locals.cspNonce as string | undefined) ?? ''}'`) as ContentSecurityPolicyDirectiveValue;
+type ContentSecurityPolicyDirectiveValueFunction = (
+  req: IncomingMessage,
+  res: ServerResponse,
+) => string;
+
+type ContentSecurityPolicyDirectiveValue =
+  | string
+  | ContentSecurityPolicyDirectiveValueFunction;
+
+const nonceDirective: ContentSecurityPolicyDirectiveValueFunction = (
+  _: IncomingMessage,
+  res: ServerResponse,
+) => {
+  const response = res as Response;
+  return `'nonce-${(response.locals.cspNonce as string | undefined) ?? ''}'`;
+};
 
 const scriptSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", nonceDirective];
 if (!isProduction) {
