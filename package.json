@@ -25,6 +25,7 @@
     "seed": "prisma db seed",
     "tenant:create": "tsx scripts/createTenant.ts",
     "reset:db": "prisma migrate reset --force",
+    "patient-portal:sw:reset": "tsx scripts/queueSwUnregister.ts",
     "studio": "prisma studio"
   },
   "prisma": {
