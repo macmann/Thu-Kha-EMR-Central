@@ -8,6 +8,8 @@ export function ServiceWorkerRegistrar() {
       return;
     }
 
+    const isSwEnabled = process.env.NEXT_PUBLIC_ENABLE_SW === 'true';
+
     if (process.env.NODE_ENV !== 'production') {
       void navigator.serviceWorker
         .getRegistrations()
@@ -17,6 +19,10 @@ export function ServiceWorkerRegistrar() {
         .catch((error) => {
           console.warn('Failed to unregister service workers in development.', error);
         });
+      return;
+    }
+
+    if (!isSwEnabled) {
       return;
     }
 
