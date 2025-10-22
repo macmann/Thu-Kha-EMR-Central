@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import type { Route } from 'next';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 
 type Step = 'start' | 'verify' | 'success';
 
@@ -16,12 +17,31 @@ interface FormError {
 }
 
 export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }: Props) {
+  const router = useRouter();
   const [contact, setContact] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState<Step>('start');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FormError | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
+
+  useEffect(() => {
+    router.prefetch('/patient');
+  }, [router]);
+
+  useEffect(() => {
+    if (step !== 'success') {
+      return;
+    }
+
+    const redirectTimer = setTimeout(() => {
+      router.replace('/patient');
+    }, 800);
+
+    return () => {
+      clearTimeout(redirectTimer);
+    };
+  }, [router, step]);
 
   const StaffPortalLink = ({ children }: { children: ReactNode }) => {
     if (isExternalStaffPortalUrl) {
@@ -101,7 +121,7 @@ export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }:
       }
 
       setStep('success');
-      setStatusMessage('Login successful!');
+      setStatusMessage('Login successful! Redirecting to your dashboard…');
     } catch (err) {
       setError({ message: err instanceof Error ? err.message : 'Unable to verify OTP.' });
     } finally {
