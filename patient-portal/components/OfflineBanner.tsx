@@ -5,19 +5,24 @@ import { WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export function OfflineBanner() {
-  const [isOffline, setIsOffline] = useState<boolean>(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+  const [isOffline, setIsOffline] = useState(false);
   const { t } = useTranslation();
 
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+    if (typeof window === 'undefined') {
+      return;
+    }
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    const updateStatus = () => setIsOffline(!navigator.onLine);
+
+    updateStatus();
+
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', updateStatus);
+      window.removeEventListener('offline', updateStatus);
     };
   }, []);
 
