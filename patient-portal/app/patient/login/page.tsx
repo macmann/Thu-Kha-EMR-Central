@@ -17,8 +17,12 @@ export default function PatientLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FormError | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
-  const staffPortalUrl = process.env.NEXT_PUBLIC_STAFF_PORTAL_URL ?? '/login';
-  const isExternalStaffPortalUrl = staffPortalUrl.startsWith('http');
+  const rawStaffPortalUrl = process.env.NEXT_PUBLIC_STAFF_PORTAL_URL;
+  const staffPortalUrl =
+    rawStaffPortalUrl && rawStaffPortalUrl !== 'undefined'
+      ? rawStaffPortalUrl
+      : '/login';
+  const isExternalStaffPortalUrl = /^https?:\/\//.test(staffPortalUrl);
 
   const StaffPortalLink = ({ children }: { children: ReactNode }) => {
     if (isExternalStaffPortalUrl) {
