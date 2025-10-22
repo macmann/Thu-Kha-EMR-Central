@@ -97,11 +97,13 @@ if (!isProduction) {
 const styleSrc: ContentSecurityPolicyDirectiveValue[] = [
   "'self'",
   "'unsafe-inline'",
+  'https://fonts.googleapis.com',
   nonceDirective,
 ];
 const styleSrcElem: ContentSecurityPolicyDirectiveValue[] = [
   "'self'",
   "'unsafe-inline'",
+  'https://fonts.googleapis.com',
 ];
 const styleSrcAttr: ContentSecurityPolicyDirectiveValue[] = ["'unsafe-inline'"];
 
@@ -111,7 +113,11 @@ if (!isProduction) {
 }
 
 const imgSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'data:'];
-const fontSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'data:'];
+const fontSrc: ContentSecurityPolicyDirectiveValue[] = [
+  "'self'",
+  'data:',
+  'https://fonts.gstatic.com',
+];
 const frameSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'https://demo.atenxion.ai'];
 const swUnregisterFlagPath = path.resolve(process.cwd(), 'patient-portal', '.force-sw-unregister');
 
