@@ -94,7 +94,16 @@ if (!isProduction) {
   scriptSrc.push("'unsafe-eval'");
 }
 
-const styleSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", nonceDirective];
+const styleSrc: ContentSecurityPolicyDirectiveValue[] = [
+  "'self'",
+  "'unsafe-inline'",
+  nonceDirective,
+];
+const styleSrcElem: ContentSecurityPolicyDirectiveValue[] = [
+  "'self'",
+  "'unsafe-inline'",
+];
+const styleSrcAttr: ContentSecurityPolicyDirectiveValue[] = ["'unsafe-inline'"];
 
 const connectSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'https:', 'ws:', 'wss:'];
 if (!isProduction) {
@@ -119,6 +128,8 @@ app.use(
         connectSrc,
         scriptSrc,
         styleSrc,
+        styleSrcElem,
+        styleSrcAttr,
         imgSrc,
         fontSrc,
         manifestSrc: ["'self'"],
