@@ -16,7 +16,7 @@ export default async function PatientConsentPage() {
   const consentResponse = await fetchPatientConsents({ cookie: cookieHeader });
 
   if (!consentResponse) {
-    redirect('/patient/login');
+    redirect('/login');
   }
 
   return (

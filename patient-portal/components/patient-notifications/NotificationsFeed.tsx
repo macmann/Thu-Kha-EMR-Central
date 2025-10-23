@@ -56,7 +56,7 @@ function resolveNotificationContent(notification: PatientNotification): Notifica
       return {
         title,
         body: `Your appointment${clinic}${doctor}${when} is confirmed.`,
-        href: '/patient/appointments',
+        href: '/appointments',
         cta: 'Manage appointment',
       };
     }
@@ -67,7 +67,7 @@ function resolveNotificationContent(notification: PatientNotification): Notifica
       return {
         title: windowText,
         body: `Upcoming visit${doctor}${when}. Please arrive a little early to complete check-in.`,
-        href: '/patient/appointments',
+        href: '/appointments',
         cta: 'View appointment',
       };
     }
@@ -78,7 +78,7 @@ function resolveNotificationContent(notification: PatientNotification): Notifica
       return {
         title: 'Follow-up reminder',
         body: `We recommend scheduling a follow-up visit${patient}${clinic}${when}.`,
-        href: '/patient/visits',
+        href: '/visits',
         cta: 'Review visits',
       };
     }
@@ -89,7 +89,7 @@ function resolveNotificationContent(notification: PatientNotification): Notifica
         body: amount
           ? `You have an outstanding balance of ${amount}. Pay securely to avoid delays in care.`
           : 'You have an outstanding invoice. Pay securely to avoid delays in care.',
-        href: '/patient/invoices',
+        href: '/invoices',
         cta: 'Pay invoice',
       };
     }
@@ -97,7 +97,7 @@ function resolveNotificationContent(notification: PatientNotification): Notifica
       return {
         title: 'Notification',
         body: clinicName ?? 'A new update is available in your patient portal.',
-        href: '/patient',
+        href: '/',
         cta: 'Open portal',
       };
   }

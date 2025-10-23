@@ -10,7 +10,7 @@ export default function AuthenticatedPatientLayout({ children }: { children: Rea
   const patientSessionToken = cookieStore.get('patient_access_token')?.value;
 
   if (!isPatientSessionActive(patientSessionToken)) {
-    redirect('/patient/login');
+    redirect('/login');
   }
 
   return (

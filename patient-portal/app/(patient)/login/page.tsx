@@ -20,7 +20,7 @@ export default function PatientLoginPage() {
   const patientSessionToken = cookieStore.get('patient_access_token')?.value;
 
   if (isPatientSessionActive(patientSessionToken)) {
-    redirect('/patient');
+    redirect('/');
   }
 
   const { staffPortalUrl, isExternal } = resolveStaffPortalUrl();

@@ -15,7 +15,7 @@ export function PatientPortalTopNav() {
     <header className="border-b border-brand-100/60 bg-white/80 backdrop-blur dark:border-brand-900/40 dark:bg-slate-900/80">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
         <Link
-          href="/patient"
+          href="/"
           className="flex items-center gap-3 rounded-full px-3 py-1 text-sm font-semibold text-brand-800 transition hover:bg-brand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:text-brand-200 dark:hover:bg-brand-900/30"
         >
           <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-500 text-white shadow-md">

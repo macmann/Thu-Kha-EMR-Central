@@ -14,22 +14,22 @@ type Props = {
 
 const QUICK_ACTIONS = [
   {
-    href: '/patient/consent',
+    href: '/consent',
     icon: ClipboardList,
     translationKey: 'actions.manageConsent',
   },
   {
-    href: '/patient/visits',
+    href: '/visits',
     icon: FileText,
     translationKey: 'actions.viewVisits',
   },
   {
-    href: '/patient/appointments',
+    href: '/appointments',
     icon: CalendarCheck,
     translationKey: 'actions.manageAppointments',
   },
   {
-    href: '/patient/invoices',
+    href: '/invoices',
     icon: HeartPulse,
     translationKey: 'actions.reviewInvoices',
   },
@@ -76,7 +76,7 @@ export function PatientHomeContent({ clinics }: Props) {
           {clinics.map((clinic) => (
             <Link
               key={clinic.id}
-              href={{ pathname: '/patient/[clinicId]', query: { clinicId: clinic.id } }}
+              href={{ pathname: '/[clinicId]', query: { clinicId: clinic.id } }}
               className="group relative overflow-hidden rounded-2xl border border-brand-100/40 bg-white/80 p-5 shadow-sm transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-900/40 dark:bg-slate-900/70"
             >
               <div className="flex items-center gap-3">

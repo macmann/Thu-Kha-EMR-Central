@@ -28,7 +28,7 @@ export default async function PatientAppointmentsPage() {
   ] as const);
 
   if (!appointments) {
-    redirect('/patient/login');
+    redirect('/login');
   }
 
   return (
