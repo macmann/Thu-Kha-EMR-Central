@@ -26,7 +26,7 @@ export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }:
   const [statusMessage, setStatusMessage] = useState('');
 
   useEffect(() => {
-    router.prefetch('/patient');
+    router.prefetch('/');
   }, [router]);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }:
     }
 
     const redirectTimer = setTimeout(() => {
-      router.replace('/patient');
+      router.replace('/');
     }, 800);
 
     return () => {

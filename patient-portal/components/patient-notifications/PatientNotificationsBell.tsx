@@ -57,7 +57,7 @@ export function PatientNotificationsBell() {
 
   return (
     <Link
-      href="/patient/notifications"
+      href="/notifications"
       className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-400/40 bg-white/80 text-brand-700 shadow-sm backdrop-blur transition hover:bg-brand-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-400/60 dark:bg-slate-900/70 dark:text-brand-200 dark:hover:bg-brand-900/40"
       aria-label={label}
     >

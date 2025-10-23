@@ -34,7 +34,7 @@ export default async function PatientVisitDetailPage({ params }: { params: { id:
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-10">
       <div className="rounded-3xl bg-white p-8 shadow-sm">
-        <Link href="/patient/visits" className="text-sm font-semibold text-brand transition hover:text-brand-dark">
+        <Link href="/visits" className="text-sm font-semibold text-brand transition hover:text-brand-dark">
           ← Back to visits
         </Link>
         <h1 className="mt-4 text-2xl font-semibold text-slate-900">Visit on {formatDateTime(visit.visitDate)}</h1>

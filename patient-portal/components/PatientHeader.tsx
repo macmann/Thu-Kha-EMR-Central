@@ -11,7 +11,7 @@ export function PatientHeader({ clinicName, logoUrl }: PatientHeaderProps) {
     <header className="header-gradient relative">
       <div className="absolute inset-0 bg-black/10 mix-blend-multiply" aria-hidden="true" />
       <div className="relative mx-auto flex max-w-3xl items-center justify-between px-6 py-5">
-        <Link href="/patient" className="flex items-center gap-3 text-white">
+        <Link href="/" className="flex items-center gap-3 text-white">
           {logoUrl ? (
             <Image
               src={logoUrl}

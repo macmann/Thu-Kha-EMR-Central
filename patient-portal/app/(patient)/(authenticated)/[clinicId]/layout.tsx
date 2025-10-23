@@ -18,7 +18,7 @@ export default async function ClinicLayout({
   const clinic = await fetchClinicById(params.clinicId);
 
   if (!clinic) {
-    redirect('/patient');
+    redirect('/');
   }
 
   const cookieStore = cookies();
@@ -27,7 +27,7 @@ export default async function ClinicLayout({
   const consentResponse = await fetchPatientConsents({ cookie: cookieHeader });
 
   if (!consentResponse) {
-    redirect('/patient/login');
+    redirect('/login');
   }
 
   const clinicConsent = consentResponse.clinics.find((entry) => entry.clinicId === params.clinicId) ?? null;
@@ -87,7 +87,7 @@ export default async function ClinicLayout({
                   ယခုဆေးခန်းအတွက် မျှဝေမှုကို ပိတ်ထားပါသည်။ ပြန်လည်ကြည့်ရှုလိုပါက မျှဝေမှုကို ပြန်ဖွင့်ပါ။
                 </p>
                 <Link
-                  href="/patient/consent"
+                  href="/consent"
                   className="inline-flex items-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-700"
                 >
                   Open consent settings

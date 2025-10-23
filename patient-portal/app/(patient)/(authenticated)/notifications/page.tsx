@@ -20,7 +20,7 @@ export default async function PatientNotificationsPage() {
   const notificationsResponse = await fetchPatientNotifications({ cookie: cookieHeader, limit: 50 });
 
   if (!notificationsResponse) {
-    redirect('/patient/login');
+    redirect('/login');
   }
 
   return (
