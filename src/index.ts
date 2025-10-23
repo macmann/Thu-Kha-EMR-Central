@@ -1,10 +1,10 @@
 import 'dotenv/config';
-import path from 'path';
+import path from 'node:path';
 import fs from 'node:fs';
 import { promises as fsPromises } from 'node:fs';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import crypto from 'node:crypto';
-import next from 'next/dist/server/next.js';
+import next from 'next';
 import type { NextServer, NextServerOptions } from 'next/dist/server/next.js';
 import helmet from 'helmet';
 import type { IncomingMessage, ServerResponse } from 'http';
@@ -205,9 +205,10 @@ const patientPortalWarmupRoutes = ['/patient/login'];
 
 if (shouldEnablePatientPortal) {
   const patientPortalDir = path.resolve(process.cwd(), 'patient-portal');
-  const createNextApp: (options: NextServerOptions) => NextServer = next;
+  const createNextApp: (options: NextServerOptions) => NextServer =
+    next as unknown as (options: NextServerOptions) => NextServer;
   const patientPortalApp = createNextApp({
-    dev: process.env.NODE_ENV !== 'production',
+    dev: !isProduction,
     dir: patientPortalDir,
   });
 
@@ -221,9 +222,7 @@ if (shouldEnablePatientPortal) {
     })
   );
 
-  const patientPortalRoutes = ['/patient', '/patient/*', '/_next', '/_next/*'];
-
-  app.all(patientPortalRoutes, async (req: Request, res: Response) => {
+  app.all('/patient*', async (req: Request, res: Response) => {
     await patientPortalReady;
     return patientPortalHandler(req, res);
   });
@@ -257,6 +256,11 @@ let cachedClientIndexHtml: string | undefined;
 
 app.use(express.static(clientDir, { index: false }));
 app.get('*', async (req: Request, res: Response, nextMiddleware: NextFunction) => {
+  if (req.path.startsWith('/patient/_next')) {
+    nextMiddleware();
+    return;
+  }
+
   if (!fs.existsSync(clientIndexPath)) {
     nextMiddleware();
     return;
