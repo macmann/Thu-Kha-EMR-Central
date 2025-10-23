@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+  basePath: '/patient',
   experimental: {
     typedRoutes: true,
   },
