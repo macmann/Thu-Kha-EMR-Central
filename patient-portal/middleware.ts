@@ -21,9 +21,17 @@ function genNonce() {
   return arrayToBase64(random);
 }
 
-export function middleware(_req: NextRequest) {
+function normalizeNonceHeaderValue(value: string | null) {
+  if (value === null) return null;
+  return value === 'dev-nonce' ? DEV_NONCE : value;
+}
+
+export function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  const nonce = genNonce();
+  const incomingNonce =
+    normalizeNonceHeaderValue(req.headers.get('x-csp-nonce')) ??
+    normalizeNonceHeaderValue(req.headers.get('x-nonce'));
+  const nonce = incomingNonce ?? genNonce();
   res.headers.set('x-csp-nonce', nonce);
   res.headers.set('x-nonce', nonce);
 
