@@ -11,7 +11,7 @@
     "start:deploy": "npm run migrate:deploy && npm run prisma:seed && NODE_ENV=production node dist/index.js",
     "prebuild": "prisma generate",
     "prestart": "prisma generate",
-    "postinstall": "prisma generate",
+    "postinstall": "npm --prefix patient-portal install --include=dev && prisma generate",
     "dev": "concurrently -k -n API,WEB \"tsx watch --exclude patient-portal/.next --exclude dist_client --exclude client/node_modules src/index.ts\" \"cd client && npm run dev\"",
     "dev:api": "tsx watch --exclude patient-portal/.next --exclude dist_client --exclude client/node_modules src/index.ts",
     "dev:web": "cd client && npm run dev",
