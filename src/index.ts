@@ -94,7 +94,17 @@ if (!isProduction) {
   scriptSrc.push("'unsafe-eval'");
 }
 
-const styleSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", nonceDirective];
+const styleSrc: ContentSecurityPolicyDirectiveValue[] = [
+  "'self'",
+  "'unsafe-inline'",
+  'https://fonts.googleapis.com',
+];
+const styleSrcElem: ContentSecurityPolicyDirectiveValue[] = [
+  "'self'",
+  "'unsafe-inline'",
+  'https://fonts.googleapis.com',
+];
+const styleSrcAttr: ContentSecurityPolicyDirectiveValue[] = ["'unsafe-inline'"];
 
 const connectSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'https:', 'ws:', 'wss:'];
 if (!isProduction) {
@@ -102,7 +112,11 @@ if (!isProduction) {
 }
 
 const imgSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'data:'];
-const fontSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'data:'];
+const fontSrc: ContentSecurityPolicyDirectiveValue[] = [
+  "'self'",
+  'data:',
+  'https://fonts.gstatic.com',
+];
 const frameSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'https://demo.atenxion.ai'];
 const swUnregisterFlagPath = path.resolve(process.cwd(), 'patient-portal', '.force-sw-unregister');
 
@@ -119,6 +133,8 @@ app.use(
         connectSrc,
         scriptSrc,
         styleSrc,
+        styleSrcElem,
+        styleSrcAttr,
         imgSrc,
         fontSrc,
         manifestSrc: ["'self'"],

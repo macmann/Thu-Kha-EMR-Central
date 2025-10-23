@@ -21,9 +21,17 @@ function genNonce() {
   return arrayToBase64(random);
 }
 
-export function middleware(_req: NextRequest) {
+function normalizeNonceHeaderValue(value: string | null) {
+  if (value === null) return null;
+  return value === 'dev-nonce' ? DEV_NONCE : value;
+}
+
+export function middleware(req: NextRequest) {
   const res = NextResponse.next();
-  const nonce = genNonce();
+  const incomingNonce =
+    normalizeNonceHeaderValue(req.headers.get('x-csp-nonce')) ??
+    normalizeNonceHeaderValue(req.headers.get('x-nonce'));
+  const nonce = incomingNonce ?? genNonce();
   res.headers.set('x-csp-nonce', nonce);
   res.headers.set('x-nonce', nonce);
 
@@ -31,9 +39,12 @@ export function middleware(_req: NextRequest) {
   if (process.env.NODE_ENV === 'development') {
     scriptSrc.push(`'unsafe-eval'`);
   }
-  const styleSrc = [`'self'`, `'unsafe-inline'`];
-  const styleSrcElem = [`'self'`, `'unsafe-inline'`];
+  const styleSrc = [`'self'`, `'unsafe-inline'`, 'https://fonts.googleapis.com'];
+  const styleSrcElem = [`'self'`, `'unsafe-inline'`, 'https://fonts.googleapis.com'];
   const styleSrcAttr = [`'unsafe-inline'`];
+
+  const connectSrc = [`'self'`, 'https:', 'ws:', 'wss:'];
+  const fontSrc = [`'self'`, 'data:', 'https://fonts.gstatic.com'];
 
   const csp = [
     `default-src 'self'`,
@@ -42,8 +53,8 @@ export function middleware(_req: NextRequest) {
     `style-src-elem ${styleSrcElem.join(' ')}`,
     `style-src-attr ${styleSrcAttr.join(' ')}`,
     `img-src 'self' data:`,
-    `font-src 'self' data:`,
-    `connect-src 'self' https: ws:`,
+    `font-src ${fontSrc.join(' ')}`,
+    `connect-src ${connectSrc.join(' ')}`,
     `object-src 'none'`,
     `base-uri 'self'`,
     `frame-ancestors 'none'`,
