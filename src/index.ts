@@ -98,6 +98,7 @@ const styleSrc: ContentSecurityPolicyDirectiveValue[] = [
   "'self'",
   "'unsafe-inline'",
   'https://fonts.googleapis.com',
+  nonceDirective,
 ];
 const styleSrcElem: ContentSecurityPolicyDirectiveValue[] = [
   "'self'",
