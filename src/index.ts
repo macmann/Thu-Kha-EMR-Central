@@ -11,6 +11,7 @@ import type { IncomingMessage, ServerResponse } from 'http';
 import cors from 'cors';
 import morgan from 'morgan';
 import { apiRouter } from './server.js';
+import { docsRouter } from './docs/openapi.js';
 import publicRouter from './modules/public/index.js';
 import patientAuthRouter from './modules/patient-auth/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -191,6 +192,8 @@ app.use('/api/patient/clinics', patientClinicsRouter);
 app.use('/api/patient/appointments', patientAppointmentsRouter);
 app.use('/api/patient/invoices', patientBillingRouter);
 app.use('/api/patient/notifications', patientNotificationsRouter);
+
+app.use('/api', docsRouter);
 
 const protectedApi = Router();
 protectedApi.use(requireAuth);

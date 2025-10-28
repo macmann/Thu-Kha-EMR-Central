@@ -9,7 +9,6 @@ import labsRouter from './modules/labs/index.js';
 import observationsRouter from './modules/observations/index.js';
 import insightsRouter from './modules/insights/index.js';
 import auditRouter from './modules/audit/index.js';
-import { docsRouter } from './docs/openapi.js';
 import appointmentsRouter from './routes/appointments.js';
 import usersRouter from './modules/users/index.js';
 import reportsRouter from './modules/reports/index.js';
@@ -49,6 +48,5 @@ apiRouter.use(patientTenantsRouter);
 apiRouter.use('/search', searchRouter);
 apiRouter.use('/settings', settingsRouter);
 apiRouter.use('/admin/tenants', adminTenantsRouter);
-apiRouter.use(docsRouter);
 
 export default apiRouter;
