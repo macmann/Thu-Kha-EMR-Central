@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { Box, Container } from '@mui/material';
-
 import { PatientPortalTopNav } from '@/components/PatientPortalTopNav';
 import { isPatientSessionActive } from '@/lib/patientSession';
 
@@ -15,11 +13,11 @@ export default function AuthenticatedPatientLayout({ children }: { children: Rea
   }
 
   return (
-    <Box minHeight="100vh" display="flex" flexDirection="column">
+    <div className="patient-shell">
       <PatientPortalTopNav />
-      <Box component="main" flex={1} bgcolor="background.default" py={4}>
-        <Container maxWidth="lg">{children}</Container>
-      </Box>
-    </Box>
+      <main className="patient-main">
+        <div className="patient-container">{children}</div>
+      </main>
+    </div>
   );
 }

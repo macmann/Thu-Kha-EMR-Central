@@ -219,16 +219,16 @@ export default function InvoicesPage({ initialStatus, initialInvoices, initialEr
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="rounded-3xl bg-white p-8 shadow-sm">
+      <section className="patient-card">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold text-slate-900">Invoices & payments</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Invoices & payments</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-300">
             Review your recent invoices, download PDF copies, and simulate payments for supported providers.
           </p>
         </div>
       </section>
 
-      <section className="rounded-3xl bg-white p-6 shadow-sm">
+      <section className="patient-card patient-card--compact">
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap gap-2">
             {(Object.keys(TAB_META) as TabKey[]).map((tab) => {
@@ -254,11 +254,11 @@ export default function InvoicesPage({ initialStatus, initialInvoices, initialEr
         </div>
 
         {activeState.error ? (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+          <div className="mt-4 rounded-2xl border border-rose-200/70 bg-rose-50/90 p-4 text-sm text-rose-800 shadow-sm dark:border-rose-500/50 dark:bg-rose-900/30 dark:text-rose-200">
             <p>{activeState.error}</p>
             <button
               type="button"
-              className="mt-3 inline-flex items-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-rose-700"
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
               onClick={() => {
                 void loadTab(activeTab);
               }}
@@ -269,11 +269,11 @@ export default function InvoicesPage({ initialStatus, initialInvoices, initialEr
         ) : null}
 
         {activeState.loading ? (
-          <p className="mt-6 text-sm text-slate-500">Loading invoices…</p>
+          <p className="mt-6 text-sm text-slate-500 dark:text-slate-300">Loading invoices…</p>
         ) : null}
 
         {!activeState.loading && activeState.invoices.length === 0 && !activeState.error ? (
-          <p className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
+          <p className="mt-6 rounded-2xl border border-dashed border-slate-200/70 bg-slate-50/80 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
             No invoices found for this tab yet.
           </p>
         ) : null}
@@ -288,15 +288,15 @@ export default function InvoicesPage({ initialStatus, initialInvoices, initialEr
             return (
               <article
                 key={invoice.id}
-                className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-brand hover:shadow-lg"
+                className="flex flex-col gap-4 rounded-3xl border border-brand-100/60 bg-white/95 p-6 shadow-lg shadow-brand-500/10 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-xl dark:border-brand-900/40 dark:bg-slate-900/70"
               >
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-brand">{invoice.number}</p>
-                    <h2 className="text-xl font-semibold text-slate-900">
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
                       {invoice.clinic?.name ?? 'Clinic invoice'}
                     </h2>
-                    <p className="text-sm text-slate-500">Issued {formatIssuedDate(invoice.issuedAt)}</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-300">Issued {formatIssuedDate(invoice.issuedAt)}</p>
                   </div>
                   <span
                     className={`inline-flex h-fit items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClasses(
@@ -307,15 +307,15 @@ export default function InvoicesPage({ initialStatus, initialInvoices, initialEr
                   </span>
                 </div>
 
-                <div className="grid gap-4 text-sm text-slate-600 md:grid-cols-2">
+                <div className="grid gap-4 text-sm text-slate-600 dark:text-slate-300 md:grid-cols-2">
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Grand total</span>
-                    <span className="text-base font-semibold text-slate-900">
+                    <span className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Grand total</span>
+                    <span className="text-base font-semibold text-slate-900 dark:text-slate-100">
                       {formatCurrency(invoice.grandTotal, invoice.currency)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Amount due</span>
+                    <span className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Amount due</span>
                     <span
                       className={`text-base font-semibold ${
                         Number.parseFloat(invoice.amountDue) > 0 ? 'text-rose-600' : 'text-emerald-600'
@@ -325,25 +325,25 @@ export default function InvoicesPage({ initialStatus, initialInvoices, initialEr
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Amount paid</span>
-                    <span className="text-base font-semibold text-slate-900">
+                    <span className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Amount paid</span>
+                    <span className="text-base font-semibold text-slate-900 dark:text-slate-100">
                       {formatCurrency(invoice.amountPaid, invoice.currency)}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400">Visit reference</span>
-                    <span className="text-sm text-slate-500">{invoice.visitId ?? 'Not available'}</span>
+                    <span className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Visit reference</span>
+                    <span className="text-sm text-slate-500 dark:text-slate-300">{invoice.visitId ?? 'Not available'}</span>
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex flex-col gap-2 text-sm text-slate-600 md:flex-row md:items-center md:gap-4">
-                    <label className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400 md:flex-col md:items-start md:gap-1">
+                  <div className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-300 md:flex-row md:items-center md:gap-4">
+                    <label className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500 md:flex-col md:items-start md:gap-1">
                       Payment provider
                       <select
                         value={provider}
                         onChange={(event) => handleProviderChange(invoice.id, event.target.value as 'stripe' | 'localWallet')}
-                        className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm transition focus:border-brand focus:outline-none"
+                        className="rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-sm text-slate-700 shadow-sm transition focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200"
                       >
                         <option value="stripe">Stripe (mock)</option>
                         <option value="localWallet">Local wallet (mock)</option>
@@ -352,7 +352,7 @@ export default function InvoicesPage({ initialStatus, initialInvoices, initialEr
                     <a
                       href={`/api/patient/invoices/${invoice.id}.pdf`}
                       download
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-brand hover:text-brand"
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-brand hover:text-brand dark:border-slate-700 dark:text-slate-300"
                     >
                       Download PDF
                     </a>
@@ -361,8 +361,8 @@ export default function InvoicesPage({ initialStatus, initialInvoices, initialEr
                     type="button"
                     className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition ${
                       canPay
-                        ? 'bg-brand text-white hover:bg-brand-dark'
-                        : 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                        ? 'bg-brand text-white shadow-brand-500/30 hover:bg-brand-600'
+                        : 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                     }`}
                     disabled={!canPay}
                     onClick={() => {
@@ -377,10 +377,10 @@ export default function InvoicesPage({ initialStatus, initialInvoices, initialEr
                   <div
                     className={`rounded-2xl px-4 py-3 text-sm ${
                       paymentState.status === 'success'
-                        ? 'bg-emerald-50 text-emerald-700'
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200'
                         : paymentState.status === 'error'
-                          ? 'bg-rose-50 text-rose-700'
-                          : 'bg-slate-50 text-slate-600'
+                          ? 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200'
+                          : 'bg-slate-50 text-slate-600 dark:bg-slate-900/40 dark:text-slate-300'
                     }`}
                   >
                     {paymentState.message}

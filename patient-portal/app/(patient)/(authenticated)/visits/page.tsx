@@ -18,8 +18,10 @@ export default async function PatientVisitsPage() {
   const initialData = await fetchPatientVisitHistory({ cookie: cookieHeader });
 
   return (
-    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-6 py-10">
-      <VisitsPage initialData={initialData} />
-    </main>
+    <div className="patient-page patient-page--medium">
+      <section className="patient-card patient-card--compact">
+        <VisitsPage initialData={initialData} />
+      </section>
+    </div>
   );
 }

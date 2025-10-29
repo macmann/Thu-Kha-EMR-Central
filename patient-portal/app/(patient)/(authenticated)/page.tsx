@@ -7,8 +7,8 @@ export default async function PatientHome() {
   const clinics = await fetchClinics();
 
   return (
-    <main className="flex w-full flex-1 flex-col">
+    <div className="patient-page">
       <PatientHomeContent clinics={clinics} />
-    </main>
+    </div>
   );
 }

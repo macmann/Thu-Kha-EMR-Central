@@ -1,5 +1,5 @@
-import NextLink from 'next/link';
-import { AppBar, Avatar, Box, Link as MuiLink, Stack, Typography } from '@mui/material';
+import Image from 'next/image';
+import Link from 'next/link';
 
 type PatientHeaderProps = {
   clinicName: string;
@@ -10,54 +10,24 @@ export function PatientHeader({ clinicName, logoUrl }: PatientHeaderProps) {
   const initial = clinicName.at(0)?.toUpperCase() ?? 'C';
 
   return (
-    <AppBar
-      position="static"
-      elevation={0}
-      sx={{
-        background: 'linear-gradient(120deg, rgba(20,184,166,0.92), rgba(14,116,144,0.92))',
-        backdropFilter: 'blur(4px)',
-        color: 'common.white',
-      }}
-    >
-      <Stack direction="row" justifyContent="center" sx={{ px: { xs: 2, sm: 4 }, py: 2.5 }}>
-        <Box maxWidth={720} width="100%">
-          <MuiLink
-            component={NextLink}
-            href="/"
-            underline="none"
-            sx={{ display: 'flex', alignItems: 'center', gap: 2, color: 'inherit' }}
-          >
-            {logoUrl ? (
-              <Avatar
-                src={logoUrl}
-                alt={`${clinicName} logo`}
-                sx={{ width: 48, height: 48, border: '2px solid rgba(255,255,255,0.6)', bgcolor: 'rgba(255,255,255,0.2)' }}
-                imgProps={{ width: 48, height: 48, style: { objectFit: 'cover' } }}
-              />
-            ) : (
-              <Avatar
-                sx={{
-                  width: 48,
-                  height: 48,
-                  border: '2px solid rgba(255,255,255,0.6)',
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  fontWeight: 600,
-                }}
-              >
-                {initial}
-              </Avatar>
-            )}
-            <Box>
-              <Typography variant="caption" sx={{ opacity: 0.8, letterSpacing: 2, textTransform: 'uppercase' }}>
-                Patient Portal
-              </Typography>
-              <Typography variant="h6" component="p" sx={{ fontWeight: 600 }}>
-                {clinicName}
-              </Typography>
-            </Box>
-          </MuiLink>
-        </Box>
-      </Stack>
-    </AppBar>
+    <header className="relative z-20 bg-gradient-to-r from-brand-600 via-brand-500 to-cyan-600 text-white shadow-lg shadow-brand-600/30">
+      <div className="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 py-6 sm:px-6 lg:px-8">
+        <Link href="/" className="flex items-center gap-3 rounded-full px-1.5 py-1 transition hover:bg-white/10">
+          {logoUrl ? (
+            <span className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-white/70 bg-white/10 shadow-lg shadow-brand-900/20">
+              <Image src={logoUrl} alt={`${clinicName} logo`} fill className="object-cover" sizes="48px" />
+            </span>
+          ) : (
+            <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white/70 bg-white/10 text-lg font-semibold shadow-lg shadow-brand-900/20">
+              {initial}
+            </span>
+          )}
+          <span className="flex flex-col leading-tight">
+            <span className="text-[11px] uppercase tracking-[0.35em] text-white/70">Patient Portal</span>
+            <span className="text-lg font-semibold text-white">{clinicName}</span>
+          </span>
+        </Link>
+      </div>
+    </header>
   );
 }

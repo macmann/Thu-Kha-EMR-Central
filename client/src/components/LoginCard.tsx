@@ -33,34 +33,36 @@ export default function LoginCard({
       </div>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-6">
-        <div className="space-y-2">
-          <label htmlFor="username" className="block text-sm font-medium text-slate-700">
-            {t('Username or Email')}
-          </label>
-          <input
-            id="username"
-            name="username"
-            type="text"
-            autoComplete="username"
-            value={values.username}
-            onChange={onChange}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70"
-          />
-        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="username" className="text-sm font-medium text-slate-700">
+              {t('Username or Email')}
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autoComplete="username"
+              value={values.username}
+              onChange={onChange}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70"
+            />
+          </div>
 
-        <div className="space-y-2">
-          <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-            {t('Password')}
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            value={values.password}
-            onChange={onChange}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70"
-          />
+          <div className="flex flex-col gap-2">
+            <label htmlFor="password" className="text-sm font-medium text-slate-700">
+              {t('Password')}
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              value={values.password}
+              onChange={onChange}
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-base shadow-sm transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70"
+            />
+          </div>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

@@ -24,11 +24,13 @@ export default async function PatientNotificationsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-10">
-      <NotificationsFeed
-        initialNotifications={notificationsResponse.notifications}
-        initialUnreadCount={notificationsResponse.unreadCount}
-      />
-    </main>
+    <div className="patient-page patient-page--narrow">
+      <section className="patient-card patient-card--compact">
+        <NotificationsFeed
+          initialNotifications={notificationsResponse.notifications}
+          initialUnreadCount={notificationsResponse.unreadCount}
+        />
+      </section>
+    </div>
   );
 }
