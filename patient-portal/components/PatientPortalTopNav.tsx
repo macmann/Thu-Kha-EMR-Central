@@ -1,8 +1,7 @@
 'use client';
 
-import NextLink from 'next/link';
+import Link from 'next/link';
 import { AutoAwesomeRounded } from '@mui/icons-material';
-import { AppBar, Box, Link as MuiLink, Stack, Toolbar, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 import { LanguageSwitcher } from './LanguageSwitcher';
@@ -13,59 +12,28 @@ export function PatientPortalTopNav() {
   const { t } = useTranslation();
 
   return (
-    <AppBar
-      position="sticky"
-      color="default"
-      elevation={2}
-      sx={{ backdropFilter: 'blur(12px)', backgroundColor: (theme) => theme.palette.background.paper }}
-    >
-      <Toolbar sx={{ maxWidth: 960, width: '100%', mx: 'auto', px: { xs: 2, sm: 3 }, py: 1.5, gap: 2 }}>
-        <MuiLink
-          component={NextLink}
+    <header className="patient-top-nav">
+      <div className="patient-top-nav__inner">
+        <Link
           href="/"
-          underline="none"
-          color="primary"
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            borderRadius: 999,
-            px: 1.5,
-            py: 0.75,
-            transition: 'all 0.2s ease',
-            '&:hover': { backgroundColor: (theme) => `${theme.palette.primary.main}14` },
-          }}
+          className="group flex items-center gap-3 rounded-full px-2 py-1.5 text-brand-700 transition hover:bg-brand-500/10 hover:text-brand-600"
         >
-          <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: (theme) => theme.palette.primary.main,
-              color: 'common.white',
-              boxShadow: 2,
-            }}
-          >
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-500 text-white shadow-lg shadow-brand-500/30">
             <AutoAwesomeRounded fontSize="small" />
-          </Box>
-          <Box sx={{ lineHeight: 1.2 }}>
-            <Typography variant="subtitle1" fontWeight={600} color="text.primary">
+          </span>
+          <span className="flex flex-col leading-tight">
+            <span className="text-sm font-semibold tracking-wide text-slate-900 transition group-hover:text-brand-600 dark:text-slate-100">
               {t('nav.portalName')}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {t('nav.tagline')}
-            </Typography>
-          </Box>
-        </MuiLink>
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ ml: 'auto' }}>
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{t('nav.tagline')}</span>
+          </span>
+        </Link>
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <LanguageSwitcher />
           <ThemeToggle />
           <PatientNotificationsBell />
-        </Stack>
-      </Toolbar>
-    </AppBar>
+        </div>
+      </div>
+    </header>
   );
 }

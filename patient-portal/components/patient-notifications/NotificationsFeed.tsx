@@ -146,14 +146,16 @@ export function NotificationsFeed({ initialNotifications, initialUnreadCount }: 
     <section className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Notifications</h1>
-          <p className="text-sm text-slate-500">Stay up to date with appointments, visits, and billing reminders.</p>
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Notifications</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-300">
+            Stay up to date with appointments, visits, and billing reminders.
+          </p>
         </div>
         <button
           type="button"
           onClick={handleMarkAll}
           disabled={unreadCount === 0 || markingAll}
-          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition enabled:hover:border-emerald-500 enabled:hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition enabled:hover:border-emerald-500 enabled:hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300"
         >
           <CheckIcon className="h-4 w-4" aria-hidden="true" />
           Mark all as read
@@ -161,7 +163,7 @@ export function NotificationsFeed({ initialNotifications, initialUnreadCount }: 
       </header>
 
       {notifications.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-200/70 bg-white/90 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-300">
           You have no notifications yet. Messages about appointments, follow-ups, and invoices will appear here.
         </div>
       ) : (
@@ -172,23 +174,27 @@ export function NotificationsFeed({ initialNotifications, initialUnreadCount }: 
             return (
               <li
                 key={notification.id}
-                className={`rounded-2xl border p-5 shadow-sm transition ${
-                  unread ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-white'
+                className={`rounded-2xl border p-5 shadow-lg transition ${
+                  unread
+                    ? 'border-emerald-200 bg-emerald-50/90 dark:border-emerald-500/40 dark:bg-emerald-900/30'
+                    : 'border-brand-100/60 bg-white/95 dark:border-brand-900/40 dark:bg-slate-900/70'
                 }`}
               >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">{notification.type.replace(/_/g, ' ')}</p>
-                    <h2 className="text-lg font-semibold text-slate-900">{content.title}</h2>
-                    <p className="text-sm text-slate-600">{content.body}</p>
-                    <p className="text-xs text-slate-400">{formatDate(notification.createdAt)}</p>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {notification.type.replace(/_/g, ' ')}
+                    </p>
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{content.title}</h2>
+                    <p className="text-sm text-slate-600 dark:text-slate-300">{content.body}</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{formatDate(notification.createdAt)}</p>
                     {content.href && content.cta ? (
                       <Link
                         href={content.href}
                         className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-600 transition hover:text-emerald-700"
                       >
                         {content.cta}
-                        <span aria-hidden="true">→</span>
+                        <span aria-hidden="true"></span>
                       </Link>
                     ) : null}
                   </div>
@@ -198,12 +204,12 @@ export function NotificationsFeed({ initialNotifications, initialUnreadCount }: 
                         type="button"
                         onClick={() => handleMarkRead(notification.id)}
                         disabled={markingId === notification.id}
-                        className="inline-flex items-center gap-2 rounded-full border border-emerald-500 px-4 py-2 text-sm font-semibold text-emerald-600 transition hover:bg-emerald-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 px-3 py-1 text-xs font-semibold text-slate-600 transition hover:border-emerald-500 hover:text-emerald-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:text-slate-300"
                       >
                         Mark as read
                       </button>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-900/30 dark:text-emerald-200">
                         <CheckIcon className="h-4 w-4" aria-hidden="true" />
                         Read
                       </span>

@@ -47,3 +47,112 @@
   );
   background-size: 400% 100%;
 }
+
+@layer components {
+  .patient-shell {
+    @apply relative flex min-h-screen flex-col overflow-hidden bg-gradient-to-br from-surface via-white to-brand-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950;
+  }
+
+  .patient-main {
+    @apply relative z-10 flex flex-1;
+  }
+
+  .patient-container {
+    @apply mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-4 py-10 sm:px-6 lg:px-8;
+  }
+
+  .patient-page {
+    @apply flex w-full flex-col gap-8;
+  }
+
+  .patient-page--medium {
+    @apply w-full max-w-4xl self-center;
+  }
+
+  .patient-page--narrow {
+    @apply w-full max-w-3xl self-center;
+  }
+
+  .patient-card {
+    @apply rounded-3xl border border-brand-100/40 bg-white/90 p-8 shadow-xl shadow-brand-500/10 backdrop-blur;
+  }
+
+  .dark .patient-card {
+    @apply border-brand-900/40 bg-slate-900/70 shadow-brand-900/30;
+  }
+
+  .patient-card--compact {
+    @apply p-6;
+  }
+
+  .patient-top-nav {
+    @apply sticky top-0 z-30 border-b border-brand-100/40 bg-white/80 backdrop-blur transition-colors dark:border-brand-900/40 dark:bg-slate-950/80;
+  }
+
+  .patient-top-nav__inner {
+    @apply mx-auto flex w-full max-w-5xl items-center gap-3 px-4 py-3 sm:px-6 lg:px-8;
+  }
+
+  .patient-pill-button {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-white/90 px-5 py-2 text-sm font-semibold text-brand-700 shadow-lg shadow-brand-500/20 transition hover:-translate-y-0.5 hover:text-brand-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:bg-slate-900/80 dark:text-brand-200;
+  }
+
+  .patient-pill-button:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  .patient-info-card {
+    @apply rounded-3xl border border-dashed border-brand-100/60 bg-white/90 p-6 text-sm text-slate-600 shadow-sm backdrop-blur dark:border-brand-900/40 dark:bg-slate-900/70 dark:text-slate-300;
+  }
+
+  .patient-info-card--blocked {
+    @apply border-rose-200/70 bg-rose-50/80 text-rose-700 dark:border-rose-500/50 dark:bg-rose-900/30 dark:text-rose-200;
+  }
+}
+
+.patient-shell::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top left, rgba(20, 184, 166, 0.25), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(14, 116, 144, 0.2), transparent 50%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.dark .patient-shell::before {
+  background: radial-gradient(circle at top left, rgba(45, 212, 191, 0.12), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.12), transparent 50%);
+}
+
+.patient-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.75rem;
+  padding: clamp(2.5rem, 5vw, 3.5rem);
+  color: white;
+  box-shadow: 0 35px 65px -35px rgba(13, 148, 136, 0.6);
+}
+
+.patient-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--patient-primary, #0d9488) 0%, var(--patient-accent, #14b8a6) 100%);
+  opacity: 0.96;
+}
+
+.patient-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.35), transparent 55%),
+    radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.25), transparent 60%);
+  mix-blend-mode: screen;
+  opacity: 0.65;
+}
+
+.patient-hero > * {
+  position: relative;
+  z-index: 1;
+}

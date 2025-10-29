@@ -95,24 +95,24 @@ export default function VisitsPage({ initialData }: VisitsPageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="rounded-3xl bg-white p-8 shadow-sm">
+      <section className="patient-card">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold text-slate-900">Your visit history</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Your visit history</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-300">
             {initialData ? headerSummary : 'Unable to load visits right now. Please try again later.'}
           </p>
-          <p className="text-xs text-slate-400">Scroll down to load more records automatically.</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Scroll down to load more records automatically.</p>
         </div>
       </section>
 
       {error ? (
-        <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 shadow-sm">
+        <div className="rounded-3xl border border-rose-200/70 bg-rose-50/90 p-4 text-sm text-rose-800 shadow-sm dark:border-rose-500/50 dark:bg-rose-900/30 dark:text-rose-200">
           {error}
         </div>
       ) : null}
 
       {isEmpty ? (
-        <section className="rounded-3xl bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+        <section className="patient-card text-center text-sm text-slate-500 dark:text-slate-300">
           Once clinics grant access, your visit history will appear here.
         </section>
       ) : (
@@ -120,16 +120,16 @@ export default function VisitsPage({ initialData }: VisitsPageProps) {
           {visits.map((visit) => (
             <article
               key={visit.id}
-              className="group flex flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-brand hover:shadow-lg"
+              className="group flex flex-col gap-3 rounded-3xl border border-brand-100/60 bg-white/95 p-6 shadow-lg shadow-brand-500/10 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-xl dark:border-brand-900/40 dark:bg-slate-900/70"
             >
               <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-brand">{visit.clinic?.name ?? 'Clinic'}</p>
-                  <h2 className="text-xl font-semibold text-slate-900">{formatVisitDate(visit.visitDate)}</h2>
+                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{formatVisitDate(visit.visitDate)}</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                   {visit.doctor ? (
-                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600">
+                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600 dark:bg-slate-800/70 dark:text-slate-200">
                       {visit.doctor.name}
                     </span>
                   ) : null}
@@ -140,11 +140,11 @@ export default function VisitsPage({ initialData }: VisitsPageProps) {
                   ) : null}
                 </div>
               </div>
-              <p className="text-sm text-slate-600">{visit.diagnosisSummary || 'No diagnosis summary.'}</p>
-              <div className="flex flex-col gap-2 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-slate-600 dark:text-slate-300">{visit.diagnosisSummary || 'No diagnosis summary.'}</p>
+              <div className="flex flex-col gap-2 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
                 <span>
                   Next visit:{' '}
-                  <span className="font-medium text-slate-700">
+                  <span className="font-medium text-slate-700 dark:text-slate-200">
                     {visit.nextVisitDate ? formatVisitDate(visit.nextVisitDate) : 'Not scheduled'}
                   </span>
                 </span>
@@ -162,7 +162,7 @@ export default function VisitsPage({ initialData }: VisitsPageProps) {
       )}
 
       <div ref={sentinelRef} aria-hidden className="h-1 w-full" />
-      {loading ? <p className="text-center text-xs text-slate-400">Loading more visits…</p> : null}
+      {loading ? <p className="text-center text-xs text-slate-400 dark:text-slate-500">Loading more visits…</p> : null}
     </div>
   );
 }
