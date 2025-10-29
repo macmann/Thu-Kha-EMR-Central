@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Bell } from 'lucide-react';
+import NextLink from 'next/link';
+import { NotificationsRounded } from '@mui/icons-material';
+import { Badge, IconButton, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 import { PATIENT_NOTIFICATIONS_UNREAD_EVENT } from '@/lib/notificationsEvents';
@@ -56,17 +57,27 @@ export function PatientNotificationsBell() {
   const label = unreadCount > 0 ? `${t('nav.notifications')} (${unreadCount})` : t('nav.notifications');
 
   return (
-    <Link
-      href="/notifications"
-      className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-400/40 bg-white/80 text-brand-700 shadow-sm backdrop-blur transition hover:bg-brand-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-400/60 dark:bg-slate-900/70 dark:text-brand-200 dark:hover:bg-brand-900/40"
-      aria-label={label}
-    >
-      <Bell className="h-4 w-4" aria-hidden />
-      {unreadCount > 0 ? (
-        <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-xs font-semibold text-white shadow-sm">
-          {unreadCount > 99 ? '99+' : unreadCount}
-        </span>
-      ) : null}
-    </Link>
+    <Tooltip title={label ?? 'Notifications'}>
+      <IconButton
+        component={NextLink}
+        href="/notifications"
+        color="primary"
+        size="small"
+        aria-label={label}
+        sx={{
+          borderRadius: '50%',
+          border: (th) => `1px solid ${th.palette.primary.main}33`,
+          bgcolor: (th) => th.palette.background.paper,
+        }}
+      >
+        <Badge
+          color="error"
+          badgeContent={unreadCount > 99 ? '99+' : unreadCount || undefined}
+          overlap="circular"
+        >
+          <NotificationsRounded fontSize="small" />
+        </Badge>
+      </IconButton>
+    </Tooltip>
   );
 }

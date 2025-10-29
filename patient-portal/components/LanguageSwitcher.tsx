@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 
 const LANGUAGES = [
   { code: 'en', label: 'EN' },
@@ -20,33 +21,30 @@ export function LanguageSwitcher() {
     return null;
   }
 
-  const active = i18n.language;
+  const active = LANGUAGES.find((language) => i18n.language.startsWith(language.code))?.code ?? LANGUAGES[0].code;
 
   return (
-    <div className="flex items-center gap-1 rounded-full border border-brand-400/40 bg-white/80 px-1.5 py-1 text-xs font-medium text-brand-700 shadow-sm backdrop-blur dark:border-brand-400/60 dark:bg-slate-900/70 dark:text-brand-200">
-      <span className="sr-only">{t('nav.language')}</span>
-      {LANGUAGES.map((language) => {
-        const isActive = active.startsWith(language.code);
-        return (
-          <button
-            key={language.code}
-            type="button"
-            onClick={() => {
-              void i18n.changeLanguage(language.code);
-              localStorage.setItem('i18nextLng', language.code);
-            }}
-            className={`rounded-full px-2 py-1 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${
-              isActive
-                ? 'bg-brand-500 text-white shadow'
-                : 'text-brand-700 hover:bg-brand-100 dark:text-brand-200 dark:hover:bg-brand-900/40'
-            }`}
-            aria-pressed={isActive}
-            aria-label={language.label}
-          >
+    <ToggleButtonGroup
+      exclusive
+      size="small"
+      value={active}
+      onChange={(_, nextLanguage) => {
+        if (!nextLanguage) {
+          return;
+        }
+        void i18n.changeLanguage(nextLanguage);
+        localStorage.setItem('i18nextLng', nextLanguage);
+      }}
+      aria-label={t('nav.language') ?? 'Language'}
+      sx={{ borderRadius: 5, backgroundColor: (theme) => theme.palette.background.paper, px: 0.5, py: 0.25 }}
+    >
+      {LANGUAGES.map((language) => (
+        <ToggleButton key={language.code} value={language.code} sx={{ border: 'none', borderRadius: 5 }}>
+          <Typography variant="caption" fontWeight={600}>
             {language.label}
-          </button>
-        );
-      })}
-    </div>
+          </Typography>
+        </ToggleButton>
+      ))}
+    </ToggleButtonGroup>
   );
 }

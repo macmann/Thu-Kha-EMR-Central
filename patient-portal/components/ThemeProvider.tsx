@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -10,6 +11,9 @@ import {
   useRef,
   useState,
 } from 'react';
+import { CssBaseline } from '@mui/material';
+import { AppRouterCacheProvider } from '@mui/material-nextjs/v14-appRouter';
+import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
 
 const STORAGE_KEY = 'theme';
 const COLOR_SCHEME_MEDIA_QUERY = '(prefers-color-scheme: dark)';
@@ -107,7 +111,56 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const contextValue = useMemo<ThemeContextValue>(() => ({ theme, setTheme }), [theme, setTheme]);
 
-  return <ThemeContext.Provider value={contextValue}>{children}</ThemeContext.Provider>;
+  const muiTheme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: theme,
+          primary: {
+            main: '#0d9488',
+            contrastText: theme === 'dark' ? '#0f172a' : '#ffffff',
+          },
+          secondary: {
+            main: '#14b8a6',
+          },
+          background: {
+            default: theme === 'dark' ? '#0f172a' : '#f8fafc',
+            paper: theme === 'dark' ? '#0b1120' : '#ffffff',
+          },
+        },
+        typography: {
+          fontFamily: 'var(--font-inter), var(--font-myanmar), system-ui, sans-serif',
+        },
+        shape: {
+          borderRadius: 16,
+        },
+        components: {
+          MuiButton: {
+            defaultProps: {
+              disableElevation: true,
+              variant: 'contained',
+            },
+          },
+          MuiLink: {
+            defaultProps: {
+              underline: 'hover',
+            },
+          },
+        },
+      }),
+    [theme],
+  );
+
+  return (
+    <ThemeContext.Provider value={contextValue}>
+      <AppRouterCacheProvider options={{ key: 'mui' }}>
+        <MuiThemeProvider theme={muiTheme}>
+          <CssBaseline enableColorScheme />
+          {children}
+        </MuiThemeProvider>
+      </AppRouterCacheProvider>
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {
