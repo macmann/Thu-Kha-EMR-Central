@@ -1,43 +1,60 @@
+'use client';
+
+import { useState } from 'react';
 import {
-  HomeIcon,
-  CalendarDaysIcon,
-  UserCircleIcon,
-  ClipboardDocumentListIcon,
-  BeakerIcon,
-  SquaresPlusIcon,
-} from '@heroicons/react/24/outline';
-import type { ReactNode } from 'react';
+  AccountCircleRounded,
+  AssignmentRounded,
+  EventAvailableRounded,
+  HomeRounded,
+  MedicationRounded,
+  ScienceRounded,
+} from '@mui/icons-material';
+import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
 
 type NavItem = {
   href: string;
   label: string;
-  icon: ReactNode;
+  icon: React.ElementType;
 };
 
 const navItems: NavItem[] = [
-  { href: '#home', label: 'Home', icon: <HomeIcon className="h-5 w-5" /> },
-  { href: '#visits', label: 'Visits', icon: <ClipboardDocumentListIcon className="h-5 w-5" /> },
-  { href: '#labs', label: 'Labs', icon: <BeakerIcon className="h-5 w-5" /> },
-  { href: '#meds', label: 'Meds', icon: <SquaresPlusIcon className="h-5 w-5" /> },
-  { href: '#appointments', label: 'Appointments', icon: <CalendarDaysIcon className="h-5 w-5" /> },
-  { href: '#profile', label: 'Profile', icon: <UserCircleIcon className="h-5 w-5" /> },
+  { href: '#home', label: 'Home', icon: HomeRounded },
+  { href: '#visits', label: 'Visits', icon: AssignmentRounded },
+  { href: '#labs', label: 'Labs', icon: ScienceRounded },
+  { href: '#meds', label: 'Meds', icon: MedicationRounded },
+  { href: '#appointments', label: 'Appointments', icon: EventAvailableRounded },
+  { href: '#profile', label: 'Profile', icon: AccountCircleRounded },
 ];
 
 export function PatientNav() {
+  const [value, setValue] = useState(0);
+
   return (
-    <nav className="sticky bottom-0 left-0 right-0 border-t border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-xl items-center justify-between px-6 py-3 text-sm font-medium text-slate-500">
-        {navItems.map((item) => (
-          <a
-            key={item.href}
-            href={item.href}
-            className="flex flex-col items-center gap-1 rounded-md px-3 py-2 text-slate-500 transition hover:text-slate-900"
-          >
-            <span className="text-brand">{item.icon}</span>
-            <span>{item.label}</span>
-          </a>
-        ))}
-      </div>
-    </nav>
+    <Paper
+      component="nav"
+      elevation={8}
+      sx={{ position: 'sticky', bottom: 0, left: 0, right: 0, borderRadius: 0, backdropFilter: 'blur(8px)' }}
+    >
+      <BottomNavigation
+        showLabels
+        value={value}
+        onChange={(_, nextValue) => setValue(nextValue)}
+        sx={{ justifyContent: 'space-around', backgroundColor: (theme) => theme.palette.background.paper }}
+      >
+        {navItems.map((item, index) => {
+          const Icon = item.icon;
+          return (
+            <BottomNavigationAction
+              key={item.href}
+              label={item.label}
+              icon={<Icon fontSize="small" />}
+              href={item.href}
+              component="a"
+              value={index}
+            />
+          );
+        })}
+      </BottomNavigation>
+    </Paper>
   );
 }

@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MoonStar, Sun } from 'lucide-react';
-import { useTheme } from './ThemeProvider';
+import { DarkModeRounded, LightModeRounded } from '@mui/icons-material';
+import { IconButton, Tooltip } from '@mui/material';
 import { useTranslation } from 'react-i18next';
+
+import { useTheme } from './ThemeProvider';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -21,13 +23,20 @@ export function ThemeToggle() {
   const isDark = theme === 'dark';
 
   return (
-    <button
-      type="button"
-      onClick={() => setTheme(isDark ? 'light' : 'dark')}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-brand-400/40 bg-white/80 text-brand-700 shadow-sm backdrop-blur transition hover:bg-brand-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-400/60 dark:bg-slate-900/70 dark:text-brand-200 dark:hover:bg-brand-900/40"
-      aria-label={t('nav.themeToggle')}
-    >
-      {isDark ? <MoonStar className="h-4 w-4" aria-hidden /> : <Sun className="h-4 w-4" aria-hidden />}
-    </button>
+    <Tooltip title={t('nav.themeToggle') ?? 'Toggle theme'}>
+      <IconButton
+        color="primary"
+        onClick={() => setTheme(isDark ? 'light' : 'dark')}
+        aria-label={t('nav.themeToggle')}
+        size="small"
+        sx={{
+          borderRadius: '50%',
+          border: (th) => `1px solid ${th.palette.primary.main}33`,
+          bgcolor: (th) => th.palette.background.paper,
+        }}
+      >
+        {isDark ? <DarkModeRounded fontSize="small" /> : <LightModeRounded fontSize="small" />}
+      </IconButton>
+    </Tooltip>
   );
 }

@@ -1,9 +1,24 @@
 'use client';
 
-import Link from 'next/link';
-import type { Route } from 'next';
 import { useEffect, useState, type ReactNode } from 'react';
+import NextLink from 'next/link';
+import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CircularProgress,
+  Container,
+  Divider,
+  Grid,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
 
 type Step = 'start' | 'verify' | 'success';
 
@@ -46,21 +61,16 @@ export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }:
   const StaffPortalLink = ({ children }: { children: ReactNode }) => {
     if (isExternalStaffPortalUrl) {
       return (
-        <a
-          href={staffPortalUrl}
-          className="font-semibold text-emerald-600 hover:text-emerald-700"
-          target="_blank"
-          rel="noreferrer"
-        >
+        <Typography component="a" href={staffPortalUrl} target="_blank" rel="noreferrer" color="primary" fontWeight={600}>
           {children}
-        </a>
+        </Typography>
       );
     }
 
     return (
-      <Link href={staffPortalUrl as Route} className="font-semibold text-emerald-600 hover:text-emerald-700">
+      <Typography component={NextLink} href={staffPortalUrl as Route} color="primary" fontWeight={600}>
         {children}
-      </Link>
+      </Typography>
     );
   };
 
@@ -130,172 +140,147 @@ export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }:
   };
 
   return (
-    <main className="relative flex flex-1 items-center justify-center overflow-hidden py-16 px-6 sm:px-10 md:px-12 lg:px-16">
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-br from-slate-100 via-white to-emerald-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute inset-y-0 left-[-30%] -z-10 hidden w-[65%] rounded-full bg-emerald-400/10 blur-3xl md:block lg:left-[-20%]"
-        aria-hidden
-      />
-      <div
-        className="pointer-events-none absolute bottom-[-25%] right-[-10%] -z-10 hidden h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl md:block"
-        aria-hidden
-      />
-      <div className="relative mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl bg-white/90 shadow-2xl ring-1 ring-slate-200 backdrop-blur-sm transition dark:bg-slate-900/90 dark:ring-slate-800 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
-        <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 p-10 text-emerald-50 md:flex">
-          <div className="space-y-6">
-            <span className="inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-50">
-              Thu Kha EMR
-            </span>
-            <h2 className="text-4xl font-bold leading-tight text-white">Welcome back to your patient portal</h2>
-            <p className="text-base text-emerald-50/90">
-              Manage appointments, review test results, and stay connected with your care team anywhere in Myanmar.
-            </p>
-          </div>
-          <ul className="mt-10 space-y-4 text-sm text-emerald-50/95">
-            <li className="flex items-start gap-3">
-              <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/25 text-sm font-semibold text-white">✓</span>
-              <span>Secure one-time passcode login keeps your information safe.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/25 text-sm font-semibold text-white">✓</span>
-              <span>Check visit summaries, invoices, and upcoming appointments.</span>
-            </li>
-            <li className="flex items-start gap-3">
-              <span className="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/25 text-sm font-semibold text-white">✓</span>
-              <span>Receive timely notifications from your clinic team.</span>
-            </li>
-          </ul>
-          <div
-            className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.35),transparent_55%)]"
-            aria-hidden
-          />
-        </div>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        bgcolor: (theme) => theme.palette.background.default,
+        py: { xs: 6, md: 10 },
+      }}
+    >
+      <Container maxWidth="lg">
+        <Grid container spacing={4} alignItems="stretch">
+          <Grid item xs={12} md={6}>
+            <Card
+              sx={{
+                height: '100%',
+                background: (theme) =>
+                  `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                color: 'common.white',
+                display: 'flex',
+              }}
+            >
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Typography variant="overline" sx={{ letterSpacing: 2, opacity: 0.9 }}>
+                  Thu Kha EMR
+                </Typography>
+                <Typography variant="h4" component="h2" fontWeight={700}>
+                  Welcome back to your patient portal
+                </Typography>
+                <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                  Manage appointments, review test results, and stay connected with your care team anywhere in Myanmar.
+                </Typography>
+                <Divider sx={{ borderColor: 'rgba(255,255,255,0.3)' }} />
+                <Stack spacing={2}>
+                  <FeatureItem>Secure one-time passcode login keeps your information safe.</FeatureItem>
+                  <FeatureItem>Check visit summaries, invoices, and upcoming appointments.</FeatureItem>
+                  <FeatureItem>Receive timely notifications from your clinic team.</FeatureItem>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Card elevation={8} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardHeader
+                title={<Typography variant="h4">Patient Login</Typography>}
+                subheader={
+                  <Typography variant="body2" color="text.secondary">
+                    Enter the phone number from your Primary Contact to receive a one-time passcode.
+                  </Typography>
+                }
+              />
+              <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <Typography variant="body2" color="text.secondary">
+                  သင်၏ Primary Contact တွင် ဖော်ပြထားသော ဖုန်းနံပါတ်ကို ထည့်ပါ၊ OTP ကုဒ်တစ်ခုကို လက်ခံရရှိပါမည်။
+                </Typography>
 
-        <div className="relative flex flex-col justify-center px-6 py-10 sm:px-10">
-          <div
-            className="pointer-events-none absolute right-[-5rem] top-[-5rem] h-40 w-40 rounded-full bg-emerald-500/20 blur-3xl dark:bg-emerald-400/10"
-            aria-hidden
-          />
-          <div className="relative mx-auto w-full max-w-md">
-            <div className="space-y-3 text-center md:text-left">
-              <span className="inline-flex items-center justify-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-                Secure login
-              </span>
-              <h1 className="text-3xl font-semibold text-slate-900 dark:text-white">Patient Login</h1>
-              <p className="text-base text-slate-600 dark:text-slate-300">
-                Enter the phone number from your Primary Contact to receive a one-time passcode.
-              </p>
-              <p className="text-base text-slate-600 dark:text-slate-300">
-                သင်၏ Primary Contact တွင် ဖော်ပြထားသော ဖုန်းနံပါတ်ကို ထည့်ပါ၊ OTP ကုဒ်တစ်ခုကို လက်ခံရရှိပါမည်။
-              </p>
-            </div>
+                {error ? <Alert severity="error">{error.message}</Alert> : null}
+                {statusMessage ? <Alert severity="success">{statusMessage}</Alert> : null}
 
-            {error && (
-              <p className="mt-6 rounded-lg border border-red-200 bg-red-50/80 p-4 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-200">
-                {error.message}
-              </p>
-            )}
-            {statusMessage && (
-              <p className="mt-6 rounded-lg border border-emerald-200 bg-emerald-50/80 p-4 text-sm text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
-                {statusMessage}
-              </p>
-            )}
+                {step === 'start' ? (
+                  <Box component="form" onSubmit={handleStart} noValidate>
+                    <Stack spacing={2.5}>
+                      <TextField
+                        id="contact"
+                        label="Primary Contact phone number"
+                        placeholder="09..."
+                        fullWidth
+                        value={contact}
+                        onChange={(event) => setContact(event.target.value)}
+                        autoComplete="tel"
+                        autoFocus
+                      />
+                      <Button type="submit" disabled={loading} size="large">
+                        {loading ? <CircularProgress size={20} color="inherit" /> : 'Send one-time passcode'}
+                      </Button>
+                    </Stack>
+                  </Box>
+                ) : null}
 
-            {step === 'start' && (
-              <form onSubmit={handleStart} className="mt-8 space-y-6">
-                <div className="space-y-2">
-                  <label htmlFor="contact" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                    Phone number (Primary Contact)
-                  </label>
-                  <input
-                    id="contact"
-                    name="contact"
-                    type="text"
-                    required
-                    value={contact}
-                    onChange={(event) => setContact(event.target.value)}
-                    className="w-full rounded-xl border border-slate-300/80 bg-white px-4 py-3 text-base text-slate-900 shadow-sm transition focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                    placeholder="09 123 456 789"
-                    autoComplete="tel"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading || contact.trim().length < 3}
-                  className="flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-400"
-                >
-                  {loading ? 'Sending…' : 'Send OTP'}
-                </button>
-              </form>
-            )}
+                {step === 'verify' ? (
+                  <Box component="form" onSubmit={handleVerify} noValidate>
+                    <Stack spacing={2.5}>
+                      <TextField
+                        id="otp"
+                        label="One-time passcode"
+                        placeholder="Enter the 6-digit code"
+                        fullWidth
+                        value={otp}
+                        onChange={(event) => setOtp(event.target.value)}
+                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 6 }}
+                      />
+                      <Button type="submit" disabled={loading} size="large">
+                        {loading ? <CircularProgress size={20} color="inherit" /> : 'Verify and sign in'}
+                      </Button>
+                    </Stack>
+                  </Box>
+                ) : null}
 
-            {step === 'verify' && (
-              <form onSubmit={handleVerify} className="mt-8 space-y-6">
-                <div className="space-y-2">
-                  <label htmlFor="otp" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                    Enter the 6-digit OTP
-                  </label>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">{contact}</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Enter 111111 to bypass OTP during development.</p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">
-                    OTP ၆ လုံးကို ထည့်ပါ။ စမ်းသပ်ခြင်းအတွက် 111111 ကို အသုံးပြုနိုင်သည်။
-                  </p>
-                  <input
-                    id="otp"
-                    name="otp"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={6}
-                    required
-                    value={otp}
-                    onChange={(event) => setOtp(event.target.value.replace(/\D/g, ''))}
-                    className="w-full rounded-xl border border-slate-300/80 bg-white px-4 py-3 text-center text-2xl tracking-[0.5em] text-slate-900 transition focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-emerald-500/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading || otp.length !== 6}
-                  className="flex w-full items-center justify-center rounded-xl bg-emerald-600 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-400"
-                >
-                  {loading ? 'Verifying…' : 'Verify OTP'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep('start');
-                    setOtp('');
-                    setStatusMessage('');
-                  }}
-                  className="w-full text-center text-sm font-medium text-emerald-700 transition hover:text-emerald-800 dark:text-emerald-300 dark:hover:text-emerald-200"
-                >
-                  Resend code / နောက်တစ်ကြိမ်ထပ်မံပို့ရန်
-                </button>
-              </form>
-            )}
+                {step === 'success' ? (
+                  <Alert severity="success">{statusMessage}</Alert>
+                ) : null}
 
-            {step === 'success' && (
-              <div className="mt-8 space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-8 text-center text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200">
-                <p className="text-lg font-semibold">You are now signed in.</p>
-                <p className="text-base">လူနာပေါ်တယ်လ်ထဲသို့ အောင်မြင်စွာ ဝင်ရောက်ပြီးဖြစ်သည်။</p>
-              </div>
-            )}
+                <Stack spacing={1.5}>
+                  <Typography variant="body2" color="text.secondary">
+                    Need help from the clinic team? Visit the staff portal at{' '}
+                    <StaffPortalLink>{staffPortalUrl}</StaffPortalLink>.
+                  </Typography>
+                  <Typography variant="caption" color="text.disabled">
+                    By signing in, you agree to receive notifications about your care via SMS or email.
+                  </Typography>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
+  );
+}
 
-            <div className="mt-10 space-y-1 text-center text-sm text-slate-500 dark:text-slate-400">
-              <p>
-                Clinic team member?{' '}
-                <StaffPortalLink>Sign in to the staff portal</StaffPortalLink>
-              </p>
-              <p>
-                ကလင်း ဝန်ထမ်းတစ်ဦးလား။{' '}
-                <StaffPortalLink>ဝန်ထမ်း ပေါ်တယ်သို့ ဝင်ရောက်ပါ</StaffPortalLink>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
+type FeatureItemProps = { children: ReactNode };
+
+function FeatureItem({ children }: FeatureItemProps) {
+  return (
+    <Stack direction="row" spacing={1.5} alignItems="flex-start">
+      <Box
+        sx={{
+          width: 28,
+          height: 28,
+          borderRadius: '50%',
+          backgroundColor: 'rgba(255,255,255,0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 600,
+        }}
+      >
+        ✓
+      </Box>
+      <Typography variant="body2" sx={{ opacity: 0.95 }}>
+        {children}
+      </Typography>
+    </Stack>
   );
 }
