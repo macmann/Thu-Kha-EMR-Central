@@ -1,5 +1,7 @@
 export const dynamic = 'force-dynamic';
 
+import { Box } from '@mui/material';
+
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import {
@@ -32,8 +34,8 @@ export default async function PatientAppointmentsPage() {
   }
 
   return (
-    <div className="patient-page patient-page--medium">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 3, md: 4 } }}>
       <PatientAppointmentsDashboard initialAppointments={appointments} initialClinics={clinics} />
-    </div>
+    </Box>
   );
 }

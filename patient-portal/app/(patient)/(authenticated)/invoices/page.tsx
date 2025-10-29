@@ -1,5 +1,7 @@
 export const dynamic = 'force-dynamic';
 
+import { Box } from '@mui/material';
+
 import InvoicesPage from '@/components/patient-billing/InvoicesPage';
 import { fetchPatientInvoices, type PatientInvoiceSummary } from '@/lib/api';
 
@@ -19,8 +21,8 @@ export default async function PatientInvoicesRoute() {
   }
 
   return (
-    <div className="patient-page patient-page--medium">
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 3, md: 4 } }}>
       <InvoicesPage initialStatus="UNPAID" initialInvoices={initialInvoices} initialError={initialError} />
-    </div>
+    </Box>
   );
 }

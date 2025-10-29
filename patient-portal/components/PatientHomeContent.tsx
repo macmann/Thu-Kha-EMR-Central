@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import type { Route } from 'next';
 import {
@@ -14,9 +15,22 @@ import {
   Sparkles,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  Chip,
+  Grid,
+  Link as MuiLink,
+  Stack,
+  Typography,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 
 import type { ClinicSummary } from '@/lib/api';
+import { cardSurface, heroSurface, subtlePanel } from './patient/PatientSurfaces';
 
 type Props = {
   clinics: ClinicSummary[];
@@ -53,160 +67,342 @@ export function PatientHomeContent({ clinics }: Props) {
   const { t } = useTranslation();
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10">
-      <section className="patient-hero" style={{ ['--patient-primary' as string]: '#0f766e', ['--patient-accent' as string]: '#14b8a6' }}>
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
-          <div className="flex-1 space-y-5">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-white/80">
-              <Sparkles className="h-3.5 w-3.5" aria-hidden />
-              {t('home.heroGreeting')}
-            </span>
-            <div className="space-y-3">
-              <h1 className="text-3xl font-semibold leading-tight sm:text-4xl">{t('home.heroHeadline')}</h1>
-              <p className="max-w-2xl text-sm text-white/80 sm:text-base">{t('home.heroDescription')}</p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Link
+    <Stack spacing={{ xs: 5, md: 7 }}>
+      <Box sx={(theme) => heroSurface(theme)}>
+        <Stack spacing={{ xs: 4, lg: 6 }} direction={{ xs: 'column', lg: 'row' }} alignItems="stretch">
+          <Stack spacing={3} flex={1} justifyContent="center">
+            <Chip
+              icon={<Sparkles size={14} aria-hidden />}
+              label={t('home.heroGreeting')}
+              sx={(theme) => ({
+                alignSelf: 'flex-start',
+                backgroundColor: alpha(theme.palette.common.white, 0.18),
+                color: alpha(theme.palette.common.white, 0.8),
+                fontWeight: 600,
+                letterSpacing: 1.5,
+                textTransform: 'uppercase',
+                '& .MuiChip-icon': { color: 'inherit', ml: 0.5 },
+              })}
+            />
+            <Stack spacing={1.5}>
+              <Typography variant="h3" component="h1" fontWeight={700} sx={{ maxWidth: 540 }}>
+                {t('home.heroHeadline')}
+              </Typography>
+              <Typography variant="body1" sx={{ maxWidth: 520, color: 'rgba(255,255,255,0.82)' }}>
+                {t('home.heroDescription')}
+              </Typography>
+            </Stack>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2.5} flexWrap="wrap">
+              <Button
+                component={Link}
                 href="/appointments"
-                className="patient-pill-button bg-white/95 text-brand-700 hover:text-brand-600"
+                size="large"
+                color="inherit"
+                sx={(theme) => ({
+                  alignSelf: { xs: 'stretch', sm: 'flex-start' },
+                  px: 3,
+                  py: 1.5,
+                  borderRadius: 999,
+                  color: theme.palette.primary.main,
+                  backgroundColor: alpha(theme.palette.common.white, 0.94),
+                  boxShadow: '0 20px 40px rgba(15, 118, 110, 0.25)',
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.common.white, 0.98),
+                    transform: 'translateY(-2px)',
+                  },
+                  '& .MuiButton-startIcon': { mr: 1 },
+                })}
+                startIcon={<CalendarCheck size={18} aria-hidden />}
               >
-                <CalendarCheck className="h-4 w-4" aria-hidden />
                 {t('home.heroPrimaryCta')}
-              </Link>
-              <Link
+              </Button>
+              <Button
+                component={Link}
                 href="/consent"
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/70 bg-white/10 px-5 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-white/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                size="large"
+                variant="outlined"
+                color="inherit"
+                sx={{
+                  alignSelf: { xs: 'stretch', sm: 'flex-start' },
+                  px: 3,
+                  py: 1.5,
+                  borderRadius: 999,
+                  borderColor: alpha('#ffffff', 0.55),
+                  color: 'rgba(255,255,255,0.92)',
+                  '&:hover': {
+                    borderColor: alpha('#ffffff', 0.8),
+                    backgroundColor: alpha('#ffffff', 0.18),
+                  },
+                }}
+                startIcon={<ShieldCheck size={18} aria-hidden />}
               >
-                <ShieldCheck className="h-4 w-4" aria-hidden />
                 {t('home.heroSecondaryCta')}
-              </Link>
-            </div>
-          </div>
-          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-1">
-            <div className="rounded-2xl border border-white/20 bg-white/10 p-4 shadow-lg shadow-black/10 backdrop-blur">
-              <p className="text-2xl font-semibold text-white">{clinics.length}</p>
-              <p className="text-xs text-white/70">{t('home.heroStatClinics', { count: clinics.length })}</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-lg shadow-black/10 backdrop-blur">
-              <p className="text-sm font-medium text-white">{t('home.heroStatSupport')}</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-lg shadow-black/10 backdrop-blur">
-              <p className="text-sm font-medium text-white">{t('home.heroStatPrivacy')}</p>
-            </div>
-          </div>
-        </div>
-      </section>
+              </Button>
+            </Stack>
+          </Stack>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <div className="patient-card patient-card--compact space-y-5">
-          <div>
-            <h2 className="text-lg font-semibold text-surface-foreground dark:text-slate-100">{t('home.quickActionsHeading')}</h2>
-            <p className="mt-1 text-sm text-surface-muted dark:text-slate-400">{t('home.quickActionsDescription')}</p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {QUICK_ACTIONS.map(({ href, icon: Icon, translationKey }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group flex items-center gap-3 rounded-2xl border border-brand-100/50 bg-white/90 px-4 py-3 text-sm font-semibold text-brand-700 shadow-sm transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-900/40 dark:bg-slate-900/70 dark:text-brand-200"
-              >
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 text-brand-600 transition group-hover:bg-brand-500 group-hover:text-white dark:bg-brand-900/40 dark:text-brand-200">
-                  <Icon className="h-4 w-4" aria-hidden />
-                </span>
-                <span>{t(translationKey)}</span>
-                <ArrowRight className="ml-auto h-4 w-4 text-brand-400 transition group-hover:translate-x-1 group-hover:text-brand-100" aria-hidden />
-              </Link>
-            ))}
-          </div>
-          <p className="text-xs text-surface-muted dark:text-slate-400">{t('home.shareSettings')}</p>
-        </div>
+          <Grid container spacing={2.5} flex={1} columns={{ xs: 1, sm: 3, lg: 1 }}>
+            <Grid item xs={1} sm={1} lg={1}>
+              <Card elevation={0} sx={(theme) => subtlePanel(theme)}>
+                <Typography variant="h4" fontWeight={700} color="common.white">
+                  {clinics.length}
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)' }}>
+                  {t('home.heroStatClinics', { count: clinics.length })}
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={1} sm={1} lg={1}>
+              <Card elevation={0} sx={(theme) => subtlePanel(theme)}>
+                <Typography variant="body2" fontWeight={600} color="common.white">
+                  {t('home.heroStatSupport')}
+                </Typography>
+              </Card>
+            </Grid>
+            <Grid item xs={1} sm={1} lg={1}>
+              <Card elevation={0} sx={(theme) => subtlePanel(theme)}>
+                <Typography variant="body2" fontWeight={600} color="common.white">
+                  {t('home.heroStatPrivacy')}
+                </Typography>
+              </Card>
+            </Grid>
+          </Grid>
+        </Stack>
+      </Box>
 
-        <div className="patient-card patient-card--compact space-y-5">
-          <div>
-            <h2 className="text-lg font-semibold text-surface-foreground dark:text-slate-100">{t('home.readinessHeading')}</h2>
-            <p className="mt-1 text-sm text-surface-muted dark:text-slate-400">{t('home.readinessDescription')}</p>
-          </div>
-          <ul className="space-y-3 text-sm text-surface-foreground dark:text-slate-200">
-            <li className="flex items-start gap-3 rounded-2xl border border-brand-100/40 bg-brand-50/40 p-4 dark:border-brand-900/40 dark:bg-slate-900/50">
-              <CheckCircle2 className="mt-0.5 h-4 w-4 text-brand-600 dark:text-brand-300" aria-hidden />
-              <span>{t('home.readinessSecureMessages')}</span>
-            </li>
-            <li className="flex items-start gap-3 rounded-2xl border border-brand-100/40 bg-brand-50/40 p-4 dark:border-brand-900/40 dark:bg-slate-900/50">
-              <ShieldCheck className="mt-0.5 h-4 w-4 text-brand-600 dark:text-brand-300" aria-hidden />
-              <span>{t('home.readinessSharePreferences')}</span>
-            </li>
-            <li className="flex items-start gap-3 rounded-2xl border border-brand-100/40 bg-brand-50/40 p-4 dark:border-brand-900/40 dark:bg-slate-900/50">
-              <Sparkles className="mt-0.5 h-4 w-4 text-brand-600 dark:text-brand-300" aria-hidden />
-              <span>{t('home.readinessContactInfo')}</span>
-            </li>
-          </ul>
-        </div>
-      </section>
+      <Grid container spacing={3} columns={6}>
+        <Grid item xs={6} lg={2.5}>
+          <Card elevation={0} sx={(theme) => cardSurface(theme, { compact: true })}>
+            <Stack spacing={3}>
+              <Stack spacing={1}>
+                <Typography variant="h6">{t('home.quickActionsHeading')}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t('home.quickActionsDescription')}
+                </Typography>
+              </Stack>
+              <Grid container spacing={2}>
+                {QUICK_ACTIONS.map(({ href, icon: Icon, translationKey }) => (
+                  <Grid item xs={12} sm={6} key={href}>
+                    <Card
+                      component={MuiLink}
+                      href={href}
+                      elevation={0}
+                      sx={(theme) => ({
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 2,
+                        padding: theme.spacing(2),
+                        borderRadius: 20,
+                        textDecoration: 'none',
+                        border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.4 : 0.18)}`,
+                        backgroundColor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.65 : 0.98),
+                        color: theme.palette.primary.main,
+                        transition: theme.transitions.create(['box-shadow', 'transform']),
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 18px 30px rgba(13,148,136,0.25)',
+                        },
+                      })}
+                    >
+                      <Avatar
+                        variant="rounded"
+                        sx={(theme) => ({
+                          width: 40,
+                          height: 40,
+                          bgcolor: alpha(theme.palette.primary.main, 0.08),
+                          color: theme.palette.primary.main,
+                          transition: theme.transitions.create(['background-color', 'color']),
+                          '.MuiCard-root:hover &': {
+                            bgcolor: theme.palette.primary.main,
+                            color: theme.palette.primary.contrastText,
+                          },
+                        })}
+                      >
+                        <Icon size={18} aria-hidden />
+                      </Avatar>
+                      <Typography variant="subtitle2" fontWeight={600}>
+                        {t(translationKey)}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>
+                        <ArrowRight size={16} aria-hidden />
+                      </Box>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+              <Typography variant="caption" color="text.secondary">
+                {t('home.shareSettings')}
+              </Typography>
+            </Stack>
+          </Card>
+        </Grid>
 
-      <section className="space-y-4">
-        <header className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-surface-foreground dark:text-slate-100">{t('home.clinicsHeading')}</h2>
-            <p className="text-sm text-surface-muted dark:text-slate-400">{t('home.clinicsDescription')}</p>
-          </div>
-          <p className="text-xs text-surface-muted dark:text-slate-400">
+        <Grid item xs={6} lg={3.5}>
+          <Card elevation={0} sx={(theme) => cardSurface(theme, { compact: true })}>
+            <Stack spacing={3}>
+              <Stack spacing={1}>
+                <Typography variant="h6">{t('home.readinessHeading')}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {t('home.readinessDescription')}
+                </Typography>
+              </Stack>
+              <Stack spacing={2}>
+                <ReadinessRow icon={<CheckCircle2 size={18} aria-hidden />} text={t('home.readinessSecureMessages')} />
+                <ReadinessRow icon={<ShieldCheck size={18} aria-hidden />} text={t('home.readinessSharePreferences')} />
+                <ReadinessRow icon={<Sparkles size={18} aria-hidden />} text={t('home.readinessContactInfo')} />
+              </Stack>
+            </Stack>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Stack spacing={3}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }}>
+          <Stack spacing={0.5}>
+            <Typography variant="h6">{t('home.clinicsHeading')}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t('home.clinicsDescription')}
+            </Typography>
+          </Stack>
+          <Typography variant="caption" color="text.secondary">
             {t('home.clinicCount', { count: clinics.length })}
-          </p>
-        </header>
-        <div className="grid gap-4 md:grid-cols-2">
+          </Typography>
+        </Stack>
+
+        <Grid container spacing={3}>
           {clinics.map((clinic) => (
-            <Link
-              key={clinic.id}
-              href={{ pathname: '/[clinicId]', query: { clinicId: clinic.id } }}
-              className="group relative overflow-hidden rounded-2xl border border-brand-100/40 bg-white/80 p-5 shadow-sm transition hover:-translate-y-1 hover:border-brand-300 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-brand-900/40 dark:bg-slate-900/70"
-            >
-              <div className="flex items-center gap-3">
-                <div className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-brand-500/10 text-brand-500 dark:bg-brand-900/50 dark:text-brand-200">
-                  <Building2 className="h-5 w-5" aria-hidden />
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-brand-500 dark:text-brand-300">{t('actions.enterPortal')}</p>
-                  <p className="text-lg font-semibold text-surface-foreground dark:text-slate-100">{clinic.name}</p>
-                </div>
-              </div>
-              {clinic.city ? (
-                <p className="mt-2 text-sm text-surface-muted dark:text-slate-400">{clinic.city}</p>
-              ) : null}
-              {clinic.specialties.length ? (
-                <p className="mt-3 text-xs font-medium uppercase tracking-wide text-brand-600 dark:text-brand-300">
-                  {clinic.specialties.join(' • ')}
-                </p>
-              ) : null}
-              <div className="mt-3 text-xs">
-                {clinic.bookingEnabled ? (
-                  <p className="font-medium text-brand-600 dark:text-brand-300">
-                    {clinic.bookingPolicy.cancelWindowHours !== null
-                      ? t('home.policyCancelWindow', { hours: clinic.bookingPolicy.cancelWindowHours })
-                      : t('home.policyFlexible')}
-                  </p>
-                ) : (
-                  <p className="font-semibold text-amber-600 dark:text-amber-400">{t('home.bookingPaused')}</p>
-                )}
-                {clinic.bookingPolicy.noShowPolicyText ? (
-                  <p className="mt-1 text-[11px] text-surface-muted dark:text-slate-400">
-                    {t('home.policyNoShow', { text: clinic.bookingPolicy.noShowPolicyText })}
-                  </p>
+            <Grid item xs={12} md={6} key={clinic.id}>
+              <Card
+                component={MuiLink}
+                href={{ pathname: '/[clinicId]', query: { clinicId: clinic.id } }}
+                elevation={0}
+                sx={(theme) => ({
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1.5,
+                  textDecoration: 'none',
+                  borderRadius: 24,
+                  border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.35 : 0.16)}`,
+                  backgroundColor: alpha(theme.palette.background.paper, theme.palette.mode === 'dark' ? 0.75 : 0.96),
+                  padding: theme.spacing(3),
+                  transition: theme.transitions.create(['transform', 'box-shadow']),
+                  '&:hover': {
+                    transform: 'translateY(-6px)',
+                    boxShadow: '0 24px 40px rgba(13,148,136,0.25)',
+                  },
+                })}
+              >
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Avatar
+                    variant="rounded"
+                    sx={(theme) => ({
+                      width: 44,
+                      height: 44,
+                      bgcolor: alpha(theme.palette.primary.main, 0.12),
+                      color: theme.palette.primary.main,
+                    })}
+                  >
+                    <Building2 size={20} aria-hidden />
+                  </Avatar>
+                  <Stack spacing={0.5}>
+                    <Typography variant="overline" color="primary" fontWeight={600} sx={{ letterSpacing: 1.2 }}>
+                      {t('actions.enterPortal')}
+                    </Typography>
+                    <Typography variant="h6">{clinic.name}</Typography>
+                  </Stack>
+                </Stack>
+                {clinic.city ? (
+                  <Typography variant="body2" color="text.secondary">
+                    {clinic.city}
+                  </Typography>
                 ) : null}
-              </div>
-              <div className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-brand-600 transition group-hover:translate-x-1 group-hover:text-brand-500 dark:text-brand-300 dark:group-hover:text-brand-200">
-                {t('actions.enterPortal')}
-                <ArrowRight className="h-4 w-4" aria-hidden />
-              </div>
-            </Link>
+                {clinic.specialties.length ? (
+                  <Typography variant="caption" color="primary" fontWeight={600} sx={{ letterSpacing: 1 }}>
+                    {clinic.specialties.join(' • ')}
+                  </Typography>
+                ) : null}
+                <Box>
+                  {clinic.bookingEnabled ? (
+                    <Typography variant="body2" color="primary" fontWeight={600}>
+                      {clinic.bookingPolicy.cancelWindowHours !== null
+                        ? t('home.policyCancelWindow', { hours: clinic.bookingPolicy.cancelWindowHours })
+                        : t('home.policyFlexible')}
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2" color="warning.main" fontWeight={600}>
+                      {t('home.bookingPaused')}
+                    </Typography>
+                  )}
+                  {clinic.bookingPolicy.noShowPolicyText ? (
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                      {t('home.policyNoShow', { text: clinic.bookingPolicy.noShowPolicyText })}
+                    </Typography>
+                  ) : null}
+                </Box>
+                <Stack direction="row" spacing={1} alignItems="center" color="primary.main" fontWeight={600}>
+                  <Typography variant="body2" fontWeight={600}>
+                    {t('actions.enterPortal')}
+                  </Typography>
+                  <ArrowRight size={16} aria-hidden />
+                </Stack>
+              </Card>
+            </Grid>
           ))}
-        </div>
+        </Grid>
+
         {clinics.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-brand-200/60 bg-brand-50/50 p-8 text-center text-sm text-brand-700 dark:border-brand-900/40 dark:bg-brand-900/20 dark:text-brand-100">
-            <Building2 className="h-6 w-6" aria-hidden />
-            <p>{t('home.clinicsEmpty')}</p>
-          </div>
+          <Card elevation={0} sx={(theme) => ({
+            ...cardSurface(theme, { compact: true }),
+            borderStyle: 'dashed',
+            textAlign: 'center',
+            color: theme.palette.primary.main,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 1.5,
+          })}
+          >
+            <Building2 size={28} aria-hidden />
+            <Typography variant="body2">{t('home.clinicsEmpty')}</Typography>
+          </Card>
         ) : null}
-      </section>
-    </div>
+      </Stack>
+    </Stack>
+  );
+}
+
+type ReadinessRowProps = {
+  icon: ReactNode;
+  text: string;
+};
+
+function ReadinessRow({ icon, text }: ReadinessRowProps) {
+  return (
+    <Stack
+      direction="row"
+      spacing={2}
+      alignItems="flex-start"
+      sx={(theme) => ({
+        borderRadius: 20,
+        border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.35 : 0.2)}`,
+        backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.08 : 0.12),
+        padding: theme.spacing(2),
+        color: theme.palette.text.primary,
+      })}
+    >
+      <Avatar
+        sx={(theme) => ({
+          width: 36,
+          height: 36,
+          bgcolor: alpha(theme.palette.primary.main, 0.12),
+          color: theme.palette.primary.main,
+        })}
+      >
+        {icon}
+      </Avatar>
+      <Typography variant="body2" sx={{ alignSelf: 'center' }}>
+        {text}
+      </Typography>
+    </Stack>
   );
 }

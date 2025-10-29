@@ -1,7 +1,24 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  Divider,
+  Grid,
+  Link as MuiLink,
+  MenuItem,
+  Stack,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
+} from '@mui/material';
+
 import type { PatientInvoiceSummary } from '@/lib/api';
+import { cardSurface, softBadge } from '../patient/PatientSurfaces';
 
 type TabKey = 'UNPAID' | 'PAID';
 
@@ -59,17 +76,17 @@ function formatIssuedDate(value: string): string {
   }).format(date);
 }
 
-function getStatusBadgeClasses(status: string): string {
+function statusTone(status: string) {
   switch (status) {
     case 'PAID':
-      return 'bg-emerald-100 text-emerald-700';
+      return 'success';
     case 'PARTIALLY_PAID':
     case 'PENDING':
-      return 'bg-amber-100 text-amber-700';
+      return 'warning';
     case 'REFUNDED':
-      return 'bg-slate-200 text-slate-700';
+      return 'info';
     default:
-      return 'bg-slate-100 text-slate-600';
+      return 'default';
   }
 }
 
@@ -218,179 +235,238 @@ export default function InvoicesPage({ initialStatus, initialInvoices, initialEr
   const activeState = tabs[activeTab];
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="patient-card">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Invoices & payments</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-300">
+    <Stack spacing={3}>
+      <Card elevation={0} sx={(theme) => cardSurface(theme)}>
+        <Stack spacing={1.5}>
+          <Typography variant="h5" fontWeight={700}>
+            Invoices & payments
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             Review your recent invoices, download PDF copies, and simulate payments for supported providers.
-          </p>
-        </div>
-      </section>
+          </Typography>
+        </Stack>
+      </Card>
 
-      <section className="patient-card patient-card--compact">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap gap-2">
-            {(Object.keys(TAB_META) as TabKey[]).map((tab) => {
-              const meta = TAB_META[tab];
-              const isActive = tab === activeTab;
-              return (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                    isActive
-                      ? 'border-brand bg-brand text-white shadow-sm'
-                      : 'border-slate-200 bg-slate-100 text-slate-600 hover:border-brand hover:text-brand'
-                  }`}
-                >
-                  {meta.label}
-                </button>
-              );
-            })}
-          </div>
-          <p className="text-xs text-slate-400">{TAB_META[activeTab].subtitle}</p>
-        </div>
-
-        {activeState.error ? (
-          <div className="mt-4 rounded-2xl border border-rose-200/70 bg-rose-50/90 p-4 text-sm text-rose-800 shadow-sm dark:border-rose-500/50 dark:bg-rose-900/30 dark:text-rose-200">
-            <p>{activeState.error}</p>
-            <button
-              type="button"
-              className="mt-3 inline-flex items-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
-              onClick={() => {
-                void loadTab(activeTab);
+      <Card elevation={0} sx={(theme) => cardSurface(theme, { compact: true })}>
+        <Stack spacing={3}>
+          <Box>
+            <Tabs
+              value={activeTab}
+              onChange={(_, value) => setActiveTab(value as TabKey)}
+              variant="scrollable"
+              sx={{
+                '& .MuiTabs-flexContainer': { gap: 1.5 },
+                '& .MuiTab-root': {
+                  borderRadius: 999,
+                  minHeight: 0,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  paddingInline: 2.5,
+                  paddingBlock: 1,
+                },
               }}
             >
-              Retry loading invoices
-            </button>
-          </div>
-        ) : null}
+              {(Object.keys(TAB_META) as TabKey[]).map((tab) => (
+                <Tab
+                  key={tab}
+                  value={tab}
+                  label={TAB_META[tab].label}
+                  disableRipple
+                />
+              ))}
+            </Tabs>
+            <Typography variant="caption" color="text.secondary">
+              {TAB_META[activeTab].subtitle}
+            </Typography>
+          </Box>
 
-        {activeState.loading ? (
-          <p className="mt-6 text-sm text-slate-500 dark:text-slate-300">Loading invoices…</p>
-        ) : null}
+          {activeState.error ? (
+            <Alert
+              severity="error"
+              action={
+                <Button color="error" size="small" onClick={() => void loadTab(activeTab)}>
+                  Retry
+                </Button>
+              }
+              sx={{ borderRadius: 3 }}
+            >
+              {activeState.error}
+            </Alert>
+          ) : null}
 
-        {!activeState.loading && activeState.invoices.length === 0 && !activeState.error ? (
-          <p className="mt-6 rounded-2xl border border-dashed border-slate-200/70 bg-slate-50/80 p-6 text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300">
-            No invoices found for this tab yet.
-          </p>
-        ) : null}
+          {activeState.loading ? (
+            <Typography variant="body2" color="text.secondary">
+              Loading invoices…
+            </Typography>
+          ) : null}
 
-        <div className="mt-6 space-y-4">
-          {activeState.invoices.map((invoice) => {
-            const paymentState = payments[invoice.id];
-            const provider = paymentState?.provider ?? 'stripe';
-            const isPaying = paymentState?.status === 'loading';
-            const canPay = invoice.canPay && !isPaying;
+          {!activeState.loading && activeState.invoices.length === 0 && !activeState.error ? (
+            <Card
+              elevation={0}
+              sx={(theme) => ({
+                ...cardSurface(theme, { compact: true }),
+                borderStyle: 'dashed',
+                textAlign: 'center',
+                color: theme.palette.text.secondary,
+              })}
+            >
+              No invoices found for this tab yet.
+            </Card>
+          ) : null}
 
-            return (
-              <article
+          <Stack spacing={3}>
+            {activeState.invoices.map((invoice) => (
+              <Card
                 key={invoice.id}
-                className="flex flex-col gap-4 rounded-3xl border border-brand-100/60 bg-white/95 p-6 shadow-lg shadow-brand-500/10 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-xl dark:border-brand-900/40 dark:bg-slate-900/70"
+                elevation={0}
+                sx={(theme) => ({
+                  ...cardSurface(theme, { compact: true }),
+                  transition: theme.transitions.create(['transform', 'box-shadow']),
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 24px 40px rgba(13,148,136,0.22)',
+                  },
+                })}
               >
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-brand">{invoice.number}</p>
-                    <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-                      {invoice.clinic?.name ?? 'Clinic invoice'}
-                    </h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-300">Issued {formatIssuedDate(invoice.issuedAt)}</p>
-                  </div>
-                  <span
-                    className={`inline-flex h-fit items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClasses(
-                      invoice.status,
-                    )}`}
+                <Stack spacing={3}>
+                  <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={1.5}
+                    justifyContent="space-between"
+                    alignItems={{ xs: 'flex-start', md: 'center' }}
                   >
-                    {formatStatus(invoice.status)}
-                  </span>
-                </div>
+                    <Stack spacing={0.5}>
+                      <Typography variant="caption" color="primary" fontWeight={600} sx={{ letterSpacing: 1 }}>
+                        {invoice.number}
+                      </Typography>
+                      <Typography variant="h6">{invoice.clinic?.name ?? 'Clinic invoice'}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Issued {formatIssuedDate(invoice.issuedAt)}
+                      </Typography>
+                    </Stack>
+                    <Box sx={(theme) => softBadge(theme, statusTone(invoice.status))}>
+                      {formatStatus(invoice.status)}
+                    </Box>
+                  </Stack>
 
-                <div className="grid gap-4 text-sm text-slate-600 dark:text-slate-300 md:grid-cols-2">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Grand total</span>
-                    <span className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                      {formatCurrency(invoice.grandTotal, invoice.currency)}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Amount due</span>
-                    <span
-                      className={`text-base font-semibold ${
-                        Number.parseFloat(invoice.amountDue) > 0 ? 'text-rose-600' : 'text-emerald-600'
-                      }`}
-                    >
-                      {formatCurrency(invoice.amountDue, invoice.currency)}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Amount paid</span>
-                    <span className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                      {formatCurrency(invoice.amountPaid, invoice.currency)}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs uppercase tracking-wide text-slate-400 dark:text-slate-500">Visit reference</span>
-                    <span className="text-sm text-slate-500 dark:text-slate-300">{invoice.visitId ?? 'Not available'}</span>
-                  </div>
-                </div>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} md={6}>
+                      <SummaryRow label="Grand total" value={formatCurrency(invoice.grandTotal, invoice.currency)} />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <SummaryRow
+                        label="Amount due"
+                        value={formatCurrency(invoice.amountDue, invoice.currency)}
+                        valueColor={Number.parseFloat(invoice.amountDue) > 0 ? 'error.main' : 'success.main'}
+                      />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <SummaryRow label="Amount paid" value={formatCurrency(invoice.amountPaid, invoice.currency)} />
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                      <SummaryRow label="Visit reference" value={invoice.visitId ?? 'Not available'} valueColor="text.secondary" />
+                    </Grid>
+                  </Grid>
 
-                <div className="flex flex-col gap-3 border-t border-slate-100 pt-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex flex-col gap-2 text-sm text-slate-600 dark:text-slate-300 md:flex-row md:items-center md:gap-4">
-                    <label className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500 md:flex-col md:items-start md:gap-1">
-                      Payment provider
-                      <select
-                        value={provider}
-                        onChange={(event) => handleProviderChange(invoice.id, event.target.value as 'stripe' | 'localWallet')}
-                        className="rounded-full border border-slate-200 bg-white/95 px-3 py-2 text-sm text-slate-700 shadow-sm transition focus:border-brand focus:outline-none dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200"
-                      >
-                        <option value="stripe">Stripe (mock)</option>
-                        <option value="localWallet">Local wallet (mock)</option>
-                      </select>
-                    </label>
-                    <a
-                      href={`/api/patient/invoices/${invoice.id}.pdf`}
-                      download
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-brand hover:text-brand dark:border-slate-700 dark:text-slate-300"
-                    >
-                      Download PDF
-                    </a>
-                  </div>
-                  <button
-                    type="button"
-                    className={`inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition ${
-                      canPay
-                        ? 'bg-brand text-white shadow-brand-500/30 hover:bg-brand-600'
-                        : 'cursor-not-allowed bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                    }`}
-                    disabled={!canPay}
-                    onClick={() => {
-                      void handlePayNow(invoice);
-                    }}
-                  >
-                    {isPaying ? 'Processing…' : 'Pay now'}
-                  </button>
-                </div>
+                  <Divider sx={{ borderColor: 'divider' }} />
 
-                {paymentState?.message ? (
-                  <div
-                    className={`rounded-2xl px-4 py-3 text-sm ${
-                      paymentState.status === 'success'
-                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200'
-                        : paymentState.status === 'error'
-                          ? 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-200'
-                          : 'bg-slate-50 text-slate-600 dark:bg-slate-900/40 dark:text-slate-300'
-                    }`}
-                  >
-                    {paymentState.message}
-                  </div>
-                ) : null}
-              </article>
-            );
-          })}
-        </div>
-      </section>
-    </div>
+                  <InvoiceActions
+                    invoice={invoice}
+                    paymentState={payments[invoice.id]}
+                    onProviderChange={handleProviderChange}
+                    onPayNow={handlePayNow}
+                  />
+                </Stack>
+              </Card>
+            ))}
+          </Stack>
+        </Stack>
+      </Card>
+    </Stack>
+  );
+}
+
+type SummaryRowProps = {
+  label: string;
+  value: string;
+  valueColor?: string;
+};
+
+function SummaryRow({ label, value, valueColor }: SummaryRowProps) {
+  return (
+    <Stack spacing={0.5}>
+      <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: 0.6, textTransform: 'uppercase' }}>
+        {label}
+      </Typography>
+      <Typography variant="body1" fontWeight={600} color={valueColor ?? 'text.primary'}>
+        {value}
+      </Typography>
+    </Stack>
+  );
+}
+
+type InvoiceActionsProps = {
+  invoice: PatientInvoiceSummary;
+  paymentState?: PaymentState;
+  onProviderChange: (invoiceId: string, provider: 'stripe' | 'localWallet') => void;
+  onPayNow: (invoice: PatientInvoiceSummary) => Promise<void>;
+};
+
+function InvoiceActions({ invoice, paymentState, onProviderChange, onPayNow }: InvoiceActionsProps) {
+  const provider = paymentState?.provider ?? 'stripe';
+  const isPaying = paymentState?.status === 'loading';
+  const canPay = invoice.canPay && !isPaying;
+
+  return (
+    <Stack spacing={2.5}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={{ xs: 2, md: 3 }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'flex-start', md: 'center' }}
+      >
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={{ xs: 2, md: 3 }} alignItems={{ xs: 'stretch', md: 'center' }}>
+          <TextField
+            select
+            label="Payment provider"
+            size="small"
+            value={provider}
+            onChange={(event) => onProviderChange(invoice.id, event.target.value as 'stripe' | 'localWallet')}
+            sx={{ minWidth: { md: 220 }, borderRadius: 999 }}
+          >
+            <MenuItem value="stripe">Stripe (mock)</MenuItem>
+            <MenuItem value="localWallet">Local wallet (mock)</MenuItem>
+          </TextField>
+          <Button
+            component={MuiLink}
+            href={`/api/patient/invoices/${invoice.id}.pdf`}
+            download
+            variant="outlined"
+            color="inherit"
+          >
+            Download PDF
+          </Button>
+        </Stack>
+
+        <Button
+          variant="contained"
+          onClick={() => {
+            void onPayNow(invoice);
+          }}
+          disabled={!canPay}
+        >
+          {isPaying ? 'Processing…' : 'Pay now'}
+        </Button>
+      </Stack>
+
+      {paymentState?.message ? (
+        <Alert
+          severity={paymentState.status === 'success' ? 'success' : paymentState.status === 'error' ? 'error' : 'info'}
+          sx={{ borderRadius: 3 }}
+        >
+          {paymentState.message}
+        </Alert>
+      ) : null}
+    </Stack>
   );
 }

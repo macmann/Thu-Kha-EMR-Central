@@ -1,7 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import {
+  Alert,
+  Card,
+  Stack,
+  Switch,
+  Typography,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+
 import type { ClinicConsentSummary, PatientConsentScope, PatientConsentStatus } from '@/lib/api';
+import { cardSurface } from './patient/PatientSurfaces';
 
 type ConsentManagerProps = {
   initialClinics: ClinicConsentSummary[];
@@ -125,12 +135,16 @@ export function ConsentManager({ initialClinics }: ConsentManagerProps) {
       [...clinics].sort((a, b) =>
         a.clinicName.localeCompare(b.clinicName, 'en', { sensitivity: 'base' })
       ),
-    [clinics]
+    [clinics],
   );
 
   return (
-    <div className="space-y-6">
-      {error ? <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+    <Stack spacing={3}>
+      {error ? (
+        <Alert severity="error" sx={{ borderRadius: 3 }}>
+          {error}
+        </Alert>
+      ) : null}
       {sortedClinics.map((clinic) => {
         const lastUpdated = formatTimestamp(latestUpdate(clinic.scopes));
         const clinicRevoked = !isScopeGranted(clinic.scopes, 'ALL');
@@ -140,81 +154,94 @@ export function ConsentManager({ initialClinics }: ConsentManagerProps) {
             : null;
 
         return (
-          <article
+          <Card
             key={clinic.clinicId}
-            className={`rounded-2xl border p-6 shadow-sm transition ${
-              clinicRevoked
-                ? 'border-rose-200 bg-rose-50/80'
-                : 'border-slate-200 bg-white'
-            }`}
+            elevation={0}
+            sx={(theme) => ({
+              ...cardSurface(theme, { compact: true }),
+              borderColor: clinicRevoked
+                ? alpha(theme.palette.error.main, 0.35)
+                : alpha(theme.palette.primary.main, theme.palette.mode === 'dark' ? 0.4 : 0.18),
+              backgroundColor: clinicRevoked
+                ? alpha(theme.palette.error.main, theme.palette.mode === 'dark' ? 0.12 : 0.08)
+                : theme.palette.background.paper,
+            })}
           >
-            <header className="space-y-1">
-              <h3 className="text-lg font-semibold text-slate-900">{clinic.clinicName}</h3>
-              {city ? <p className="text-sm text-slate-500">{city}</p> : null}
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                Last updated: {lastUpdated.en}
-              </p>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                နောက်ဆုံးပြင်ဆင်ခဲ့သည့်နေ့: {lastUpdated.mm}
-              </p>
-              {clinicRevoked ? (
-                <p className="mt-2 rounded-md bg-rose-100 px-3 py-2 text-sm text-rose-700">
-                  Data from this clinic is hidden. ယခုဆေးခန်းနှင့် မမျှဝေထားပါ။
-                </p>
-              ) : null}
-            </header>
+            <Stack spacing={3}>
+              <Stack spacing={0.75}>
+                <Typography variant="h6">{clinic.clinicName}</Typography>
+                {city ? (
+                  <Typography variant="body2" color="text.secondary">
+                    {city}
+                  </Typography>
+                ) : null}
+                <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: 0.6 }}>
+                  Last updated: {lastUpdated.en}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: 0.6 }}>
+                  နောက်ဆုံးပြင်ဆင်ခဲ့သည့်နေ့: {lastUpdated.mm}
+                </Typography>
+                {clinicRevoked ? (
+                  <Alert severity="warning" variant="outlined" sx={{ borderRadius: 2 }}>
+                    Data from this clinic is hidden. ယခုဆေးခန်းနှင့် မမျှဝေထားပါ။
+                  </Alert>
+                ) : null}
+              </Stack>
 
-            <div className="mt-5 space-y-5">
-              {clinic.scopes.map((scope) => {
-                const statusCopy = STATUS_COPY[scope.status];
-                const scopeCopy = SCOPE_COPY[scope.scope];
-                const isActive = scope.status === 'GRANTED';
-                const pending = pendingKey === `${clinic.clinicId}:${scope.scope}`;
+              <Stack spacing={3}>
+                {clinic.scopes.map((scope) => {
+                  const statusCopy = STATUS_COPY[scope.status];
+                  const scopeCopy = SCOPE_COPY[scope.scope];
+                  const isActive = scope.status === 'GRANTED';
+                  const pending = pendingKey === `${clinic.clinicId}:${scope.scope}`;
 
-                return (
-                  <div
-                    key={scope.scope}
-                    className="flex flex-col gap-3 border-t border-slate-200 pt-4 first:border-0 first:pt-0 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div>
-                      <p className="font-medium text-slate-900">{scopeCopy.en}</p>
-                      <p className="text-sm text-slate-500">{scopeCopy.mm}</p>
-                    </div>
-                    <div className="flex items-center justify-between gap-4 md:justify-end">
-                      <div className="text-right text-xs font-medium uppercase text-slate-500">
-                        <p>{statusCopy.en}</p>
-                        <p>{statusCopy.mm}</p>
-                      </div>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={isActive}
-                        aria-label={`Toggle consent for ${scopeCopy.en}`}
-                        onClick={() => handleToggle(clinic.clinicId, scope.scope)}
-                        disabled={pending}
-                        className={`relative inline-flex h-7 w-14 items-center rounded-full transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 ${
-                          isActive ? 'bg-emerald-500' : 'bg-slate-300'
-                        } ${pending ? 'opacity-60' : 'cursor-pointer'}`}
-                      >
-                        <span
-                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition ${
-                            isActive ? 'translate-x-7' : 'translate-x-1'
-                          }`}
+                  return (
+                    <Stack
+                      key={scope.scope}
+                      direction={{ xs: 'column', md: 'row' }}
+                      spacing={{ xs: 2, md: 3 }}
+                      alignItems={{ xs: 'flex-start', md: 'center' }}
+                      justifyContent="space-between"
+                      sx={{
+                        borderTop: '1px solid',
+                        borderColor: 'divider',
+                        pt: 2.5,
+                        '&:first-of-type': { borderTop: 'none', pt: 0 },
+                      }}
+                    >
+                      <Stack spacing={0.5}>
+                        <Typography variant="subtitle1" fontWeight={600}>
+                          {scopeCopy.en}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {scopeCopy.mm}
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Stack spacing={0.25} textAlign="right">
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                            {statusCopy.en}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                            {statusCopy.mm}
+                          </Typography>
+                        </Stack>
+                        <Switch
+                          checked={isActive}
+                          onChange={() => handleToggle(clinic.clinicId, scope.scope)}
+                          color="primary"
+                          disabled={pending}
+                          inputProps={{ 'aria-label': `Toggle consent for ${scopeCopy.en}` }}
                         />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </article>
+                      </Stack>
+                    </Stack>
+                  );
+                })}
+              </Stack>
+            </Stack>
+          </Card>
         );
       })}
-      {sortedClinics.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-500">
-          No clinics connected yet. ဆေးခန်းများနှင့် မချိတ်ဆက်ရသေးပါ။
-        </p>
-      ) : null}
-    </div>
+    </Stack>
   );
 }

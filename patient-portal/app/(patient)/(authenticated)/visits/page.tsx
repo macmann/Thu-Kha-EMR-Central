@@ -1,5 +1,7 @@
 export const dynamic = 'force-dynamic';
 
+import { Box } from '@mui/material';
+
 import { cookies } from 'next/headers';
 import { fetchPatientVisitHistory } from '@/lib/api';
 import VisitsPage from '@/components/patient-history/VisitsPage';
@@ -18,10 +20,8 @@ export default async function PatientVisitsPage() {
   const initialData = await fetchPatientVisitHistory({ cookie: cookieHeader });
 
   return (
-    <div className="patient-page patient-page--medium">
-      <section className="patient-card patient-card--compact">
-        <VisitsPage initialData={initialData} />
-      </section>
-    </div>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 3, md: 4 } }}>
+      <VisitsPage initialData={initialData} />
+    </Box>
   );
 }
