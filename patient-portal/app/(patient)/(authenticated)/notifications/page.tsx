@@ -1,10 +1,12 @@
 export const dynamic = 'force-dynamic';
 
+import { Card, Stack } from '@mui/material';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { fetchPatientNotifications } from '@/lib/api';
 import { NotificationsFeed } from '@/components/patient-notifications/NotificationsFeed';
+import { cardSurface } from '@/components/patient/PatientSurfaces';
 
 function serializeCookies(): string | undefined {
   const store = cookies();
@@ -24,13 +26,13 @@ export default async function PatientNotificationsPage() {
   }
 
   return (
-    <div className="patient-page patient-page--narrow">
-      <section className="patient-card patient-card--compact">
+    <Stack spacing={3}>
+      <Card elevation={0} sx={(theme) => cardSurface(theme, { compact: true })}>
         <NotificationsFeed
           initialNotifications={notificationsResponse.notifications}
           initialUnreadCount={notificationsResponse.unreadCount}
         />
-      </section>
-    </div>
+      </Card>
+    </Stack>
   );
 }

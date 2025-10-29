@@ -2,7 +2,20 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import {
+  Alert,
+  Box,
+  Card,
+  Chip,
+  CircularProgress,
+  Divider,
+  Stack,
+  Typography,
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+
 import type { PatientVisitHistoryResponse, PatientVisitSummary } from '@/lib/api';
+import { cardSurface, softBadge } from '../patient/PatientSurfaces';
 
 function formatVisitDate(value: string) {
   const date = new Date(value);
@@ -94,75 +107,132 @@ export default function VisitsPage({ initialData }: VisitsPageProps) {
   }, [visits]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <section className="patient-card">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Your visit history</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-300">
+    <Stack spacing={3}>
+      <Card elevation={0} sx={(theme) => cardSurface(theme)}>
+        <Stack spacing={1.5}>
+          <Typography variant="h5" fontWeight={700}>
+            Your visit history
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             {initialData ? headerSummary : 'Unable to load visits right now. Please try again later.'}
-          </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">Scroll down to load more records automatically.</p>
-        </div>
-      </section>
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Scroll down to load more records automatically.
+          </Typography>
+        </Stack>
+      </Card>
 
       {error ? (
-        <div className="rounded-3xl border border-rose-200/70 bg-rose-50/90 p-4 text-sm text-rose-800 shadow-sm dark:border-rose-500/50 dark:bg-rose-900/30 dark:text-rose-200">
+        <Alert severity="error" sx={{ borderRadius: 3 }}>
           {error}
-        </div>
+        </Alert>
       ) : null}
 
       {isEmpty ? (
-        <section className="patient-card text-center text-sm text-slate-500 dark:text-slate-300">
+        <Card elevation={0} sx={(theme) => ({
+          ...cardSurface(theme, { compact: true }),
+          textAlign: 'center',
+          color: theme.palette.text.secondary,
+        })}
+        >
           Once clinics grant access, your visit history will appear here.
-        </section>
+        </Card>
       ) : (
-        <div className="space-y-4">
+        <Stack spacing={2.5}>
           {visits.map((visit) => (
-            <article
+            <Card
               key={visit.id}
-              className="group flex flex-col gap-3 rounded-3xl border border-brand-100/60 bg-white/95 p-6 shadow-lg shadow-brand-500/10 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-xl dark:border-brand-900/40 dark:bg-slate-900/70"
+              elevation={0}
+              sx={(theme) => ({
+                ...cardSurface(theme, { compact: true }),
+                transition: theme.transitions.create(['transform', 'box-shadow']),
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 24px 40px rgba(13,148,136,0.22)',
+                },
+              })}
             >
-              <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand">{visit.clinic?.name ?? 'Clinic'}</p>
-                  <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{formatVisitDate(visit.visitDate)}</h2>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                  {visit.doctor ? (
-                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-600 dark:bg-slate-800/70 dark:text-slate-200">
-                      {visit.doctor.name}
-                    </span>
-                  ) : null}
-                  {visit.hasDoctorNote ? (
-                    <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 font-medium text-emerald-700">
-                      Doctor note available
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-              <p className="text-sm text-slate-600 dark:text-slate-300">{visit.diagnosisSummary || 'No diagnosis summary.'}</p>
-              <div className="flex flex-col gap-2 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-                <span>
-                  Next visit:{' '}
-                  <span className="font-medium text-slate-700 dark:text-slate-200">
-                    {visit.nextVisitDate ? formatVisitDate(visit.nextVisitDate) : 'Not scheduled'}
-                  </span>
-                </span>
-                <Link
-                  href={`/patient/visits/${visit.id}`}
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-dark"
+              <Stack spacing={2}>
+                <Stack
+                  direction={{ xs: 'column', md: 'row' }}
+                  spacing={1}
+                  justifyContent="space-between"
+                  alignItems={{ xs: 'flex-start', md: 'center' }}
                 >
-                  View visit details
-                  <span aria-hidden>→</span>
-                </Link>
-              </div>
-            </article>
+                  <Stack spacing={0.5}>
+                    <Typography variant="overline" color="primary" fontWeight={600} sx={{ letterSpacing: 1 }}>
+                      {visit.clinic?.name ?? 'Clinic'}
+                    </Typography>
+                    <Typography variant="h6">{formatVisitDate(visit.visitDate)}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
+                    {visit.doctor ? (
+                      <Chip
+                        label={visit.doctor.name}
+                        size="small"
+                        sx={(theme) => ({
+                          backgroundColor: alpha(theme.palette.text.primary, 0.08),
+                          color: theme.palette.text.primary,
+                          fontWeight: 500,
+                        })}
+                      />
+                    ) : null}
+                    {visit.hasDoctorNote ? (
+                      <Box sx={(theme) => softBadge(theme, 'success')}>Doctor note available</Box>
+                    ) : null}
+                  </Stack>
+                </Stack>
+
+                <Typography variant="body2" color="text.secondary">
+                  {visit.diagnosisSummary || 'No diagnosis summary.'}
+                </Typography>
+
+                <Divider sx={{ borderColor: 'divider' }} />
+
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  spacing={{ xs: 2, sm: 1.5 }}
+                  justifyContent="space-between"
+                  alignItems={{ xs: 'flex-start', sm: 'center' }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Next visit:{' '}
+                    <Typography component="span" variant="body2" fontWeight={600} color="text.primary">
+                      {visit.nextVisitDate ? formatVisitDate(visit.nextVisitDate) : 'Not scheduled'}
+                    </Typography>
+                  </Typography>
+                  <Typography
+                    component={Link}
+                    href={`/patient/visits/${visit.id}`}
+                    variant="button"
+                    sx={(theme) => ({
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 0.75,
+                      color: theme.palette.primary.main,
+                      textDecoration: 'none',
+                      fontWeight: 600,
+                      '&:hover': { textDecoration: 'underline' },
+                    })}
+                  >
+                    View visit details
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Card>
           ))}
-        </div>
+        </Stack>
       )}
 
-      <div ref={sentinelRef} aria-hidden className="h-1 w-full" />
-      {loading ? <p className="text-center text-xs text-slate-400 dark:text-slate-500">Loading more visits…</p> : null}
-    </div>
+      <Box ref={sentinelRef} aria-hidden sx={{ height: 4 }} />
+      {loading ? (
+        <Stack direction="row" spacing={1.5} justifyContent="center" alignItems="center" sx={{ color: 'text.secondary' }}>
+          <CircularProgress size={18} thickness={4} />
+          <Typography variant="caption" color="text.secondary">
+            Loading more visits…
+          </Typography>
+        </Stack>
+      ) : null}
+    </Stack>
   );
 }
