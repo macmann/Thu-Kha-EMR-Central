@@ -16,9 +16,6 @@ import {
   Container,
   Divider,
   Stack,
-  Step,
-  StepLabel,
-  Stepper,
   TextField,
   Typography,
 } from '@mui/material';
@@ -27,8 +24,6 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import ScienceIcon from '@mui/icons-material/Science';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import ForumIcon from '@mui/icons-material/Forum';
-
-type Step = 'start' | 'verify' | 'success';
 
 type Props = {
   staffPortalUrl: string;
@@ -42,8 +37,8 @@ interface FormError {
 export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }: Props) {
   const router = useRouter();
   const [contact, setContact] = useState('');
-  const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<Step>('start');
+  const [password, setPassword] = useState('');
+  const [loginComplete, setLoginComplete] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<FormError | null>(null);
   const [statusMessage, setStatusMessage] = useState('');
@@ -53,7 +48,7 @@ export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }:
   }, [router]);
 
   useEffect(() => {
-    if (step !== 'success') {
+    if (!loginComplete) {
       return;
     }
 
@@ -64,7 +59,7 @@ export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }:
     return () => {
       clearTimeout(redirectTimer);
     };
-  }, [router, step]);
+  }, [router, loginComplete]);
 
   const StaffPortalLink = ({ children }: { children: ReactNode }) => {
     if (isExternalStaffPortalUrl) {
@@ -82,7 +77,7 @@ export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }:
     );
   };
 
-  const handleStart = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
@@ -98,57 +93,26 @@ export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }:
         setContact(trimmedContact);
       }
 
-      const response = await fetch('/api/patient/auth/start', {
+      const response = await fetch('/api/patient/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ phoneOrEmail: trimmedContact }),
+        body: JSON.stringify({ phone: trimmedContact, password }),
       });
 
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.error ?? 'Unable to send OTP. Confirm your Primary Contact number in the EMR.');
+        throw new Error(payload?.error ?? 'Unable to sign in.');
       }
 
-      setStep('verify');
-      setStatusMessage('OTP sent! Please check your messages.');
-    } catch (err) {
-      setError({ message: err instanceof Error ? err.message : 'Unable to send OTP.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerify = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-    setStatusMessage('');
-
-    try {
-      const response = await fetch('/api/patient/auth/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ phoneOrEmail: contact, otp }),
-      });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.error ?? 'Unable to verify OTP.');
-      }
-
-      setStep('success');
       setStatusMessage('Login successful! Redirecting to your dashboard…');
+      setLoginComplete(true);
     } catch (err) {
-      setError({ message: err instanceof Error ? err.message : 'Unable to verify OTP.' });
+      setError({ message: err instanceof Error ? err.message : 'Unable to sign in.' });
     } finally {
       setLoading(false);
     }
   };
-
-  const steps = ['Verify contact', 'Enter passcode', 'Access portal'];
-  const activeStepIndex = step === 'start' ? 0 : step === 'verify' ? 1 : 2;
 
   const featureCards: FeatureCardProps[] = [
     {
@@ -250,75 +214,48 @@ export function PatientLoginClient({ staffPortalUrl, isExternalStaffPortalUrl }:
                 title={<Typography variant="h4">Patient Login</Typography>}
                 subheader={
                   <Typography variant="body2" color="text.secondary">
-                    Enter the phone number from your Primary Contact to receive a one-time passcode.
+                    Use your Primary Contact phone number and password to access your health updates.
                   </Typography>
                 }
               />
               <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <Stepper
-                  activeStep={activeStepIndex}
-                  alternativeLabel
-                  sx={{
-                    '& .MuiStepConnector-line': { borderColor: 'divider' },
-                    '& .MuiStepLabel-label': { typography: 'caption' },
-                  }}
-                >
-                  {steps.map((label) => (
-                    <Step key={label}>
-                      <StepLabel>{label}</StepLabel>
-                    </Step>
-                  ))}
-                </Stepper>
-
                 <Typography variant="body2" color="text.secondary">
-                  သင်၏ Primary Contact တွင် ဖော်ပြထားသော ဖုန်းနံပါတ်ကို ထည့်ပါ၊ OTP ကုဒ်တစ်ခုကို လက်ခံရရှိပါမည်။
+                  သင်၏ Primary Contact ဖုန်းနံပါတ်နှင့် စကားဝှက်ဖြင့် အကောင့်ဝင်ပါ။ ပထမတစ်ကြိမ် အသုံးပြုသူများအတွက် စကားဝှက်မှာ 111111 ဖြစ်ပါသည်။
                 </Typography>
 
                 {error ? <Alert severity="error">{error.message}</Alert> : null}
                 {statusMessage ? <Alert severity="success">{statusMessage}</Alert> : null}
 
-                {step === 'start' ? (
-                  <Box component="form" onSubmit={handleStart} noValidate>
-                    <Stack spacing={2.5}>
-                      <TextField
-                        id="contact"
-                        label="Primary Contact phone number"
-                        placeholder="09..."
-                        fullWidth
-                        value={contact}
-                        onChange={(event) => setContact(event.target.value)}
-                        autoComplete="tel"
-                        autoFocus
-                      />
-                      <Button type="submit" disabled={loading} size="large">
-                        {loading ? <CircularProgress size={20} color="inherit" /> : 'Send one-time passcode'}
-                      </Button>
-                    </Stack>
-                  </Box>
-                ) : null}
+                <Box component="form" onSubmit={handleLogin} noValidate>
+                  <Stack spacing={2.5}>
+                    <TextField
+                      id="contact"
+                      label="Primary Contact phone number"
+                      placeholder="09..."
+                      fullWidth
+                      value={contact}
+                      onChange={(event) => setContact(event.target.value)}
+                      autoComplete="tel"
+                      autoFocus
+                    />
+                    <TextField
+                      id="password"
+                      label="Password"
+                      type="password"
+                      fullWidth
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      autoComplete="current-password"
+                    />
+                    <Button type="submit" disabled={loading} size="large">
+                      {loading ? <CircularProgress size={20} color="inherit" /> : 'Sign in'}
+                    </Button>
+                  </Stack>
+                </Box>
 
-                {step === 'verify' ? (
-                  <Box component="form" onSubmit={handleVerify} noValidate>
-                    <Stack spacing={2.5}>
-                      <TextField
-                        id="otp"
-                        label="One-time passcode"
-                        placeholder="Enter the 6-digit code"
-                        fullWidth
-                        value={otp}
-                        onChange={(event) => setOtp(event.target.value)}
-                        inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 6 }}
-                      />
-                      <Button type="submit" disabled={loading} size="large">
-                        {loading ? <CircularProgress size={20} color="inherit" /> : 'Verify and sign in'}
-                      </Button>
-                    </Stack>
-                  </Box>
-                ) : null}
-
-                {step === 'success' ? (
-                  <Alert severity="success">{statusMessage}</Alert>
-                ) : null}
+                <Alert severity="info">
+                  New accounts start with the default password <strong>111111</strong>. Update it after signing in for added security.
+                </Alert>
 
                 <Stack spacing={1.5}>
                   <Typography variant="body2" color="text.secondary">

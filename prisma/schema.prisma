@@ -92,6 +92,7 @@ model PatientUser {
   globalPatientId String
   loginPhone      String?   @unique
   loginEmail      String?   @unique
+  passwordHash    String
   lastLoginAt     DateTime? @default(now())
 
   globalPatient GlobalPatient @relation(fields: [globalPatientId], references: [id], onDelete: Cascade)

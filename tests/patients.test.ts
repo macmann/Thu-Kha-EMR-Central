@@ -1,6 +1,13 @@
 import request from 'supertest';
-import { app } from '../src/index';
+import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
+
+import { app } from '../src/index';
+import {
+  ensurePatientPortalAccount,
+  normalizePatientPortalPhone,
+  PATIENT_PORTAL_DEFAULT_PASSWORD,
+} from '../src/services/patientPortalAccounts.js';
 
 const prisma = new PrismaClient();
 let patientId: string;
@@ -19,8 +26,13 @@ beforeAll(async () => {
       drugAllergies: 'Penicillin',
     },
   });
+  await ensurePatientPortalAccount(prisma, {
+    patientId: patient.patientId,
+    contact: patient.contact,
+    patientName: patient.name,
+  });
   patientId = patient.patientId;
-  await prisma.patient.create({
+  const secondPatient = await prisma.patient.create({
     data: {
       name: 'Jane Smith',
       dob: new Date('1990-01-01'),
@@ -29,6 +41,11 @@ beforeAll(async () => {
       insurance: 'Aetna',
       drugAllergies: 'Sulfa',
     },
+  });
+  await ensurePatientPortalAccount(prisma, {
+    patientId: secondPatient.patientId,
+    contact: secondPatient.contact,
+    patientName: secondPatient.name,
   });
   const visit1 = await prisma.visit.create({ data: { patientId: patient.patientId, doctorId: doctor.doctorId, visitDate: new Date('2023-01-01'), department: 'Cardiology', reason: 'checkup' } });
   const visit2 = await prisma.visit.create({ data: { patientId: patient.patientId, doctorId: doctor.doctorId, visitDate: new Date('2023-02-01'), department: 'Endocrinology', reason: 'follow-up' } });
@@ -50,7 +67,10 @@ afterAll(async () => {
   await prisma.medication.deleteMany({});
   await prisma.diagnosis.deleteMany({});
   await prisma.visit.deleteMany({});
+  await prisma.patientLink.deleteMany({});
   await prisma.patient.deleteMany({});
+  await prisma.patientUser.deleteMany({});
+  await prisma.globalPatient.deleteMany({});
   await prisma.doctor.deleteMany({});
   await prisma.user.deleteMany({});
   await prisma.$disconnect();
@@ -89,11 +109,34 @@ describe('POST /api/patients', () => {
     const res = await request(app).post('/api/patients').send({
       name: 'Alice Jones',
       dob: '2001-01-01',
+      contact: '0999888777',
       insurance: 'Aetna',
       drugAllergies: 'Ibuprofen',
     });
     expect(res.status).toBe(201);
     expect(res.body.name).toBe('Alice Jones');
     expect(res.body.drugAllergies).toBe('Ibuprofen');
+
+    const normalizedPhone = normalizePatientPortalPhone(res.body.contact ?? '');
+    const patientUser = await prisma.patientUser.findUnique({ where: { loginPhone: normalizedPhone } });
+    expect(patientUser).toBeTruthy();
+    const passwordMatches = await bcrypt.compare(
+      PATIENT_PORTAL_DEFAULT_PASSWORD,
+      patientUser!.passwordHash,
+    );
+    expect(passwordMatches).toBe(true);
+  });
+});
+
+describe('POST /api/patient/auth/login', () => {
+  it('authenticates with phone number and default password', async () => {
+    const res = await request(app).post('/api/patient/auth/login').send({
+      phone: '5551234',
+      password: PATIENT_PORTAL_DEFAULT_PASSWORD,
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('ok');
+    expect(res.body.patientUserId).toBeDefined();
   });
 });
