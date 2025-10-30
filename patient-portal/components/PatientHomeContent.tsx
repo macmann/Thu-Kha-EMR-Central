@@ -15,17 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import {
-  Avatar,
-  Box,
-  Button,
-  Card,
-  Chip,
-  Grid,
-  Link as MuiLink,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Avatar, Box, Button, Card, Chip, Grid, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 
@@ -184,7 +174,7 @@ export function PatientHomeContent({ clinics }: Props) {
                 {QUICK_ACTIONS.map(({ href, icon: Icon, translationKey }) => (
                   <Grid item xs={12} sm={6} key={href}>
                     <Card
-                      component={MuiLink}
+                      component={Link}
                       href={href}
                       elevation={0}
                       sx={(theme) => ({
@@ -273,7 +263,7 @@ export function PatientHomeContent({ clinics }: Props) {
           {clinics.map((clinic) => (
             <Grid item xs={12} md={6} key={clinic.id}>
               <Card
-                component={MuiLink}
+                component={Link}
                 href={{ pathname: '/[clinicId]', query: { clinicId: clinic.id } }}
                 elevation={0}
                 sx={(theme) => ({
