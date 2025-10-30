@@ -36,26 +36,16 @@ export function heroSurface(theme: Theme) {
   const gradientEnd = alpha(theme.palette.secondary.main, 0.9);
 
   return {
-    position: 'relative' as const,
-    overflow: 'hidden',
     borderRadius: 36,
     padding: theme.spacing(5),
     color: theme.palette.common.white,
-    background: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`,
+    backgroundImage: [
+      'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.28), transparent 55%)',
+      'radial-gradient(circle at 80% 0%, rgba(255,255,255,0.2), transparent 60%)',
+      `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`,
+    ].join(', '),
+    backgroundBlendMode: 'screen, screen, normal',
     boxShadow: '0 40px 70px rgba(13, 148, 136, 0.45)',
-    '&::before': {
-      content: '""',
-      position: 'absolute' as const,
-      inset: 0,
-      background:
-        'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.28), transparent 55%), radial-gradient(circle at 80% 0%, rgba(255,255,255,0.2), transparent 60%)',
-      mixBlendMode: 'screen',
-      opacity: 0.7,
-    },
-    '& > *': {
-      position: 'relative' as const,
-      zIndex: 1,
-    },
   };
 }
 
