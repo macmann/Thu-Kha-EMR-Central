@@ -6,11 +6,11 @@ export const PATIENT_PORTAL_DEFAULT_PASSWORD = '111111';
 let defaultPasswordHashPromise: Promise<string> | null = null;
 
 async function resolveDefaultPasswordHash(): Promise<string> {
-  if (!defaultPasswordHashPromise) {
-    defaultPasswordHashPromise = bcrypt.hash(PATIENT_PORTAL_DEFAULT_PASSWORD, 10);
-  }
+  const promise =
+    defaultPasswordHashPromise ??
+    (defaultPasswordHashPromise = bcrypt.hash(PATIENT_PORTAL_DEFAULT_PASSWORD, 10));
 
-  return defaultPasswordHashPromise;
+  return promise;
 }
 
 function normalizePhone(raw: string): string {
