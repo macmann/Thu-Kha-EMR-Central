@@ -445,6 +445,7 @@ export async function resetPassword(token: string, password: string): Promise<Re
 export interface CreatePatientPayload {
   name: string;
   dob: string;
+  contact: string;
   insurance: string;
   drugAllergies?: string;
 }

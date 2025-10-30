@@ -656,10 +656,11 @@ addPath('/patients', 'post', {
       'application/json': {
         schema: {
           type: 'object',
-          required: ['name', 'dob', 'insurance'],
+          required: ['name', 'dob', 'contact', 'insurance'],
           properties: {
             name: { type: 'string' },
             dob: { type: 'string', format: 'date' },
+            contact: { type: 'string' },
             insurance: { type: 'string' },
             drugAllergies: { type: 'string' }
           },

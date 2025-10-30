@@ -8,6 +8,7 @@ import { useTranslation } from '../hooks/useTranslation';
 export default function RegisterPatient() {
   const [name, setName] = useState('');
   const [dob, setDob] = useState('');
+  const [contact, setContact] = useState('');
   const [insurance, setInsurance] = useState('');
   const [drugAllergies, setDrugAllergies] = useState('');
   const [saving, setSaving] = useState(false);
@@ -33,7 +34,13 @@ export default function RegisterPatient() {
     e.preventDefault();
     setSaving(true);
     try {
-      const patient = await createPatient({ name, dob, insurance, drugAllergies: drugAllergies.trim() || undefined });
+      const patient = await createPatient({
+        name,
+        dob,
+        contact: contact.trim(),
+        insurance,
+        drugAllergies: drugAllergies.trim() || undefined,
+      });
       navigate(`/patients/${patient.patientId}`);
     } catch (err) {
       console.error(err);
@@ -91,6 +98,24 @@ export default function RegisterPatient() {
                   placeholder={t('e.g. Jane Smith')}
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700" htmlFor="patient-contact">
+                  {t('Primary contact phone')}
+                </label>
+                <input
+                  id="patient-contact"
+                  type="tel"
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  placeholder={t('e.g. 09 123 456 789')}
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  {t('Patients use this number with their default password to sign in.')}
+                </p>
               </div>
 
               <div>
@@ -184,6 +209,10 @@ export default function RegisterPatient() {
               <div className="flex items-start justify-between gap-3">
                 <dt className="font-medium text-gray-600">{t('Age')}</dt>
                 <dd className="text-right text-gray-900">{age != null ? t('{count} years', { count: age }) : '—'}</dd>
+              </div>
+              <div className="flex items-start justify-between gap-3">
+                <dt className="font-medium text-gray-600">{t('Primary contact')}</dt>
+                <dd className="text-right text-gray-900">{contact || t('Not captured yet')}</dd>
               </div>
               <div className="flex items-start justify-between gap-3">
                 <dt className="font-medium text-gray-600">{t('Insurance')}</dt>
