@@ -9,7 +9,7 @@ export function gradientBackground(theme: Theme) {
     minHeight: '100vh',
     display: 'flex',
     flexDirection: 'column' as const,
-    backgroundImage: `radial-gradient(circle at 15% 20%, ${primaryLight}, transparent 55%), radial-gradient(circle at 85% 10%, ${accent}, transparent 60%)`,
+    backgroundImage: `linear-gradient(135deg, ${primaryLight} 0%, ${accent} 100%)`,
     backgroundColor: theme.palette.background.default,
   };
 }
@@ -39,12 +39,7 @@ export function heroSurface(theme: Theme) {
     borderRadius: 36,
     padding: theme.spacing(5),
     color: theme.palette.common.white,
-    backgroundImage: [
-      'radial-gradient(circle at 20% 20%, rgba(255,255,255,0.28), transparent 55%)',
-      'radial-gradient(circle at 80% 0%, rgba(255,255,255,0.2), transparent 60%)',
-      `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`,
-    ].join(', '),
-    backgroundBlendMode: 'screen, screen, normal',
+    backgroundImage: `linear-gradient(135deg, ${gradientStart} 0%, ${gradientEnd} 100%)`,
     boxShadow: '0 40px 70px rgba(13, 148, 136, 0.45)',
   };
 }
