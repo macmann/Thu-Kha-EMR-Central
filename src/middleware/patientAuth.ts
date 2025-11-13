@@ -60,25 +60,23 @@ export async function requirePatientAuth(req: PatientAuthRequest, res: Response,
       return res.status(401).json({ error: 'Session expired' });
     }
 
-    const patientUser = await prisma.patientUser.findUnique({
-      where: { id: sub },
+    const patientRecord = await prisma.patient.findUnique({
+      where: { patientId: sub },
       select: {
-        id: true,
-        globalPatientId: true,
-        loginPhone: true,
-        loginEmail: true,
+        patientId: true,
+        contact: true,
       },
     });
 
-    if (!patientUser) {
+    if (!patientRecord) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
     req.patient = {
-      patientUserId: patientUser.id,
-      globalPatientId: patientUser.globalPatientId,
-      loginPhone: patientUser.loginPhone ?? null,
-      loginEmail: patientUser.loginEmail ?? null,
+      patientUserId: patientRecord.patientId,
+      globalPatientId: patientRecord.patientId,
+      loginPhone: patientRecord.contact ?? null,
+      loginEmail: null,
     };
 
     next();
