@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { requireAuth, type AuthRequest } from '../auth/index.js';
 import { validate } from '../../middleware/validate.js';
 import { logDataChange } from '../audit/index.js';
-import { ensurePatientPortalAccount } from '../../services/patientPortalAccounts.js';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -152,11 +151,6 @@ router.post('/', requireAuth, async (req: AuthRequest, res: Response) => {
     },
   });
   await logDataChange(req.user!.userId, 'patient', patient.patientId, undefined, patient);
-  await ensurePatientPortalAccount(prisma, {
-    patientId: patient.patientId,
-    contact: patient.contact,
-    patientName: patient.name,
-  });
   res.status(201).json(patient);
 });
 
@@ -217,12 +211,6 @@ router.patch('/:id', requireAuth, async (req: AuthRequest, res: Response) => {
 
   const updated = await prisma.patient.update({ where: { patientId: id }, data, select: patientBaseSelect });
   await logDataChange(req.user!.userId, 'patient', id, transformPatient(existing), transformPatient(updated));
-
-  await ensurePatientPortalAccount(prisma, {
-    patientId: updated.patientId,
-    contact: updated.contact,
-    patientName: updated.name,
-  });
 
   res.json(transformPatient(updated));
 });

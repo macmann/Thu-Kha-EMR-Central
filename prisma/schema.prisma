@@ -35,111 +35,10 @@ enum Role {
   LabTech
 }
 
-enum PatientConsentScope {
-  VISITS
-  LAB
-  MEDS
-  BILLING
-  ALL
-}
-
-enum PatientConsentStatus {
-  GRANTED
-  REVOKED
-}
-
 enum DoctorNoteStorageType {
   S3
   MONGO
   LOCAL
-}
-
-enum NotificationChannel {
-  SMS
-  WHATSAPP
-  EMAIL
-  INAPP
-}
-
-enum NotificationType {
-  APPT_BOOKED
-  APPT_REMINDER
-  FOLLOWUP_DUE
-  INVOICE_DUE
-}
-
-enum NotificationStatus {
-  QUEUED
-  SENT
-  FAILED
-}
-
-model GlobalPatient {
-  id           String    @id @default(cuid())
-  primaryPhone String?   @unique
-  fullName     String?
-  dob          DateTime?
-  gender       String?
-  createdAt    DateTime  @default(now())
-
-  users PatientUser[]
-  links PatientLink[]
-  consents PatientConsent[]
-}
-
-model PatientUser {
-  id              String    @id @default(cuid())
-  globalPatientId String
-  loginPhone      String?   @unique
-  loginEmail      String?   @unique
-  passwordHash    String
-  lastLoginAt     DateTime? @default(now())
-
-  globalPatient GlobalPatient @relation(fields: [globalPatientId], references: [id], onDelete: Cascade)
-  notifications Notification[]
-}
-
-model PatientLink {
-  id              String    @id @default(cuid())
-  globalPatientId String
-  clinicId        String
-  patientId       String
-  verifiedAt      DateTime?
-
-  globalPatient GlobalPatient @relation(fields: [globalPatientId], references: [id], onDelete: Cascade)
-
-  @@unique([clinicId, patientId])
-  @@index([globalPatientId])
-}
-
-model PatientConsent {
-  id              String               @id @default(cuid())
-  globalPatientId String
-  clinicId        String
-  scope           PatientConsentScope
-  status          PatientConsentStatus @default(GRANTED)
-  updatedAt       DateTime             @updatedAt
-
-  globalPatient GlobalPatient @relation(fields: [globalPatientId], references: [id], onDelete: Cascade)
-
-  @@unique([globalPatientId, clinicId, scope])
-  @@index([globalPatientId])
-  @@index([clinicId])
-}
-
-model PatientOtp {
-  id         String    @id @default(cuid())
-  contact    String
-  otpHash    String
-  requestIp  String?
-  deviceId   String?
-  expiresAt  DateTime
-  createdAt  DateTime  @default(now())
-  verifiedAt DateTime?
-  attempts   Int       @default(0)
-
-  @@index([contact])
-  @@index([createdAt])
 }
 
 model TenantConfiguration {
@@ -156,15 +55,11 @@ model TenantConfiguration {
 }
 
 model Tenant {
-  tenantId                String   @id @default(uuid()) @db.Uuid
-  name                    String
-  code                    String?  @unique
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-  enabledForPatientPortal Boolean  @default(false)
-  enabledForPatientBooking Boolean  @default(false)
-  portalBranding          Json?
-  bookingPolicy           Json?
+  tenantId  String   @id @default(uuid()) @db.Uuid
+  name      String
+  code      String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   userMemberships    UserTenant[]
   patientMemberships PatientTenant[]
@@ -228,22 +123,22 @@ model Doctor {
 }
 
 model Appointment {
-  appointmentId String            @id @default(uuid()) @db.Uuid
-  patientId     String            @db.Uuid
-  doctorId      String            @db.Uuid
-  tenantId      String            @db.Uuid
-  department    String
-  date          DateTime
-  startTimeMin  Int
-  endTimeMin    Int
-  reason        String?
-  location      String?
-  status        AppointmentStatus @default(Scheduled)
-  cancelReason  String?
+  appointmentId    String            @id @default(uuid()) @db.Uuid
+  patientId        String            @db.Uuid
+  doctorId         String            @db.Uuid
+  tenantId         String            @db.Uuid
+  department       String
+  date             DateTime
+  startTimeMin     Int
+  endTimeMin       Int
+  reason           String?
+  location         String?
+  status           AppointmentStatus @default(Scheduled)
+  cancelReason     String?
   reminder24SentAt DateTime?
   reminder3SentAt  DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   patient Patient @relation(fields: [patientId], references: [patientId])
   doctor  Doctor  @relation(fields: [doctorId], references: [doctorId])
@@ -379,18 +274,6 @@ model DoctorNote {
   @@index([visitId])
   @@index([tenantId])
   @@index([patientId])
-}
-
-model PatientAccessLog {
-  id            String   @id @default(cuid())
-  patientUserId String
-  resourceType  String
-  resourceId    String
-  clinicId      String?
-  ts            DateTime @default(now())
-
-  @@index([patientUserId, ts])
-  @@index([clinicId, ts])
 }
 
 model User {
@@ -697,21 +580,6 @@ model Payment {
 
   @@index([invoiceId])
   @@index([tenantId, paidAt])
-}
-
-model Notification {
-  id            String              @id @default(uuid())
-  patientUserId String
-  channel       NotificationChannel @default(INAPP)
-  type          NotificationType
-  payload       Json
-  status        NotificationStatus  @default(QUEUED)
-  readAt        DateTime?
-  createdAt     DateTime            @default(now())
-
-  patientUser PatientUser @relation(fields: [patientUserId], references: [id], onDelete: Cascade)
-
-  @@index([patientUserId, createdAt(sort: Desc)])
 }
 
 model PaymentAllocation {

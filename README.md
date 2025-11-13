@@ -57,17 +57,6 @@ npm run tenant:create -- --name "Downtown Clinic" --code downtown --admin admin@
 
 You can repeat `--admin` to associate multiple staff members. The command creates the clinic, ensures the slug/code is unique, and then grants the listed users access with their existing roles. IT Administrators without a clinic membership will see a "No clinics available" banner until they are assigned to at least one clinic.
 
-## Patient Portal Quick Start
-
-The Next.js patient portal lives in [`patient-portal/`](patient-portal/). After running the seed commands above (including `npm run seed:demo`), launch it with:
-
-```bash
-npm run dev:api               # in a dedicated terminal
-cd patient-portal && npm run dev
-```
-
-Visit `http://localhost:3000` and sign in with the OTP sent to `+95 9 7777 8888`. The demo data links a `GlobalPatient` record to two branded clinics, so you can walk through visit history, invoices, and appointments immediately. For detailed configuration guidance, see [`docs/PATIENT-PORTAL.md`](docs/PATIENT-PORTAL.md) and review the feature highlights in [`docs/PATIENT-PORTAL-FEATURES.md`](docs/PATIENT-PORTAL-FEATURES.md).
-
 ## Neon PostgreSQL Setup
 Provision a PostgreSQL instance on [Neon](https://neon.tech) and set the `DATABASE_URL` and `DIRECT_URL` in `.env` (include `sslmode=require` for both). Enable the required extensions:
 ```sql
@@ -122,5 +111,4 @@ The OpenAPI specification is served at `/api/docs/openapi.json`.
 - Every incoming request receives a new 128-bit nonce in [`src/index.ts`](src/index.ts). The value is stored on `res.locals.cspNonce` and injected into the `%CSP_NONCE%` placeholder inside the built Vite HTML so inline tags that remain can opt in via `nonce="%CSP_NONCE%"`.
 - Helmet enforces a request-scoped CSP that limits scripts and styles to `'self'` plus the generated nonce. `'unsafe-eval'` is appended only while developing to keep Vite HMR working; production responses omit it and block inline execution outright. Image and font sources are restricted to same-origin or data URIs, frames are disabled, and connections are limited to the app origin plus HTTPS/WebSocket endpoints.
 - The Express fallback now reads `dist_client/index.html`, replaces `%CSP_NONCE%` with the runtime nonce, and serves the rendered HTML while `express.static` continues handling asset URLs without auto-injecting the HTML shell.
-- The patient portal only registers its service worker in production. Development builds clear existing registrations to avoid stale offline caches, and `/api/public/sw/unregister-flag` cooperates with `npm run patient-portal:sw:reset` to queue a one-time unregister the next time the portal loads.
 - `/manifest.webmanifest` is returned with the `application/manifest+json` MIME type so Lighthouse's PWA checks continue to pass under the tightened CSP.
