@@ -4,28 +4,15 @@ import fs from 'node:fs';
 import { promises as fsPromises } from 'node:fs';
 import express, { NextFunction, Request, Response, Router } from 'express';
 import crypto from 'node:crypto';
-import next from 'next';
-import type { NextServer, NextServerOptions } from 'next/dist/server/next.js';
 import helmet from 'helmet';
 import type { IncomingMessage, ServerResponse } from 'http';
 import cors from 'cors';
 import morgan from 'morgan';
 import { apiRouter } from './server.js';
 import { docsRouter } from './docs/openapi.js';
-import publicRouter from './modules/public/index.js';
-import patientAuthRouter from './modules/patient-auth/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRouter, { requireAuth } from './modules/auth/index.js';
 import { resolveTenant } from './middleware/tenant.js';
-import patientConsentRouter from './modules/patient-consent/index.js';
-import patientHistoryRouter, { docsRouter as patientDocsRouter } from './modules/patient-history/index.js';
-import {
-  clinicsRouter as patientClinicsRouter,
-  appointmentsRouter as patientAppointmentsRouter,
-} from './modules/patient-appointments/index.js';
-import patientBillingRouter from './modules/patient-billing/index.js';
-import patientNotificationsRouter from './modules/patient-notifications/index.js';
-import { startAppointmentReminderCron } from './services/appointmentReminderCron.js';
 
 if (
   process.env.DATABASE_URL &&
@@ -69,8 +56,6 @@ if (trustProxy) {
   app.set('trust proxy', 1);
 }
 
-const shouldEnablePatientPortal =
-  process.env.ENABLE_PATIENT_PORTAL !== 'false' && process.env.NODE_ENV !== 'test';
 const isProduction = process.env.NODE_ENV === 'production';
 
 type ContentSecurityPolicyDirectiveValueFunction = (
@@ -120,7 +105,6 @@ const fontSrc: ContentSecurityPolicyDirectiveValue[] = [
   'https://fonts.gstatic.com',
 ];
 const frameSrc: ContentSecurityPolicyDirectiveValue[] = ["'self'", 'https://demo.atenxion.ai'];
-const swUnregisterFlagPath = path.resolve(process.cwd(), 'patient-portal', '.force-sw-unregister');
 
 app.use(
   helmet({
@@ -157,41 +141,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
 
-app.get(
-  '/api/public/sw/unregister-flag',
-  async (_req: Request, res: Response, nextMiddleware: NextFunction) => {
-    try {
-      await fsPromises.access(swUnregisterFlagPath);
-    } catch {
-      res.json({ shouldUnregister: false });
-      return;
-    }
-
-    try {
-      await fsPromises.rm(swUnregisterFlagPath);
-    } catch (error) {
-      const errorWithCode = error as NodeJS.ErrnoException;
-      if (errorWithCode?.code && errorWithCode.code !== 'ENOENT') {
-        nextMiddleware(error);
-        return;
-      }
-    }
-
-    res.json({ shouldUnregister: true });
-  }
-);
-
-app.use('/api/public', publicRouter);
-
 app.use('/api/auth', authRouter);
-app.use('/api/patient/auth', patientAuthRouter);
-app.use('/api/patient/consent', patientConsentRouter);
-app.use('/api/patient/history', patientHistoryRouter);
-app.use('/api/patient/docs', patientDocsRouter);
-app.use('/api/patient/clinics', patientClinicsRouter);
-app.use('/api/patient/appointments', patientAppointmentsRouter);
-app.use('/api/patient/invoices', patientBillingRouter);
-app.use('/api/patient/notifications', patientNotificationsRouter);
 
 app.use('/api', docsRouter);
 
@@ -201,35 +151,6 @@ protectedApi.use(resolveTenant);
 protectedApi.use(apiRouter);
 
 app.use('/api', protectedApi);
-
-const readinessPromises: Promise<void>[] = [];
-
-const patientPortalWarmupRoutes = ['/patient/login'];
-
-if (shouldEnablePatientPortal) {
-  const patientPortalDir = path.resolve(process.cwd(), 'patient-portal');
-  const createNextApp: (options: NextServerOptions) => NextServer =
-    next as unknown as (options: NextServerOptions) => NextServer;
-  const patientPortalApp = createNextApp({
-    dev: !isProduction,
-    dir: patientPortalDir,
-  });
-
-  const patientPortalHandler = patientPortalApp.getRequestHandler();
-  const patientPortalReady = patientPortalApp.prepare();
-
-  readinessPromises.push(
-    patientPortalReady.catch((error: unknown) => {
-      console.error('Failed to prepare patient portal', error);
-      throw error;
-    })
-  );
-
-  app.all('/patient*', async (req: Request, res: Response) => {
-    await patientPortalReady;
-    return patientPortalHandler(req, res);
-  });
-}
 
 const publicDir = path.resolve(process.cwd(), 'public');
 if (fs.existsSync(publicDir)) {
@@ -258,12 +179,7 @@ const clientIndexPath = path.join(clientDir, 'index.html');
 let cachedClientIndexHtml: string | undefined;
 
 app.use(express.static(clientDir, { index: false }));
-app.get('*', async (req: Request, res: Response, nextMiddleware: NextFunction) => {
-  if (req.path.startsWith('/patient/_next')) {
-    nextMiddleware();
-    return;
-  }
-
+app.get('*', async (_req: Request, res: Response, nextMiddleware: NextFunction) => {
   if (!fs.existsSync(clientIndexPath)) {
     nextMiddleware();
     return;
@@ -286,34 +202,9 @@ app.get('*', async (req: Request, res: Response, nextMiddleware: NextFunction) =
 // Error handler should be last and only apply to /api routes
 app.use('/api', errorHandler);
 
-startAppointmentReminderCron();
-
 if (process.env.NODE_ENV !== 'test') {
-  Promise.all(readinessPromises)
-    .catch((error: unknown) => {
-      console.error('Server failed to start', error);
-      process.exit(1);
-    })
-    .then(() => {
-      const port = process.env.PORT || 8080;
-      app.listen(port, () => {
-        console.log(`Server listening on port ${port}`);
-
-        if (shouldEnablePatientPortal) {
-          void (async () => {
-            for (const route of patientPortalWarmupRoutes) {
-              try {
-                const response = await fetch(`http://127.0.0.1:${port}${route}`, {
-                  headers: { 'x-internal-warmup': 'true' },
-                });
-                await response.arrayBuffer();
-                console.log(`Warmed patient portal route: ${route}`);
-              } catch (error) {
-                console.warn(`Failed to warm patient portal route: ${route}`, error);
-              }
-            }
-          })();
-        }
-      });
-    });
+  const port = process.env.PORT || 8080;
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
 }

@@ -66,31 +66,16 @@ const PATIENT_RECORDS = [
   },
 ] as const;
 
-const GLOBAL_PATIENT_PHONE = '+95 9 7777 8888';
-const GLOBAL_PATIENT_EMAIL = 'demo.patient@example.com';
-
 async function ensureClinic(clinic: (typeof CLINICS)[number]) {
   const tenant = await prisma.tenant.upsert({
     where: { code: clinic.code },
     update: {
       name: clinic.name,
-      enabledForPatientPortal: true,
-      enabledForPatientBooking: true,
-      portalBranding: {
-        primaryColor: clinic.configuration.primaryColor,
-        accentColor: clinic.configuration.accentColor,
-      },
     },
     create: {
       tenantId: clinic.tenantId,
       code: clinic.code,
       name: clinic.name,
-      enabledForPatientPortal: true,
-      enabledForPatientBooking: true,
-      portalBranding: {
-        primaryColor: clinic.configuration.primaryColor,
-        accentColor: clinic.configuration.accentColor,
-      },
     },
   });
 
@@ -189,87 +174,6 @@ async function ensurePatients(clinicMap: Map<string, { tenantId: string }>) {
   }
 
   return patientMap;
-}
-
-async function ensureGlobalPatient(
-  patientMap: Map<string, { patientId: string; tenantId: string; clinicCode: string }>,
-) {
-  const globalPatient = await prisma.globalPatient.upsert({
-    where: { primaryPhone: GLOBAL_PATIENT_PHONE },
-    update: {
-      fullName: 'Aye Chan',
-      gender: 'F',
-      dob: new Date('1992-05-18T00:00:00.000Z'),
-    },
-    create: {
-      id: 'demo-global-patient',
-      primaryPhone: GLOBAL_PATIENT_PHONE,
-      fullName: 'Aye Chan',
-      gender: 'F',
-      dob: new Date('1992-05-18T00:00:00.000Z'),
-    },
-  });
-
-  const patientUser = await prisma.patientUser.upsert({
-    where: { loginPhone: GLOBAL_PATIENT_PHONE },
-    update: {
-      globalPatientId: globalPatient.id,
-      loginEmail: GLOBAL_PATIENT_EMAIL,
-      lastLoginAt: new Date(),
-    },
-    create: {
-      id: 'demo-patient-user',
-      globalPatientId: globalPatient.id,
-      loginPhone: GLOBAL_PATIENT_PHONE,
-      loginEmail: GLOBAL_PATIENT_EMAIL,
-      lastLoginAt: new Date(),
-    },
-  });
-
-  for (const entry of patientMap.values()) {
-    await prisma.patientLink.upsert({
-      where: {
-        clinicId_patientId: {
-          clinicId: entry.tenantId,
-          patientId: entry.patientId,
-        },
-      },
-      update: {
-        verifiedAt: new Date(),
-      },
-      create: {
-        id: randomUUID(),
-        clinicId: entry.tenantId,
-        patientId: entry.patientId,
-        globalPatientId: globalPatient.id,
-        verifiedAt: new Date(),
-      },
-    });
-
-    for (const scope of ['VISITS', 'LAB', 'MEDS', 'BILLING'] as const) {
-      await prisma.patientConsent.upsert({
-        where: {
-          globalPatientId_clinicId_scope: {
-            globalPatientId: globalPatient.id,
-            clinicId: entry.tenantId,
-            scope,
-          },
-        },
-        update: {
-          status: 'GRANTED',
-        },
-        create: {
-          id: randomUUID(),
-          globalPatientId: globalPatient.id,
-          clinicId: entry.tenantId,
-          scope,
-          status: 'GRANTED',
-        },
-      });
-    }
-  }
-
-  return { globalPatient, patientUser };
 }
 
 async function seedEncounters({
@@ -582,12 +486,10 @@ async function main() {
 
   const doctorMap = await ensureDoctors(clinicMap);
   const patientMap = await ensurePatients(clinicMap);
-  await ensureGlobalPatient(patientMap);
   const visitMap = await seedEncounters({ clinicMap, doctorMap, patientMap });
   await seedAppointments({ clinicMap, doctorMap, patientMap });
   await seedInvoices({ clinicMap, patientMap, visitMap });
 
-  console.log('✅ Demo patient portal data ready. Login with OTP using phone', GLOBAL_PATIENT_PHONE);
 }
 
 main()

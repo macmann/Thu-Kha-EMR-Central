@@ -30,36 +30,6 @@ export interface UpdateClinicConfigurationPayload {
   contactPhone?: string | null;
 }
 
-export interface PatientPortalBranding {
-  logo: string | null;
-  primaryColor: string | null;
-  accentColor: string | null;
-  heroTitle: string | null;
-  heroSubtitle: string | null;
-  city: string | null;
-  specialties: string[];
-}
-
-export interface PatientPortalBookingPolicy {
-  cancelWindowHours: number | null;
-  noShowPolicyText: string | null;
-}
-
-export interface PatientPortalSettings {
-  enabledForPatientPortal: boolean;
-  enabledForPatientBooking: boolean;
-  branding: PatientPortalBranding;
-  bookingPolicy: PatientPortalBookingPolicy;
-  updatedAt: string;
-}
-
-export interface UpdatePatientPortalSettingsPayload {
-  enabledForPatientPortal?: boolean;
-  enabledForPatientBooking?: boolean;
-  branding?: Partial<PatientPortalBranding>;
-  bookingPolicy?: Partial<PatientPortalBookingPolicy>;
-}
-
 export interface TenantMemberSummary {
   userId: string;
   email: string;
@@ -90,20 +60,6 @@ export function updateClinicConfiguration(
   payload: UpdateClinicConfigurationPayload,
 ): Promise<ClinicConfiguration> {
   return fetchJSON('/settings/clinic', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-}
-
-export function getPatientPortalSettings(): Promise<PatientPortalSettings> {
-  return fetchJSON('/settings/patient-portal');
-}
-
-export function updatePatientPortalSettings(
-  payload: UpdatePatientPortalSettingsPayload,
-): Promise<PatientPortalSettings> {
-  return fetchJSON('/settings/patient-portal', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
