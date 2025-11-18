@@ -14,6 +14,30 @@ export interface PatientAuthRequest extends Request {
 
 const prisma = new PrismaClient();
 
+type PatientRecord = {
+  patientId: string;
+  contact: string | null;
+};
+
+async function findPatientRecord(patientId: string): Promise<PatientRecord | null> {
+  const record = await prisma.patient.findUnique({
+    where: { patientId },
+    select: {
+      patientId: true,
+      contact: true,
+    },
+  });
+
+  if (!record) {
+    return null;
+  }
+
+  return {
+    patientId: record.patientId,
+    contact: record.contact ?? null,
+  };
+}
+
 function parseCookies(header: string | undefined): Record<string, string> {
   if (!header) return {};
   return header.split(';').reduce<Record<string, string>>((acc, part) => {
@@ -60,13 +84,7 @@ export async function requirePatientAuth(req: PatientAuthRequest, res: Response,
       return res.status(401).json({ error: 'Session expired' });
     }
 
-    const patientRecord = await prisma.patient.findUnique({
-      where: { patientId: sub },
-      select: {
-        patientId: true,
-        contact: true,
-      },
-    });
+    const patientRecord = await findPatientRecord(sub);
 
     if (!patientRecord) {
       return res.status(401).json({ error: 'Unauthorized' });
@@ -75,7 +93,7 @@ export async function requirePatientAuth(req: PatientAuthRequest, res: Response,
     req.patient = {
       patientUserId: patientRecord.patientId,
       globalPatientId: patientRecord.patientId,
-      loginPhone: patientRecord.contact ?? null,
+      loginPhone: patientRecord.contact,
       loginEmail: null,
     };
 
