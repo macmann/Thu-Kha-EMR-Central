@@ -374,15 +374,18 @@ export default function PatientDetail() {
                 const labs = visit.labResults ?? [];
                 const observations = visit.observations ?? [];
 
+                const doctorName = visit.doctor?.name ?? t('Unknown provider');
+                const doctorDepartment = visit.doctor?.department ?? t('Department unavailable');
+
                 return (
                   <article key={visit.visitId} className="rounded-2xl border border-gray-200 bg-gray-50 p-6 shadow-sm">
                     <div className="flex flex-wrap justify-between gap-4">
                       <div>
                         <div className="text-sm font-medium text-blue-600">{formatDateValue(visit.visitDate)}</div>
                         <h3 className="mt-1 text-lg font-semibold text-gray-900">
-                          {t('Visit with {name}', { name: visit.doctor.name })}
+                          {t('Visit with {name}', { name: doctorName })}
                         </h3>
-                        <p className="mt-1 text-sm text-gray-500">{visit.doctor.department}</p>
+                        <p className="mt-1 text-sm text-gray-500">{doctorDepartment}</p>
                       </div>
                       <Link
                         to={`/visits/${visit.visitId}`}
@@ -534,43 +537,47 @@ export default function PatientDetail() {
 
     return (
       <div className="space-y-4">
-        {visits.map((visit) => (
-          <article
-            key={visit.visitId}
-            className="rounded-2xl border border-gray-200 bg-gray-50 p-5 shadow-sm"
-          >
-            <div className="flex flex-wrap justify-between gap-4">
-              <div>
-                <div className="text-sm font-medium text-blue-600">{formatDateValue(visit.visitDate)}</div>
-                <h3 className="mt-1 text-lg font-semibold text-gray-900">
-                  {t('Visit with {name}', { name: visit.doctor.name })}
-                </h3>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium">
-                  <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-blue-600">
-                    {visit.department}
-                  </span>
-                  {visit.clinic && (
-                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-indigo-600">
-                      {visit.clinic.name}
-                      {visit.clinic.code ? ` (${visit.clinic.code})` : ''}
+        {visits.map((visit) => {
+          const doctorName = visit.doctor?.name ?? t('Unknown provider');
+
+          return (
+            <article
+              key={visit.visitId}
+              className="rounded-2xl border border-gray-200 bg-gray-50 p-5 shadow-sm"
+            >
+              <div className="flex flex-wrap justify-between gap-4">
+                <div>
+                  <div className="text-sm font-medium text-blue-600">{formatDateValue(visit.visitDate)}</div>
+                  <h3 className="mt-1 text-lg font-semibold text-gray-900">
+                    {t('Visit with {name}', { name: doctorName })}
+                  </h3>
+                  <div className="mt-2 flex flex-wrap gap-2 text-xs font-medium">
+                    <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-blue-600">
+                      {visit.department}
                     </span>
-                  )}
-                  {visit.reason && (
-                    <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-gray-600">
-                      {visit.reason}
-                    </span>
-                  )}
+                    {visit.clinic && (
+                      <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-indigo-600">
+                        {visit.clinic.name}
+                        {visit.clinic.code ? ` (${visit.clinic.code})` : ''}
+                      </span>
+                    )}
+                    {visit.reason && (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-gray-600">
+                        {visit.reason}
+                      </span>
+                    )}
+                  </div>
                 </div>
+                <Link
+                  to={`/visits/${visit.visitId}`}
+                  className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
+                >
+                  {t('View visit')}
+                </Link>
               </div>
-              <Link
-                to={`/visits/${visit.visitId}`}
-                className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
-              >
-                {t('View visit')}
-              </Link>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
     );
   }
