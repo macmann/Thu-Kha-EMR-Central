@@ -75,24 +75,125 @@ async function ensureSystemAdminUser() {
   return createdUser;
 }
 
-export async function requireAuth(req: AuthRequest, _res: Response, next: NextFunction) {
-  req.user ??= {
+function parseBearerToken(header: string | undefined): string | null {
+  if (!header) return null;
+  const [scheme, value] = header.split(' ');
+  if (!scheme || scheme.toLowerCase() !== 'bearer') return null;
+  return value?.trim() || null;
+}
+
+function decodeToken(token: string): AuthUser | null {
+  const parts = token.split('.');
+  if (parts.length < 2) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8')) as {
+      sub?: unknown;
+      role?: unknown;
+      email?: unknown;
+      doctorId?: unknown;
+    };
+
+    if (!isRoleName(payload.role) || typeof payload.sub !== 'string' || typeof payload.email !== 'string') {
+      return null;
+    }
+
+    return {
+      userId: payload.sub,
+      role: payload.role,
+      email: payload.email,
+      doctorId: typeof payload.doctorId === 'string' ? payload.doctorId : undefined,
+    } satisfies AuthUser;
+  } catch {
+    return null;
+  }
+}
+
+function isRoleName(value: unknown): value is RoleName {
+  return (
+    typeof value === 'string' &&
+    [
+      'Doctor',
+      'AdminAssistant',
+      'Cashier',
+      'ITAdmin',
+      'SystemAdmin',
+      'SuperAdmin',
+      'Pharmacist',
+      'PharmacyTech',
+      'InventoryManager',
+      'Nurse',
+      'LabTech',
+    ].includes(value)
+  );
+}
+
+function defaultPublicUser(): AuthUser {
+  return {
     userId: 'public-user',
     role: 'SuperAdmin',
     email: 'public@example.com',
   } satisfies AuthUser;
+}
+
+function resolveUser(req: AuthRequest): AuthUser | null {
+  if (req.user) {
+    return req.user;
+  }
+
+  const rawToken = parseBearerToken(req.get('authorization'));
+  if (!rawToken) {
+    return null;
+  }
+
+  const user = decodeToken(rawToken);
+  if (user) {
+    req.user = user;
+  }
+  return user;
+}
+
+function attachPublicUserIfMissing(req: AuthRequest) {
+  if (!req.user) {
+    req.user = defaultPublicUser();
+  }
+}
+
+export async function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
+  const user = resolveUser(req);
+
+  if (user) {
+    return next();
+  }
+
+  const hasAuthHeader = Boolean(req.get('authorization'));
+  if (hasAuthHeader) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  attachPublicUserIfMissing(req);
   next();
 }
 
 export function requireRole(...roles: RoleName[]) {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
-    req.user ??= {
-      userId: 'public-user',
-      role: 'SuperAdmin',
-      email: 'public@example.com',
-    } satisfies AuthUser;
-    void roles;
-    void res;
+    const user = resolveUser(req);
+
+    if (!user) {
+      const hasAuthHeader = Boolean(req.get('authorization'));
+      if (hasAuthHeader) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      attachPublicUserIfMissing(req);
+    }
+
+    const effectiveUser = req.user as AuthUser;
+    if (effectiveUser.role !== 'SuperAdmin' && roles.length > 0 && !roles.includes(effectiveUser.role)) {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
     next();
   };
 }
