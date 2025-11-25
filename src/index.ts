@@ -16,7 +16,10 @@ import { resolveTenant } from './middleware/tenant.js';
 import doctorsRouter from './modules/doctors/index.js';
 import appointmentsRouter from './routes/appointments.js';
 
+const enforceDatabaseSsl = process.env.NODE_ENV === 'production';
+
 if (
+  enforceDatabaseSsl &&
   process.env.DATABASE_URL &&
   !process.env.DATABASE_URL.includes('sslmode=require')
 ) {
@@ -24,6 +27,7 @@ if (
 }
 
 if (
+  enforceDatabaseSsl &&
   process.env.DIRECT_URL &&
   !process.env.DIRECT_URL.includes('sslmode=require')
 ) {
