@@ -283,7 +283,7 @@ router.post(
     } catch (error) {
       handleError(error, next);
     }
-  }
+  })
 );
 
 router.post(
