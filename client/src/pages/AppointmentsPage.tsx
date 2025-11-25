@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { CalendarIcon } from '../components/icons';
@@ -195,6 +195,52 @@ function formatTimeRange(startMin: number, endMin: number) {
   return `${formatTime(startMin)} – ${formatTime(endMin)}`;
 }
 
+type MissingRelation = 'patient' | 'doctor';
+
+function getPatientName(
+  appointment: Appointment,
+  logMissing?: (relation: MissingRelation) => void,
+): string {
+  const name = appointment.patient?.name;
+  if (!name) {
+    logMissing?.('patient');
+  }
+  return name ?? 'Unknown patient';
+}
+
+function getPatientId(
+  appointment: Appointment,
+  logMissing?: (relation: MissingRelation) => void,
+): string {
+  const id = appointment.patient?.patientId;
+  if (!id) {
+    logMissing?.('patient');
+  }
+  return id ?? '—';
+}
+
+function getDoctorName(
+  appointment: Appointment,
+  logMissing?: (relation: MissingRelation) => void,
+): string {
+  const name = appointment.doctor?.name;
+  if (!name) {
+    logMissing?.('doctor');
+  }
+  return name ?? 'Unknown doctor';
+}
+
+function getDoctorId(
+  appointment: Appointment,
+  logMissing?: (relation: MissingRelation) => void,
+): string {
+  const id = appointment.doctor?.doctorId;
+  if (!id) {
+    logMissing?.('doctor');
+  }
+  return id ?? '—';
+}
+
 export default function AppointmentsPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -228,6 +274,16 @@ export default function AppointmentsPage() {
   const [updating, setUpdating] = useState<Record<string, boolean>>({});
   const [toast, setToast] = useState<ToastState | null>(null);
   const effectiveDoctorId = isDoctorUser ? user?.doctorId ?? '' : doctorId;
+  const missingRelationsLogged = useRef<Set<string>>(new Set());
+
+  const logMissingRelation = (appointmentId: string, relation: MissingRelation) => {
+    const key = `${appointmentId}-${relation}`;
+    if (!missingRelationsLogged.current.has(key)) {
+      // Log once per missing relation to avoid noisy console output in production
+      console.warn(`Appointment ${appointmentId} is missing ${relation} information.`);
+      missingRelationsLogged.current.add(key);
+    }
+  };
 
   useEffect(() => {
     if (isDoctorUser) {
@@ -365,7 +421,11 @@ export default function AppointmentsPage() {
 
         const result = await listAppointments(params);
         if (!cancelled) {
-          setAppointments(result.data);
+          const data = Array.isArray(result?.data) ? (result.data.filter(Boolean) as Appointment[]) : [];
+          if (!Array.isArray(result?.data)) {
+            setError(t('Unable to load appointments right now.'));
+          }
+          setAppointments(data);
         }
       } catch (err) {
         if (!cancelled) {
@@ -449,7 +509,11 @@ export default function AppointmentsPage() {
           id: Date.now(),
           title: 'Visit created',
           message: 'A visit was created for {name}.',
-          messageParams: { name: appointment.patient.name },
+          messageParams: {
+            name: getPatientName(appointment, (relation) =>
+              logMissingRelation(appointment.appointmentId, relation),
+            ),
+          },
           link: { to: `/visits/${result.visitId}`, label: 'Open visit details' },
         });
       } else {
@@ -800,6 +864,12 @@ export default function AppointmentsPage() {
                     )}
                     {dayAppointments.map((appointment) => {
                       const { top, height } = normalizeBlock(appointment.startTimeMin, appointment.endTimeMin);
+                      const patientName = getPatientName(appointment, (relation) =>
+                        logMissingRelation(appointment.appointmentId, relation),
+                      );
+                      const doctorName = getDoctorName(appointment, (relation) =>
+                        logMissingRelation(appointment.appointmentId, relation),
+                      );
                       return (
                         <button
                           key={appointment.appointmentId}
@@ -813,10 +883,10 @@ export default function AppointmentsPage() {
                         >
                           <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 leading-tight">
                             <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-500">
-                              {appointment.doctor.name}
+                              {doctorName}
                             </span>
                             <span className="text-sm font-semibold text-blue-900">
-                              {appointment.patient.name}
+                              {patientName}
                             </span>
                             <span className="ml-auto text-[11px] font-medium text-blue-700">
                               {formatTimeRange(appointment.startTimeMin, appointment.endTimeMin)}
@@ -898,6 +968,12 @@ export default function AppointmentsPage() {
                           )}
                           {columnAppointments.map((appointment) => {
                             const { top, height } = normalizeBlock(appointment.startTimeMin, appointment.endTimeMin);
+                            const patientName = getPatientName(appointment, (relation) =>
+                              logMissingRelation(appointment.appointmentId, relation),
+                            );
+                            const doctorName = getDoctorName(appointment, (relation) =>
+                              logMissingRelation(appointment.appointmentId, relation),
+                            );
                             return (
                               <button
                                 key={appointment.appointmentId}
@@ -911,10 +987,10 @@ export default function AppointmentsPage() {
                               >
                                 <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-1 leading-tight">
                                   <span className="text-[11px] font-semibold uppercase tracking-wide text-blue-500">
-                                    {appointment.doctor.name}
+                                    {doctorName}
                                   </span>
                                   <span className="text-sm font-semibold text-blue-900">
-                                    {appointment.patient.name}
+                                    {patientName}
                                   </span>
                                   <span className="ml-auto text-[11px] font-medium text-blue-700">
                                     {formatTimeRange(appointment.startTimeMin, appointment.endTimeMin)}
@@ -997,6 +1073,18 @@ export default function AppointmentsPage() {
                       {appointments.map((appointment) => {
                         const visuals = statusVisuals[appointment.status];
                         const busy = isUpdating(appointment.appointmentId);
+                        const patientName = getPatientName(appointment, (relation) =>
+                          logMissingRelation(appointment.appointmentId, relation),
+                        );
+                        const doctorName = getDoctorName(appointment, (relation) =>
+                          logMissingRelation(appointment.appointmentId, relation),
+                        );
+                        const patientIdDisplay = getPatientId(appointment, (relation) =>
+                          logMissingRelation(appointment.appointmentId, relation),
+                        );
+                        const doctorIdDisplay = getDoctorId(appointment, (relation) =>
+                          logMissingRelation(appointment.appointmentId, relation),
+                        );
                         return (
                           <tr key={appointment.appointmentId} className="transition hover:bg-blue-50/40">
                             <td className="px-6 py-4 align-top">
@@ -1006,12 +1094,12 @@ export default function AppointmentsPage() {
                               <div className="mt-1 text-xs text-gray-500">{formatDateDisplay(appointment.date)}</div>
                             </td>
                             <td className="px-6 py-4 align-top">
-                              <div className="font-medium text-gray-900">{appointment.patient.name}</div>
-                              <div className="mt-1 text-xs text-gray-500">{t('ID: {id}', { id: appointment.patient.patientId })}</div>
+                              <div className="font-medium text-gray-900">{patientName}</div>
+                              <div className="mt-1 text-xs text-gray-500">{t('ID: {id}', { id: patientIdDisplay })}</div>
                             </td>
                             <td className="px-6 py-4 align-top">
-                              <div className="font-medium text-gray-900">{appointment.doctor.name}</div>
-                              <div className="mt-1 text-xs text-gray-500">{t('ID: {id}', { id: appointment.doctor.doctorId })}</div>
+                              <div className="font-medium text-gray-900">{doctorName}</div>
+                              <div className="mt-1 text-xs text-gray-500">{t('ID: {id}', { id: doctorIdDisplay })}</div>
                             </td>
                             <td className="px-6 py-4 align-top text-gray-700">{appointment.department}</td>
                             <td className="px-6 py-4 align-top">
