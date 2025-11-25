@@ -138,6 +138,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 app.use(morgan('dev'));
 app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 app.get('/api/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
