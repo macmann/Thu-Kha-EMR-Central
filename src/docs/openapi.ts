@@ -86,13 +86,6 @@ const openapi: any = {
   },
   servers: [{ url: '/api' }],
   components: {
-    securitySchemes: {
-      bearerAuth: {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-      },
-    },
     schemas: {
       Patient: {
         type: 'object',
@@ -818,7 +811,7 @@ addPath('/appointments/availability', 'get', {
   summary: 'Get appointment availability for a doctor',
   description:
     'Returns configured availability, blocked segments, and computed free slots for the requested day.',
-  security: [{ bearerAuth: [] }],
+  security: [],
   parameters: [
     {
       name: 'doctorId',
@@ -849,14 +842,13 @@ addPath('/appointments/availability', 'get', {
       description: 'Invalid request.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
     },
-    '401': { description: 'Unauthorized' },
   },
 });
 
 addPath('/appointments', 'post', {
   summary: 'Create appointment',
   description: 'Creates a new appointment after validating doctor availability and conflicts.',
-  security: [{ bearerAuth: [] }],
+  security: [],
   requestBody: {
     required: true,
     content: {
@@ -880,7 +872,6 @@ addPath('/appointments', 'post', {
       description: 'Invalid request or unavailable time slot.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
     },
-    '401': { description: 'Unauthorized' },
     '404': {
       description: 'Patient or doctor not found.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
@@ -891,7 +882,7 @@ addPath('/appointments', 'post', {
 addPath('/appointments', 'get', {
   summary: 'List appointments',
   description: 'Returns appointments with optional filtering and pagination.',
-  security: [{ bearerAuth: [] }],
+  security: [],
   parameters: [
     {
       name: 'date',
@@ -965,13 +956,12 @@ addPath('/appointments', 'get', {
       description: 'Invalid request.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
     },
-    '401': { description: 'Unauthorized' },
   },
 });
 
 addPath('/appointments/{appointmentId}', 'get', {
   summary: 'Get appointment',
-  security: [{ bearerAuth: [] }],
+  security: [],
   parameters: [
     {
       name: 'appointmentId',
@@ -990,7 +980,6 @@ addPath('/appointments/{appointmentId}', 'get', {
         },
       },
     },
-    '401': { description: 'Unauthorized' },
     '404': {
       description: 'Appointment not found.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
@@ -1000,7 +989,7 @@ addPath('/appointments/{appointmentId}', 'get', {
 
 addPath('/appointments/{appointmentId}', 'put', {
   summary: 'Update appointment',
-  security: [{ bearerAuth: [] }],
+  security: [],
   parameters: [
     {
       name: 'appointmentId',
@@ -1032,7 +1021,6 @@ addPath('/appointments/{appointmentId}', 'put', {
       description: 'Invalid request or unavailable time slot.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
     },
-    '401': { description: 'Unauthorized' },
     '404': {
       description: 'Appointment not found.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
@@ -1042,7 +1030,7 @@ addPath('/appointments/{appointmentId}', 'put', {
 
 addPath('/appointments/{appointmentId}', 'delete', {
   summary: 'Delete appointment',
-  security: [{ bearerAuth: [] }],
+  security: [],
   parameters: [
     {
       name: 'appointmentId',
@@ -1053,7 +1041,6 @@ addPath('/appointments/{appointmentId}', 'delete', {
   ],
   responses: {
     '204': { description: 'Appointment deleted.' },
-    '401': { description: 'Unauthorized' },
     '404': {
       description: 'Appointment not found.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
@@ -1065,7 +1052,7 @@ addPath('/appointments/{appointmentId}/status', 'patch', {
   summary: 'Update appointment status',
   description:
     'Transitions an appointment to a new status and optionally creates a visit when completing the appointment.',
-  security: [{ bearerAuth: [] }],
+  security: [],
   parameters: [
     {
       name: 'appointmentId',
@@ -1111,7 +1098,6 @@ addPath('/appointments/{appointmentId}/status', 'patch', {
       description: 'Invalid status transition or request.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
     },
-    '401': { description: 'Unauthorized' },
     '404': {
       description: 'Appointment not found.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
@@ -1262,13 +1248,12 @@ addPath('/insights/cohort', 'get', {
 
 addPath('/reports/summary', 'get', {
   summary: 'Reporting summary',
-  security: [{ bearerAuth: [] }],
+  security: [],
   responses: {
     '200': {
       description: 'Aggregated reporting metrics',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/ReportSummary' } } },
     },
-    '401': { description: 'Unauthorized' },
   },
 });
 
