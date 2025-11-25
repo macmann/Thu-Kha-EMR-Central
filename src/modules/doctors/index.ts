@@ -1,7 +1,8 @@
-import { Router, Request, Response } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { DEFAULT_AVAILABILITY_WINDOWS } from '../../services/appointmentService.js';
+import type { AuthRequest } from '../auth/index.js';
 
 const prisma = new PrismaClient();
 const router = Router();
@@ -31,13 +32,21 @@ const availabilitySchema = z
     path: ['endMin'],
   });
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: AuthRequest, res: Response) => {
   const parsed = querySchema.safeParse(req.query);
   if (!parsed.success) {
     return res.status(400).json({ error: 'Invalid query' });
   }
   const { department, q } = parsed.data;
   const where: any = {};
+
+  if (req.tenantId) {
+    where.user = {
+      tenantMemberships: {
+        some: { tenantId: req.tenantId },
+      },
+    };
+  }
   if (department) {
     where.department = { contains: department, mode: 'insensitive' };
   }

@@ -148,11 +148,18 @@ app.use('/api/auth', authRouter);
 app.use('/api/docs', docsRouter);
 app.use('/docs', docsRouter);
 
-const publicApi = Router();
+const tenantScopedPublicApi = Router({ mergeParams: true });
+tenantScopedPublicApi.use(resolveTenant);
+tenantScopedPublicApi.use('/doctors', doctorsRouter);
+tenantScopedPublicApi.use('/appointments', appointmentsRouter);
+
+const publicApi = Router({ mergeParams: true });
 publicApi.use(resolveTenant);
 publicApi.use('/doctors', doctorsRouter);
 publicApi.use('/appointments', appointmentsRouter);
+publicApi.use('/:tenantCode', tenantScopedPublicApi);
 
+app.use('/api/:tenantCode', tenantScopedPublicApi);
 app.use('/api', publicApi);
 
 const protectedApi = Router();
