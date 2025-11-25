@@ -39,6 +39,7 @@ import type {
   AppointmentWhereInput,
   DateTimeFilter,
 } from '../types/appointments.js';
+import { ensureMigrationsApplied } from '../utils/migrations.js';
 
 const prisma = new PrismaClient() as AppPrismaClient;
 
@@ -141,10 +142,33 @@ type ListQuery = z.infer<typeof listQuerySchema>;
 
 type TimeSegment = { startMin: number; endMin: number };
 
+type AsyncRouteHandler = (req: Request, res: Response, next: NextFunction) => Promise<void>;
+
+function withMigrationRetry(handler: AsyncRouteHandler): AsyncRouteHandler {
+  return async (req, res, next) => {
+    try {
+      await handler(req, res, next);
+    } catch (error) {
+      if (isMissingAppointmentsTableError(error) || isMissingDoctorBlackoutsTableError(error)) {
+        try {
+          await ensureMigrationsApplied();
+          await handler(req, res, next);
+          return;
+        } catch (retryError) {
+          handleError(retryError, next);
+          return;
+        }
+      }
+
+      handleError(error, next);
+    }
+  };
+}
+
 router.get(
   '/availability',
   validate({ query: availabilityQuerySchema }),
-  async (req: Request, res: Response, next: NextFunction) => {
+  withMigrationRetry(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { doctorId, date } = req.query as AvailabilityQuery;
       const appointmentDate = toDateOnly(date);
@@ -218,13 +242,13 @@ router.get(
     } catch (error) {
       handleError(error, next);
     }
-  }
+  })
 );
 
 router.post(
   '/bookings',
   validate({ body: CreateNameOnlyBookingSchema }),
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
+  withMigrationRetry(async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const body = req.body as CreateNameOnlyBookingInput;
       await assertNameOnlyBookable(prisma, body);
@@ -265,7 +289,7 @@ router.post(
 router.post(
   '/',
   validate({ body: CreateAppointmentSchema }),
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
+  withMigrationRetry(async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const body = req.body as CreateAppointmentInput;
       await assertCreatable(prisma, body);
@@ -295,7 +319,7 @@ router.post(
     } catch (error) {
       handleError(error, next);
     }
-  }
+  })
 );
 
 async function handleUpdateAppointment(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -337,13 +361,13 @@ async function handleUpdateAppointment(req: Request, res: Response, next: NextFu
 router.put(
   '/bookings/:appointmentId',
   validate({ params: UpdateAppointmentParamsSchema, body: UpdateAppointmentBodySchema }),
-  handleUpdateAppointment
+  withMigrationRetry(handleUpdateAppointment)
 );
 
 router.put(
   '/:appointmentId',
   validate({ params: UpdateAppointmentParamsSchema, body: UpdateAppointmentBodySchema }),
-  handleUpdateAppointment
+  withMigrationRetry(handleUpdateAppointment)
 );
 
 const allowedTransitions: Record<AppointmentStatus, AppointmentStatus[]> = {
@@ -360,7 +384,7 @@ router.patch(
     params: UpdateAppointmentParamsSchema,
     body: PatchStatusSchema,
   }),
-  async (req: Request, res: Response, next: NextFunction) => {
+  withMigrationRetry(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { appointmentId } = req.params as z.infer<typeof UpdateAppointmentParamsSchema>;
       const body = req.body as PatchStatusInput;
@@ -460,13 +484,13 @@ router.patch(
     } catch (error) {
       handleError(error, next);
     }
-  }
+  })
 );
 
 router.get(
   '/queue',
   validate({ query: queueQuerySchema }),
-  async (req: Request, res: Response, next: NextFunction) => {
+  withMigrationRetry(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { doctorId: requestedDoctorId, days } = req.query as z.infer<typeof queueQuerySchema>;
       const doctorId = requestedDoctorId;
@@ -506,13 +530,13 @@ router.get(
     } catch (error) {
       handleError(error, next);
     }
-  }
+  })
 );
 
 router.get(
   '/',
   validate({ query: listQuerySchema }),
-  async (req: Request, res: Response, next: NextFunction) => {
+  withMigrationRetry(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const query = req.query as ListQuery;
       const where: AppointmentWhereInput = {};
@@ -580,13 +604,13 @@ router.get(
     } catch (error) {
       handleError(error, next);
     }
-  }
+  })
 );
 
 router.get(
   '/:appointmentId',
   validate({ params: UpdateAppointmentParamsSchema }),
-  async (req: Request, res: Response, next: NextFunction) => {
+  withMigrationRetry(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { appointmentId } = req.params as z.infer<typeof UpdateAppointmentParamsSchema>;
 
@@ -606,7 +630,7 @@ router.get(
     } catch (error) {
       handleError(error, next);
     }
-  }
+  })
 );
 
 async function handleDeleteAppointment(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -622,13 +646,13 @@ async function handleDeleteAppointment(req: Request, res: Response, next: NextFu
 router.delete(
   '/bookings/:appointmentId',
   validate({ params: UpdateAppointmentParamsSchema }),
-  handleDeleteAppointment
+  withMigrationRetry(handleDeleteAppointment)
 );
 
 router.delete(
   '/:appointmentId',
   validate({ params: UpdateAppointmentParamsSchema }),
-  handleDeleteAppointment
+  withMigrationRetry(handleDeleteAppointment)
 );
 
 function handleError(error: unknown, next: NextFunction) {
