@@ -143,7 +143,8 @@ app.get('/api/health', (_req: Request, res: Response) => {
 
 app.use('/api/auth', authRouter);
 
-app.use('/api', docsRouter);
+app.use('/api/docs', docsRouter);
+app.use('/docs', docsRouter);
 
 const protectedApi = Router();
 protectedApi.use(requireAuth);
