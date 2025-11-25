@@ -1617,9 +1617,9 @@ function DoctorQueueDashboard() {
                 appointments.map((appointment) => {
                   const status = statusVisuals[appointment.status];
                   const isSelected = appointment.appointmentId === selectedId;
-                  const patientSummaryId = appointment.patientId;
-                  const summaryEntry = summaryState[patientSummaryId];
-                  const summaryOpen = activeSummaryPatientId === patientSummaryId;
+                  const patientSummaryId = appointment.patientId ?? undefined;
+                  const summaryEntry = patientSummaryId ? summaryState[patientSummaryId] : undefined;
+                  const summaryOpen = patientSummaryId ? activeSummaryPatientId === patientSummaryId : false;
                   const patientName = getAppointmentPatientName(appointment, (relation) =>
                     logMissingRelation(appointment.appointmentId, relation),
                   );
@@ -1640,13 +1640,17 @@ function DoctorQueueDashboard() {
                           }
                           className="flex flex-1 cursor-pointer flex-col text-left rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-50"
                         >
-                          <Link
-                            to={`/patients/${appointment.patientId}`}
-                          onClick={(event) => event.stopPropagation()}
-                          className="text-sm font-semibold text-blue-600 hover:underline focus:outline-none focus-visible:underline focus-visible:text-blue-700"
-                        >
-                          {patientName}
-                        </Link>
+                          {appointment.patientId ? (
+                            <Link
+                              to={`/patients/${appointment.patientId}`}
+                              onClick={(event) => event.stopPropagation()}
+                              className="text-sm font-semibold text-blue-600 hover:underline focus:outline-none focus-visible:underline focus-visible:text-blue-700"
+                            >
+                              {patientName}
+                            </Link>
+                          ) : (
+                            <span className="text-sm font-semibold text-gray-900">{patientName}</span>
+                          )}
                           <span className="mt-1 text-xs text-gray-500">
                             {formatDateDisplay(appointment.date)} ·{' '}
                             {formatTimeRange(appointment.startTimeMin, appointment.endTimeMin)}
@@ -1962,7 +1966,7 @@ function getAppointmentPatientName(
   appointment: Appointment,
   logMissing?: (relation: MissingRelation) => void,
 ): string {
-  const name = appointment.patient?.name;
+  const name = appointment.patient?.name ?? appointment.guestName;
   if (!name) {
     logMissing?.('patient');
   }

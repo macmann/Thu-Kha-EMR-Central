@@ -340,11 +340,16 @@ export default function AppointmentForm() {
       ? appointment.date.split('T')[0]
       : appointment.date;
 
-    setSelectedPatient({
-      patientId: appointment.patient.patientId,
-      name: appointment.patient.name,
-    });
-    setPatientInput(appointment.patient.name);
+    if (appointment.patient) {
+      setSelectedPatient({
+        patientId: appointment.patient.patientId,
+        name: appointment.patient.name,
+      });
+      setPatientInput(appointment.patient.name);
+    } else {
+      setSelectedPatient(null);
+      setPatientInput(appointment.guestName ?? '');
+    }
     setDoctorId(appointment.doctor.doctorId);
     setDepartment(appointment.department || appointment.doctor.department);
     setDate(appointmentDate);

@@ -201,7 +201,7 @@ function getPatientName(
   appointment: Appointment,
   logMissing?: (relation: MissingRelation) => void,
 ): string {
-  const name = appointment.patient?.name;
+  const name = appointment.patient?.name ?? appointment.guestName;
   if (!name) {
     logMissing?.('patient');
   }
@@ -212,7 +212,7 @@ function getPatientId(
   appointment: Appointment,
   logMissing?: (relation: MissingRelation) => void,
 ): string {
-  const id = appointment.patient?.patientId;
+  const id = appointment.patient?.patientId ?? appointment.patientId;
   if (!id) {
     logMissing?.('patient');
   }
