@@ -1287,10 +1287,239 @@ addPath('/audit', 'get', {
   responses: { '200': { description: 'Audit events' } }
 });
 
+addPath('/pharmacy/drugs', 'post', {
+  summary: 'Create or update a drug record',
+  responses: { '201': { description: 'Drug created' } }
+});
+
+addPath('/pharmacy/inventory/receive', 'post', {
+  summary: 'Receive inventory items',
+  responses: { '201': { description: 'Inventory received' } }
+});
+
+addPath('/pharmacy/inventory/invoice/scan', 'post', {
+  summary: 'Scan and analyze a stock invoice',
+  responses: { '200': { description: 'Parsed invoice data' } }
+});
+
+addPath('/pharmacy/inventory/stock', 'get', {
+  summary: 'List stock items for a drug',
+  responses: { '200': { description: 'Stock items' } }
+});
+
+addPath('/pharmacy/inventory/adjust', 'post', {
+  summary: 'Adjust stock quantities',
+  responses: { '200': { description: 'Adjusted stock' } }
+});
+
+addPath('/pharmacy/inventory/search', 'get', {
+  summary: 'Search inventory by name or MRN',
+  responses: { '200': { description: 'Inventory search results' } }
+});
+
+addPath('/pharmacy/inventory/low-stock', 'get', {
+  summary: 'List low stock items',
+  responses: { '200': { description: 'Low stock items' } }
+});
+
+addPath('/pharmacy/rx/queue', 'get', {
+  summary: 'Get pharmacy queue',
+  responses: { '200': { description: 'Queue items' } }
+});
+
+addPath('/pharmacy/rx', 'post', {
+  summary: 'Create a prescription',
+  responses: { '201': { description: 'Prescription created' } }
+});
+
+addPath('/pharmacy/rx', 'get', {
+  summary: 'List prescriptions',
+  responses: { '200': { description: 'Prescriptions' } }
+});
+
+addPath('/pharmacy/rx/{prescriptionId}/start-dispense', 'post', {
+  summary: 'Start dispensing a prescription',
+  parameters: [{ name: 'prescriptionId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Dispense started' } }
+});
+
+addPath('/pharmacy/rx/{prescriptionId}/dispense', 'post', {
+  summary: 'Dispense items for a prescription',
+  parameters: [{ name: 'prescriptionId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Dispense updated' } }
+});
+
+addPath('/pharmacy/rx/{prescriptionId}/complete', 'post', {
+  summary: 'Complete dispensing a prescription',
+  parameters: [{ name: 'prescriptionId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Dispense completed' } }
+});
+
+addPath('/pharmacy/rx/{prescriptionId}/items', 'post', {
+  summary: 'Add dispensed items to a prescription',
+  parameters: [{ name: 'prescriptionId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '201': { description: 'Items added' } }
+});
+
+addPath('/pharmacy/rx/{prescriptionId}', 'get', {
+  summary: 'Get prescription detail',
+  parameters: [{ name: 'prescriptionId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Prescription detail' } }
+});
+
+addPath('/pharmacy/rx/{prescriptionId}/complete-dispense', 'post', {
+  summary: 'Mark a prescription as fully dispensed',
+  parameters: [{ name: 'prescriptionId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Dispense completed' } }
+});
+
+addPath('/pharmacy/rx/{prescriptionId}/charges', 'post', {
+  summary: 'Post pharmacy charges for a prescription',
+  parameters: [{ name: 'prescriptionId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Charges posted' } }
+});
+
+addPath('/billing/invoices', 'post', {
+  summary: 'Create an invoice',
+  responses: { '201': { description: 'Invoice created' } }
+});
+
+addPath('/billing/invoices', 'get', {
+  summary: 'List invoices',
+  responses: { '200': { description: 'Invoices' } }
+});
+
+addPath('/billing/invoices/{invoiceId}', 'get', {
+  summary: 'Get invoice detail',
+  parameters: [{ name: 'invoiceId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Invoice detail' } }
+});
+
+addPath('/billing/invoices/{invoiceId}', 'patch', {
+  summary: 'Update invoice status',
+  parameters: [{ name: 'invoiceId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Invoice updated' } }
+});
+
+addPath('/billing/invoices/{invoiceId}', 'delete', {
+  summary: 'Delete an invoice',
+  parameters: [{ name: 'invoiceId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '204': { description: 'Invoice deleted' } }
+});
+
+addPath('/billing/payments', 'post', {
+  summary: 'Create a payment',
+  responses: { '201': { description: 'Payment created' } }
+});
+
+addPath('/billing/payments', 'get', {
+  summary: 'List payments',
+  responses: { '200': { description: 'Payments' } }
+});
+
+addPath('/billing/payments/{paymentId}', 'post', {
+  summary: 'Attach a payment to invoices',
+  parameters: [{ name: 'paymentId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Payment applied' } }
+});
+
+addPath('/billing/payments/{paymentId}', 'put', {
+  summary: 'Update a payment',
+  parameters: [{ name: 'paymentId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Payment updated' } }
+});
+
+addPath('/billing/payments/{paymentId}', 'delete', {
+  summary: 'Delete a payment',
+  parameters: [{ name: 'paymentId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '204': { description: 'Payment deleted' } }
+});
+
+addPath('/billing/payments/allocate', 'post', {
+  summary: 'Allocate a payment across invoices',
+  responses: { '200': { description: 'Payment allocated' } }
+});
+
+addPath('/billing/payments/history', 'get', {
+  summary: 'Get payment history',
+  responses: { '200': { description: 'Payment history' } }
+});
+
+addPath('/billing/refunds', 'post', {
+  summary: 'Create a refund',
+  responses: { '201': { description: 'Refund created' } }
+});
+
+addPath('/billing/refunds', 'get', {
+  summary: 'List refunds',
+  responses: { '200': { description: 'Refunds' } }
+});
+
+addPath('/sessions/switch-tenant', 'post', {
+  summary: 'Switch active tenant for the current session',
+  responses: { '200': { description: 'Tenant switched' } }
+});
+
+addPath('/me/tenants', 'get', {
+  summary: 'List tenants for the current user',
+  responses: { '200': { description: 'Tenant memberships' } }
+});
+
+addPath('/patients/{patientId}/tenant-meta', 'get', {
+  summary: 'Get tenant-specific metadata for a patient',
+  parameters: [{ name: 'patientId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '200': { description: 'Tenant metadata' } }
+});
+
+addPath('/patient-tenants', 'post', {
+  summary: 'Upsert patient-tenant membership',
+  responses: { '200': { description: 'Membership upserted' }, '201': { description: 'Membership created' } }
+});
+
+addPath('/search', 'get', {
+  summary: 'Search patients and doctors for a tenant',
+  responses: { '200': { description: 'Search results' } }
+});
+
+addPath('/settings/clinic', 'get', {
+  summary: 'Get clinic settings for the active tenant',
+  responses: { '200': { description: 'Clinic settings' } }
+});
+
+addPath('/settings/clinic', 'patch', {
+  summary: 'Update clinic settings for the active tenant',
+  responses: { '200': { description: 'Clinic settings updated' } }
+});
+
+addPath('/admin/tenants', 'get', {
+  summary: 'List tenants',
+  responses: { '200': { description: 'Tenants' } }
+});
+
+addPath('/admin/tenants', 'post', {
+  summary: 'Create a tenant',
+  responses: { '201': { description: 'Tenant created' } }
+});
+
+addPath('/admin/tenants/{tenantId}/members', 'post', {
+  summary: 'Add a tenant member',
+  parameters: [{ name: 'tenantId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }],
+  responses: { '201': { description: 'Member added' } }
+});
+
+addPath('/admin/tenants/{tenantId}/members/{userId}', 'delete', {
+  summary: 'Remove a tenant member',
+  parameters: [
+    { name: 'tenantId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } },
+    { name: 'userId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }
+  ],
+  responses: { '204': { description: 'Member removed' } }
+});
+
 openapi.paths = paths;
 
 export const docsRouter = Router();
-docsRouter.get('/docs/openapi.json', (_req: Request, res: Response) => {
+docsRouter.get(['/openapi.json', '/docs/openapi.json'], (_req: Request, res: Response) => {
   res.json(openapi);
 });
 
