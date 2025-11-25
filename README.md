@@ -110,16 +110,6 @@ curl -H "x-tenant-code: downtown" \
   "https://thu-kha-emr-saas.onrender.com/api/doctors"
 ```
 
-**Windows cURL TLS note:** the default `curl.exe` on some Windows builds can fail
-the TLS handshake with Render-hosted apps when negotiating TLS 1.3 + HTTP/2,
-resulting in `SEC_E_ILLEGAL_MESSAGE`. Force TLS 1.2 and HTTP/1.1 to avoid the
-schannel error:
-
-```powershell
-curl.exe -v --tlsv1.2 --http1.1 -H "x-tenant-code: <tenant-code>" `
-  "https://thu-kha-emr-saas.onrender.com/api/doctors"
-```
-
 ## Deploying to Render
 1. Create a new Web Service and connect this repository.
 2. Configure environment variables:
