@@ -3,17 +3,18 @@ import { z } from 'zod';
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
 const timeMinutesSchema = z.number().int().min(0).max(1440);
 
-const BaseAppointmentSchema = z
-  .object({
-    doctorId: z.string().uuid(),
-    department: z.string().min(1),
-    date: z.string().regex(dateRegex, 'Date must be in format YYYY-MM-DD'),
-    startTimeMin: timeMinutesSchema,
-    endTimeMin: timeMinutesSchema,
-    reason: z.string().min(1).optional(),
-    location: z.string().min(1).optional(),
-  })
-  .superRefine((data, ctx) => {
+const BaseAppointmentSchema = z.object({
+  doctorId: z.string().uuid(),
+  department: z.string().min(1),
+  date: z.string().regex(dateRegex, 'Date must be in format YYYY-MM-DD'),
+  startTimeMin: timeMinutesSchema,
+  endTimeMin: timeMinutesSchema,
+  reason: z.string().min(1).optional(),
+  location: z.string().min(1).optional(),
+});
+
+const ensureEndAfterStart = <T extends z.ZodTypeAny>(schema: T) =>
+  schema.superRefine((data, ctx) => {
     if (data.endTimeMin <= data.startTimeMin) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -23,13 +24,17 @@ const BaseAppointmentSchema = z
     }
   });
 
-export const CreateAppointmentSchema = BaseAppointmentSchema.extend({
-  patientId: z.string().uuid(),
-});
+export const CreateAppointmentSchema = ensureEndAfterStart(
+  BaseAppointmentSchema.extend({
+    patientId: z.string().uuid(),
+  }),
+);
 
-export const CreateNameOnlyBookingSchema = BaseAppointmentSchema.extend({
-  name: z.string().min(1, 'Name is required'),
-});
+export const CreateNameOnlyBookingSchema = ensureEndAfterStart(
+  BaseAppointmentSchema.extend({
+    name: z.string().min(1, 'Name is required'),
+  }),
+);
 
 export const UpdateAppointmentBodySchema = z
   .object({
