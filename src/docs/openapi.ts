@@ -36,6 +36,28 @@ const appointmentCreateExample = {
   location: 'Room 12B',
 };
 
+const appointmentBookingCreateExample = {
+  name: 'Walk-in Guest',
+  doctorId: '99999999-8888-7777-6666-555555555555',
+  department: 'Cardiology',
+  date: '2024-06-15',
+  startTimeMin: 540,
+  endTimeMin: 600,
+  reason: 'Walk-in consultation',
+  location: 'Room 5A',
+};
+
+const bookingCreatedExample = {
+  bookingId: '3f1c4b19-29c4-4ba1-9b36-6a8a1d9db1f1',
+  appointment: {
+    ...appointmentCreateExample,
+    appointmentId: '3f1c4b19-29c4-4ba1-9b36-6a8a1d9db1f1',
+    guestName: 'Walk-in Guest',
+    patientId: null,
+    patient: null,
+  },
+};
+
 const appointmentUpdateExample = {
   department: 'Cardiology',
   startTimeMin: 555,
@@ -379,7 +401,6 @@ const openapi: any = {
         type: 'object',
         required: [
           'appointmentId',
-          'patientId',
           'doctorId',
           'department',
           'date',
@@ -393,21 +414,56 @@ const openapi: any = {
         ],
         properties: {
           appointmentId: { type: 'string', format: 'uuid' },
-          patientId: { type: 'string', format: 'uuid' },
+          patientId: { type: 'string', format: 'uuid', nullable: true },
           doctorId: { type: 'string', format: 'uuid' },
           department: { type: 'string' },
           date: { type: 'string', format: 'date-time' },
           startTimeMin: { type: 'integer', minimum: 0, maximum: 1440 },
           endTimeMin: { type: 'integer', minimum: 0, maximum: 1440 },
+          guestName: { type: 'string', nullable: true },
           reason: { type: 'string', nullable: true },
           location: { type: 'string', nullable: true },
           status: { $ref: '#/components/schemas/AppointmentStatus' },
           cancelReason: { type: 'string', nullable: true },
           createdAt: { type: 'string', format: 'date-time' },
           updatedAt: { type: 'string', format: 'date-time' },
-          patient: { $ref: '#/components/schemas/AppointmentPatientSummary' },
+          patient: {
+            oneOf: [
+              { $ref: '#/components/schemas/AppointmentPatientSummary' },
+              { type: 'null' },
+            ],
+          },
           doctor: { $ref: '#/components/schemas/AppointmentDoctorSummary' }
         }
+      },
+      AppointmentBookingRequest: {
+        type: 'object',
+        required: [
+          'name',
+          'doctorId',
+          'department',
+          'date',
+          'startTimeMin',
+          'endTimeMin'
+        ],
+        properties: {
+          name: { type: 'string' },
+          doctorId: { type: 'string', format: 'uuid' },
+          department: { type: 'string' },
+          date: { type: 'string', format: 'date' },
+          startTimeMin: { type: 'integer', minimum: 0, maximum: 1440 },
+          endTimeMin: { type: 'integer', minimum: 0, maximum: 1440 },
+          reason: { type: 'string' },
+          location: { type: 'string' }
+        }
+      },
+      AppointmentBookingResponse: {
+        type: 'object',
+        required: ['bookingId', 'appointment'],
+        properties: {
+          bookingId: { type: 'string', format: 'uuid' },
+          appointment: { $ref: '#/components/schemas/Appointment' },
+        },
       },
       AppointmentCreateRequest: {
         type: 'object',
@@ -840,6 +896,41 @@ addPath('/appointments/availability', 'get', {
     },
     '400': {
       description: 'Invalid request.',
+      content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+    },
+  },
+});
+
+addPath('/appointments/bookings', 'post', {
+  summary: 'Create a walk-in appointment booking',
+  description:
+    'Creates an appointment for a guest without a patient record. The booking can later be updated with a patientId.',
+  security: [],
+  requestBody: {
+    required: true,
+    content: {
+      'application/json': {
+        schema: { $ref: '#/components/schemas/AppointmentBookingRequest' },
+        example: appointmentBookingCreateExample,
+      },
+    },
+  },
+  responses: {
+    '201': {
+      description: 'Created booking.',
+      content: {
+        'application/json': {
+          schema: { $ref: '#/components/schemas/AppointmentBookingResponse' },
+          example: bookingCreatedExample,
+        },
+      },
+    },
+    '400': {
+      description: 'Invalid request or unavailable time slot.',
+      content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
+    },
+    '404': {
+      description: 'Doctor not found.',
       content: { 'application/json': { schema: { $ref: '#/components/schemas/Error' } } },
     },
   },
