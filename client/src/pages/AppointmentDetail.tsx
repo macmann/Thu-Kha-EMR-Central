@@ -325,6 +325,13 @@ export default function AppointmentDetail() {
       return;
     }
 
+    if (!appointment.patientId) {
+      setPatient(null);
+      setPatientError(null);
+      setPatientLoading(false);
+      return;
+    }
+
     let cancelled = false;
     setPatientLoading(true);
     setPatientError(null);
@@ -347,7 +354,7 @@ export default function AppointmentDetail() {
       }
     }
 
-    loadPatient(appointment.patient.patientId);
+    loadPatient(appointment.patientId);
 
     return () => {
       cancelled = true;
@@ -392,7 +399,7 @@ export default function AppointmentDetail() {
   }, [date, doctorId, editing]);
 
   useEffect(() => {
-    if (!appointment || appointment.status !== 'Completed') {
+    if (!appointment || appointment.status !== 'Completed' || !appointment.patientId) {
       setVisitLookupStatus('idle');
       setVisitLookupError(null);
       if (!appointment || appointment.status !== 'Completed') {
@@ -415,7 +422,7 @@ export default function AppointmentDetail() {
 
     async function locateVisit() {
       try {
-        const visits = await listPatientVisits(completedAppointment.patient.patientId);
+        const visits = await listPatientVisits(completedAppointment.patientId);
         if (cancelled) return;
         const match = findMatchingVisit(completedAppointment, visits);
         if (match) {
@@ -660,6 +667,8 @@ export default function AppointmentDetail() {
     </div>
   );
 
+  const patientDisplayName = appointment?.patient?.name ?? appointment?.guestName ?? 'Unknown patient';
+
   const subtitle = appointment
     ? `${formatDate(appointment.date)} · ${formatTimeRange(appointment.startTimeMin, appointment.endTimeMin)}`
     : loading
@@ -668,7 +677,7 @@ export default function AppointmentDetail() {
 
   return (
     <DashboardLayout
-      title={appointment ? appointment.patient.name : 'Appointment detail'}
+      title={appointment ? patientDisplayName : 'Appointment detail'}
       subtitle={subtitle}
       activeItem="appointments"
       headerChildren={headerActions}
@@ -699,7 +708,7 @@ export default function AppointmentDetail() {
                     />
                     {statusVisuals[appointment.status].label}
                   </div>
-                  <h2 className="mt-4 text-xl font-semibold text-gray-900">{appointment.patient.name}</h2>
+                  <h2 className="mt-4 text-xl font-semibold text-gray-900">{patientDisplayName}</h2>
                   <p className="mt-1 text-sm text-gray-600">
                     Appointment ID: {appointment.appointmentId}
                   </p>

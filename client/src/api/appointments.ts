@@ -16,19 +16,20 @@ export interface AppointmentDoctorSummary {
 
 export interface Appointment {
   appointmentId: string;
-  patientId: string;
+  patientId: string | null;
   doctorId: string;
   department: string;
   date: string;
   startTimeMin: number;
   endTimeMin: number;
+  guestName: string | null;
   reason: string | null;
   location: string | null;
   status: AppointmentStatus;
   cancelReason: string | null;
   createdAt: string;
   updatedAt: string;
-  patient: AppointmentPatientSummary;
+  patient: AppointmentPatientSummary | null;
   doctor: AppointmentDoctorSummary;
 }
 
