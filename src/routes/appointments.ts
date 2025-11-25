@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { PrismaClient, Prisma } from '@prisma/client';
 import { z } from 'zod';
+import type { AuthRequest } from '../modules/auth/index.js';
 
 import {
   assertCreatable,
@@ -223,15 +224,21 @@ router.get(
 router.post(
   '/bookings',
   validate({ body: CreateNameOnlyBookingSchema }),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const body = req.body as CreateNameOnlyBookingInput;
       await assertNameOnlyBookable(prisma, body);
+
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        throw new BadRequestError('Tenant context could not be resolved for this booking');
+      }
 
       const appointment = await prisma.appointment.create({
         data: {
           guestName: body.name,
           doctorId: body.doctorId,
+          tenantId,
           department: body.department,
           date: toDateOnly(body.date),
           startTimeMin: body.startTimeMin,
@@ -258,14 +265,20 @@ router.post(
 router.post(
   '/',
   validate({ body: CreateAppointmentSchema }),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const body = req.body as CreateAppointmentInput;
       await assertCreatable(prisma, body);
+
+      const tenantId = req.tenantId;
+      if (!tenantId) {
+        throw new BadRequestError('Tenant context could not be resolved for this appointment');
+      }
       const appointment = await prisma.appointment.create({
         data: {
           patientId: body.patientId,
           doctorId: body.doctorId,
+          tenantId,
           department: body.department,
           date: toDateOnly(body.date),
           startTimeMin: body.startTimeMin,
