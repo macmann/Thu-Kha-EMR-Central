@@ -128,7 +128,7 @@ model Appointment {
   doctorId         String            @db.Uuid
   tenantId         String            @db.Uuid
   department       String
-  date             DateTime
+  date             DateTime          @db.Timestamptz(3)
   startTimeMin     Int
   endTimeMin       Int
   guestName        String?
@@ -136,10 +136,10 @@ model Appointment {
   location         String?
   status           AppointmentStatus @default(Scheduled)
   cancelReason     String?
-  reminder24SentAt DateTime?
-  reminder3SentAt  DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  reminder24SentAt DateTime?         @db.Timestamptz(3)
+  reminder3SentAt  DateTime?         @db.Timestamptz(3)
+  createdAt        DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime          @updatedAt @db.Timestamptz(3)
 
   patient Patient? @relation(fields: [patientId], references: [patientId])
   doctor  Doctor   @relation(fields: [doctorId], references: [doctorId])
