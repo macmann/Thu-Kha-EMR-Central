@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent, MouseEvent } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
@@ -859,6 +859,18 @@ function TeamDashboard({ role }: { role?: string }) {
   const [error, setError] = useState<string | null>(null);
   const todayKey = useMemo(() => createDateKey(new Date()), []);
   const statusVisuals = getStatusVisuals(t);
+  const missingRelationsLogged = useRef<Set<string>>(new Set());
+
+  const logMissingRelation = useCallback(
+    (appointmentId: string, relation: MissingRelation) => {
+      const key = `${appointmentId}-${relation}`;
+      if (!missingRelationsLogged.current.has(key)) {
+        console.warn(`Appointment ${appointmentId} is missing ${relation} information.`);
+        missingRelationsLogged.current.add(key);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     let active = true;
@@ -868,7 +880,11 @@ function TeamDashboard({ role }: { role?: string }) {
     listAppointments({ from: todayKey, limit: 25 })
       .then((response) => {
         if (!active) return;
-        setAppointments(response.data);
+        const data = Array.isArray(response?.data) ? (response.data.filter(Boolean) as Appointment[]) : [];
+        if (!Array.isArray(response?.data)) {
+          setError(t('Unable to load schedule.'));
+        }
+        setAppointments(data);
       })
       .catch((err) => {
         if (!active) return;
@@ -1125,29 +1141,37 @@ function TeamDashboard({ role }: { role?: string }) {
             <p className="mt-4 text-sm text-gray-500">{t('Loading appointments...')}</p>
           ) : upcomingAppointments.length > 0 ? (
             <ul className="mt-4 space-y-3">
-              {upcomingAppointments.map((appointment) => (
-                <li
-                  key={appointment.appointmentId}
-                  className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
-                >
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{appointment.patient.name}</div>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
-                      <span>{formatDateDisplay(appointment.date)}</span>
-                      <span>•</span>
-                      <span>{formatTimeRange(appointment.startTimeMin, appointment.endTimeMin)}</span>
-                    </div>
-                    <div className="mt-1 text-xs text-gray-400">
-                      {appointment.doctor.name} • {appointment.department}
-                    </div>
-                  </div>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${statusVisuals[appointment.status].chip}`}
+              {upcomingAppointments.map((appointment) => {
+                const patientName = getAppointmentPatientName(appointment, (relation) =>
+                  logMissingRelation(appointment.appointmentId, relation),
+                );
+                const doctorName = getAppointmentDoctorName(appointment, (relation) =>
+                  logMissingRelation(appointment.appointmentId, relation),
+                );
+                return (
+                  <li
+                    key={appointment.appointmentId}
+                    className="flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3"
                   >
-                    {statusVisuals[appointment.status].label}
-                  </span>
-                </li>
-              ))}
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{patientName}</div>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
+                        <span>{formatDateDisplay(appointment.date)}</span>
+                        <span>•</span>
+                        <span>{formatTimeRange(appointment.startTimeMin, appointment.endTimeMin)}</span>
+                      </div>
+                      <div className="mt-1 text-xs text-gray-400">
+                        {doctorName} • {appointment.department}
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${statusVisuals[appointment.status].chip}`}
+                    >
+                      {statusVisuals[appointment.status].label}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="mt-4 text-sm text-gray-500">{t('No upcoming appointments.')}</p>
@@ -1201,6 +1225,18 @@ function DoctorQueueDashboard() {
   const [summaryState, setSummaryState] = useState<Record<string, SummaryEntry>>({});
   const { t } = useTranslation();
   const statusVisuals = getStatusVisuals(t);
+  const missingRelationsLogged = useRef<Set<string>>(new Set());
+
+  const logMissingRelation = useCallback(
+    (appointmentId: string, relation: MissingRelation) => {
+      const key = `${appointmentId}-${relation}`;
+      if (!missingRelationsLogged.current.has(key)) {
+        console.warn(`Appointment ${appointmentId} is missing ${relation} information.`);
+        missingRelationsLogged.current.add(key);
+      }
+    },
+    [],
+  );
 
   const fetchSummary = useCallback(
     (patientId: string) => {
@@ -1232,7 +1268,11 @@ function DoctorQueueDashboard() {
     setError(null);
     try {
       const response = await getAppointmentQueue();
-      setAppointments(response.data);
+      const data = Array.isArray(response?.data) ? (response.data.filter(Boolean) as Appointment[]) : [];
+      if (!Array.isArray(response?.data)) {
+        setError(t('Unable to load queue.'));
+      }
+      setAppointments(data);
     } catch (err) {
       setError(parseErrorMessage(err, t('Unable to load queue.')));
       setAppointments([]);
@@ -1440,7 +1480,10 @@ function DoctorQueueDashboard() {
     try {
       await patchStatus(appointment.appointmentId, { status: 'InProgress' });
       await loadQueue();
-      setSuccess(t('Invited {name} to the consultation room.', { name: appointment.patient.name }));
+      const patientName = getAppointmentPatientName(appointment, (relation) =>
+        logMissingRelation(appointment.appointmentId, relation),
+      );
+      setSuccess(t('Invited {name} to the consultation room.', { name: patientName }));
       setSelectedId(appointment.appointmentId);
     } catch (err) {
       setError(parseErrorMessage(err, t('Unable to update appointment status.')));
@@ -1577,6 +1620,9 @@ function DoctorQueueDashboard() {
                   const patientSummaryId = appointment.patientId;
                   const summaryEntry = summaryState[patientSummaryId];
                   const summaryOpen = activeSummaryPatientId === patientSummaryId;
+                  const patientName = getAppointmentPatientName(appointment, (relation) =>
+                    logMissingRelation(appointment.appointmentId, relation),
+                  );
                   return (
                     <li
                       key={appointment.appointmentId}
@@ -1596,11 +1642,11 @@ function DoctorQueueDashboard() {
                         >
                           <Link
                             to={`/patients/${appointment.patientId}`}
-                            onClick={(event) => event.stopPropagation()}
-                            className="text-sm font-semibold text-blue-600 hover:underline focus:outline-none focus-visible:underline focus-visible:text-blue-700"
-                          >
-                            {appointment.patient.name}
-                          </Link>
+                          onClick={(event) => event.stopPropagation()}
+                          className="text-sm font-semibold text-blue-600 hover:underline focus:outline-none focus-visible:underline focus-visible:text-blue-700"
+                        >
+                          {patientName}
+                        </Link>
                           <span className="mt-1 text-xs text-gray-500">
                             {formatDateDisplay(appointment.date)} ·{' '}
                             {formatTimeRange(appointment.startTimeMin, appointment.endTimeMin)}
@@ -1648,7 +1694,11 @@ function DoctorQueueDashboard() {
               <div className="flex flex-col gap-6">
                 <div>
                   <div className="text-sm font-medium text-gray-500">{t('Current patient')}</div>
-                  <h2 className="mt-1 text-2xl font-semibold text-gray-900">{selected.patient.name}</h2>
+                  <h2 className="mt-1 text-2xl font-semibold text-gray-900">
+                    {getAppointmentPatientName(selected, (relation) =>
+                      logMissingRelation(selected.appointmentId, relation),
+                    )}
+                  </h2>
                   <p className="mt-1 text-sm text-gray-600">
                     {(selected.reason && selected.reason.trim()) || t('No visit reason recorded.')}
                     {' · '}
@@ -1904,6 +1954,30 @@ function formatDateDisplay(value: string | Date) {
 
 function formatTimeRange(startMin: number, endMin: number) {
   return `${formatTime(startMin)} – ${formatTime(endMin)}`;
+}
+
+type MissingRelation = 'patient' | 'doctor';
+
+function getAppointmentPatientName(
+  appointment: Appointment,
+  logMissing?: (relation: MissingRelation) => void,
+): string {
+  const name = appointment.patient?.name;
+  if (!name) {
+    logMissing?.('patient');
+  }
+  return name ?? 'Unknown patient';
+}
+
+function getAppointmentDoctorName(
+  appointment: Appointment,
+  logMissing?: (relation: MissingRelation) => void,
+): string {
+  const name = appointment.doctor?.name;
+  if (!name) {
+    logMissing?.('doctor');
+  }
+  return name ?? 'Unknown doctor';
 }
 
 function formatTime(minutes: number) {
