@@ -421,8 +421,14 @@ export default function AppointmentDetail() {
     setVisitLookupError(null);
 
     async function locateVisit() {
+      const patientId = completedAppointment.patientId;
+      if (!patientId) {
+        setVisitLookupStatus('missing');
+        return;
+      }
+
       try {
-        const visits = await listPatientVisits(completedAppointment.patientId);
+        const visits = await listPatientVisits(patientId);
         if (cancelled) return;
         const match = findMatchingVisit(completedAppointment, visits);
         if (match) {

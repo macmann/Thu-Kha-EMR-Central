@@ -1432,8 +1432,13 @@ function DoctorQueueDashboard() {
     let ignore = false;
 
     async function loadExistingVisitDetails(current: Appointment) {
+      const patientId = current.patientId;
+      if (!patientId) {
+        return;
+      }
+
       try {
-        const visits = await listPatientVisits(current.patientId);
+        const visits = await listPatientVisits(patientId);
         const appointmentDate = normalizeDateKey(current.date);
         const match = visits.find(
           (visit) =>
@@ -1504,6 +1509,11 @@ function DoctorQueueDashboard() {
     }
 
     const summaryPatientId = selected.patientId;
+    if (!summaryPatientId) {
+      setError(t('A patient must be associated with the appointment to save visit details.'));
+      return;
+    }
+
     setSavingVisit(true);
     setSuccess(null);
     setError(null);
@@ -1514,7 +1524,7 @@ function DoctorQueueDashboard() {
 
       if (!visitId) {
         const visit = await createVisit({
-          patientId: selected.patientId,
+          patientId: summaryPatientId,
           visitDate: values.visitDate,
           doctorId: values.doctorId,
           department: values.department,
@@ -1566,9 +1576,9 @@ function DoctorQueueDashboard() {
       );
       await loadQueue();
       setSelectedId(selected.appointmentId);
-      if (summaryState[summaryPatientId]) {
-        fetchSummary(summaryPatientId);
-      }
+        if (summaryState[summaryPatientId]) {
+          fetchSummary(summaryPatientId);
+        }
     } catch (err) {
       console.error(err);
       setError(parseErrorMessage(err, t('Unable to save visit details.')));
@@ -1675,7 +1685,13 @@ function DoctorQueueDashboard() {
                               {summaryOpen && (
                                 <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-blue-100 bg-white p-4 text-xs shadow-xl">
                                   <p className="text-xs font-semibold text-blue-600">{t('AI Summary')}</p>
-                                  {renderSummaryContent(summaryEntry, patientSummaryId)}
+                                  {patientSummaryId
+                                    ? renderSummaryContent(summaryEntry, patientSummaryId)
+                                    : (
+                                      <p className="mt-2 text-xs text-gray-500">
+                                        {t('No patient information available for AI summary.')}
+                                      </p>
+                                    )}
                                 </div>
                               )}
                             </div>
