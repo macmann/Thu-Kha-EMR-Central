@@ -98,7 +98,7 @@ function isMissingDoctorBlackoutsTableError(error: unknown): boolean {
 
 function createAppointmentsUnavailableError(): ServiceUnavailableError {
   return new ServiceUnavailableError(
-    'Appointments storage is not available. Please run database migrations to create the Appointment table.'
+    'Appointments storage is not available. Please run database migrations (e.g. "npm run migrate:deploy") to create or update the Appointment table and its columns.'
   );
 }
 
