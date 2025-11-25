@@ -87,6 +87,39 @@ Try the scheduling workflow after seeding demo data:
 ## API Docs
 The OpenAPI specification is served at `/api/docs/openapi.json`.
 
+### Multi-tenant API access (Render deploy)
+
+The Render deployment expects every request to include a clinic/tenant context. Use
+the tenant code as the subdomain so requests are routed to the correct clinic:
+
+```bash
+curl -X GET "https://<tenant-code>.thu-kha-emr-saas.onrender.com/api/doctors"
+```
+
+Replace `<tenant-code>` with the clinic code you provisioned (for example,
+`downtown` when created via `npm run tenant:create -- --code downtown`). The same
+subdomain pattern applies to all API endpoints and the web client
+(`https://<tenant-code>.thu-kha-emr-saas.onrender.com`).
+
+If you cannot reach a tenant-specific subdomain (for example, while testing behind
+certain proxies), include the tenant code explicitly using either the
+`x-tenant-code` header or a `tenant`/`tenantCode` query string parameter:
+
+```bash
+curl -H "x-tenant-code: downtown" \
+  "https://thu-kha-emr-saas.onrender.com/api/doctors"
+```
+
+**Windows cURL TLS note:** the default `curl.exe` on some Windows builds can fail
+the TLS handshake with Render-hosted apps when negotiating TLS 1.3 + HTTP/2,
+resulting in `SEC_E_ILLEGAL_MESSAGE`. Force TLS 1.2 and HTTP/1.1 to avoid the
+schannel error:
+
+```powershell
+curl.exe -v --tlsv1.2 --http1.1 -H "x-tenant-code: <tenant-code>" `
+  "https://thu-kha-emr-saas.onrender.com/api/doctors"
+```
+
 ## Deploying to Render
 1. Create a new Web Service and connect this repository.
 2. Configure environment variables:
