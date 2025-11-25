@@ -9,6 +9,7 @@ import {
   createDoctorAvailability,
   listDoctorAvailability,
   listAssignableUsers,
+  type Doctor,
   type Role,
   type UserAccount,
 } from '../api/client';
