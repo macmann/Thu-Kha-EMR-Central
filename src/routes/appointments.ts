@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import {
   assertCreatable,
+  assertNameOnlyBookable,
   assertUpdatable,
   getDoctorAvailabilityForDate,
   type AvailabilityWindow,
@@ -12,10 +13,12 @@ import { validate } from '../middleware/validate.js';
 import { requireAuth, requireRole, type AuthRequest } from '../modules/auth/index.js';
 import {
   CreateAppointmentSchema,
+  CreateNameOnlyBookingSchema,
   UpdateAppointmentBodySchema,
   UpdateAppointmentParamsSchema,
   PatchStatusSchema,
   type CreateAppointmentInput,
+  type CreateNameOnlyBookingInput,
   type UpdateAppointmentInput,
   type PatchStatusInput,
 } from '../validation/appointment.js';
@@ -231,6 +234,42 @@ router.get(
 );
 
 router.post(
+  '/bookings',
+  requireRole('AdminAssistant'),
+  validate({ body: CreateNameOnlyBookingSchema }),
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const body = req.body as CreateNameOnlyBookingInput;
+      await assertNameOnlyBookable(prisma, body);
+
+      const appointment = await prisma.appointment.create({
+        data: {
+          guestName: body.name,
+          doctorId: body.doctorId,
+          department: body.department,
+          date: toDateOnly(body.date),
+          startTimeMin: body.startTimeMin,
+          endTimeMin: body.endTimeMin,
+          reason: body.reason ?? null,
+          location: body.location ?? null,
+        },
+        include: {
+          patient: { select: { patientId: true, name: true } },
+          doctor: { select: { doctorId: true, name: true, department: true } },
+        },
+      });
+
+      res.status(201).json({
+        bookingId: appointment.appointmentId,
+        appointment,
+      });
+    } catch (error) {
+      handleError(error, next);
+    }
+  }
+);
+
+router.post(
   '/',
   requireRole('AdminAssistant'),
   validate({ body: CreateAppointmentSchema }),
@@ -261,41 +300,54 @@ router.post(
   }
 );
 
+async function handleUpdateAppointment(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { appointmentId } = req.params as z.infer<typeof UpdateAppointmentParamsSchema>;
+    const body = req.body as UpdateAppointmentInput;
+
+    await assertUpdatable(prisma, appointmentId, body);
+
+    const data: AppointmentUpdateData = {};
+    if (body.patientId) {
+      data.patientId = body.patientId;
+      data.guestName = null;
+    }
+    if (body.doctorId) data.doctorId = body.doctorId;
+    if (body.department) data.department = body.department;
+    if (body.date) data.date = toDateOnly(body.date);
+    if (typeof body.startTimeMin === 'number') data.startTimeMin = body.startTimeMin;
+    if (typeof body.endTimeMin === 'number') data.endTimeMin = body.endTimeMin;
+    if (body.guestName !== undefined) data.guestName = body.guestName;
+    if (body.reason !== undefined) data.reason = body.reason;
+    if (body.location !== undefined) data.location = body.location;
+
+    const appointment = await prisma.appointment.update({
+      where: { appointmentId },
+      data,
+      include: {
+        patient: { select: { patientId: true, name: true } },
+        doctor: { select: { doctorId: true, name: true, department: true } },
+      },
+    });
+
+    res.json(appointment);
+  } catch (error) {
+    handleError(error, next);
+  }
+}
+
+router.put(
+  '/bookings/:appointmentId',
+  requireRole('AdminAssistant'),
+  validate({ params: UpdateAppointmentParamsSchema, body: UpdateAppointmentBodySchema }),
+  handleUpdateAppointment
+);
+
 router.put(
   '/:appointmentId',
   requireRole('AdminAssistant'),
   validate({ params: UpdateAppointmentParamsSchema, body: UpdateAppointmentBodySchema }),
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    try {
-      const { appointmentId } = req.params as z.infer<typeof UpdateAppointmentParamsSchema>;
-      const body = req.body as UpdateAppointmentInput;
-
-      await assertUpdatable(prisma, appointmentId, body);
-
-      const data: AppointmentUpdateData = {};
-      if (body.patientId) data.patientId = body.patientId;
-      if (body.doctorId) data.doctorId = body.doctorId;
-      if (body.department) data.department = body.department;
-      if (body.date) data.date = toDateOnly(body.date);
-      if (typeof body.startTimeMin === 'number') data.startTimeMin = body.startTimeMin;
-      if (typeof body.endTimeMin === 'number') data.endTimeMin = body.endTimeMin;
-      if (body.reason !== undefined) data.reason = body.reason;
-      if (body.location !== undefined) data.location = body.location;
-
-      const appointment = await prisma.appointment.update({
-        where: { appointmentId },
-        data,
-        include: {
-          patient: { select: { patientId: true, name: true } },
-          doctor: { select: { doctorId: true, name: true, department: true } },
-        },
-      });
-
-      res.json(appointment);
-    } catch (error) {
-      handleError(error, next);
-    }
-  }
+  handleUpdateAppointment
 );
 
 const allowedTransitions: Record<AppointmentStatus, AppointmentStatus[]> = {
@@ -324,6 +376,10 @@ router.patch(
 
       if (!appointment) {
         throw new NotFoundError('Appointment not found');
+      }
+
+      if (!appointment.patientId && body.status !== 'Cancelled') {
+        throw new BadRequestError('Patient registration is required before updating the status');
       }
 
       const user = req.user!;
@@ -617,19 +673,28 @@ router.get(
   }
 );
 
+async function handleDeleteAppointment(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const { appointmentId } = req.params as z.infer<typeof UpdateAppointmentParamsSchema>;
+    await prisma.appointment.delete({ where: { appointmentId } });
+    res.status(204).send();
+  } catch (error) {
+    handleError(error, next);
+  }
+}
+
+router.delete(
+  '/bookings/:appointmentId',
+  requireRole('AdminAssistant'),
+  validate({ params: UpdateAppointmentParamsSchema }),
+  handleDeleteAppointment
+);
+
 router.delete(
   '/:appointmentId',
   requireRole('AdminAssistant'),
   validate({ params: UpdateAppointmentParamsSchema }),
-  async (req: AuthRequest, res: Response, next: NextFunction) => {
-    try {
-      const { appointmentId } = req.params as z.infer<typeof UpdateAppointmentParamsSchema>;
-      await prisma.appointment.delete({ where: { appointmentId } });
-      res.status(204).send();
-    } catch (error) {
-      handleError(error, next);
-    }
-  }
+  handleDeleteAppointment
 );
 
 function handleError(error: unknown, next: NextFunction) {

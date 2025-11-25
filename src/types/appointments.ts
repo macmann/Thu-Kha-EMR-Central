@@ -34,6 +34,7 @@ export interface AppointmentFindManyArgs {
 
 export type AppointmentUpdateData = {
   patientId?: string;
+  guestName?: string | null;
   doctorId?: string;
   department?: string;
   date?: Date;
