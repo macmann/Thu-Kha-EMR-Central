@@ -7,11 +7,13 @@ import {
   listDoctors,
   listUsers,
   updateClinicConfiguration,
+  updateDoctor,
   updateUserAccount,
   removeUserFromActiveTenant,
   type CreateUserPayload,
   type Doctor,
   type UpdateClinicConfigurationPayload,
+  type UpdateDoctorPayload,
   type UpdateUserPayload,
   type UserAccount,
 } from '../api/client';
@@ -29,6 +31,7 @@ interface SettingsContextType {
   addUser: (user: CreateUserPayload) => Promise<UserAccount>;
   updateUser: (id: string, data: UpdateUserPayload) => Promise<UserAccount>;
   addDoctor: (doctor: { name: string; department: string }) => Promise<Doctor>;
+  updateDoctor: (doctorId: string, data: UpdateDoctorPayload) => Promise<Doctor>;
   widgetEnabled: boolean;
   setWidgetEnabled: (enabled: boolean) => void;
   assignExistingUser: (userId: string) => Promise<UserAccount>;
@@ -200,6 +203,12 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return created;
   };
 
+  const updateDoctorDetails = async (doctorId: string, data: UpdateDoctorPayload) => {
+    const updated = await updateDoctor(doctorId, data);
+    setDoctors((prev) => prev.map((doctor) => (doctor.doctorId === doctorId ? updated : doctor)));
+    return updated;
+  };
+
   const setWidgetEnabled = (enabled: boolean) => {
     setWidgetEnabledState(enabled);
   };
@@ -217,6 +226,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         addUser,
         updateUser,
         addDoctor,
+        updateDoctor: updateDoctorDetails,
       widgetEnabled,
       setWidgetEnabled,
       assignExistingUser,

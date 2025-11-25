@@ -464,6 +464,19 @@ export async function createDoctor(payload: CreateDoctorPayload): Promise<Doctor
   });
 }
 
+export interface UpdateDoctorPayload {
+  name?: string;
+  department?: string;
+}
+
+export async function updateDoctor(id: string, payload: UpdateDoctorPayload): Promise<Doctor> {
+  return fetchJSON(`/doctors/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 export function listDoctorAvailability(doctorId: string): Promise<DoctorAvailabilityResponse> {
   return fetchJSON(`/doctors/${doctorId}/availability`);
 }

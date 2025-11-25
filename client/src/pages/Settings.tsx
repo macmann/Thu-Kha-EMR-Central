@@ -104,6 +104,7 @@ export default function Settings() {
     addUser,
     updateUser,
     addDoctor,
+    updateDoctor,
     widgetEnabled,
     setWidgetEnabled,
     assignExistingUser,
@@ -125,6 +126,11 @@ export default function Settings() {
   const [userDrafts, setUserDrafts] = useState<Record<string, UserDraft>>({});
   const [userSavingId, setUserSavingId] = useState<string | null>(null);
   const [doctorForm, setDoctorForm] = useState<DoctorFormState>({ name: '', department: '' });
+  const [editingDoctorId, setEditingDoctorId] = useState<string | null>(null);
+  const [editingDoctorForm, setEditingDoctorForm] = useState<DoctorFormState>({ name: '', department: '' });
+  const [doctorMessage, setDoctorMessage] = useState<string | null>(null);
+  const [doctorError, setDoctorError] = useState<string | null>(null);
+  const [doctorSavingId, setDoctorSavingId] = useState<string | null>(null);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
   const [availabilitySlots, setAvailabilitySlots] = useState<DoctorAvailabilitySlot[]>([]);
   const [defaultAvailability, setDefaultAvailability] = useState<{ startMin: number; endMin: number }[]>([]);
@@ -504,12 +510,68 @@ export default function Settings() {
     event.preventDefault();
     const trimmedName = doctorForm.name.trim();
     const trimmedDepartment = doctorForm.department.trim();
-    if (!trimmedName || !trimmedDepartment) return;
+    if (!trimmedName || !trimmedDepartment) {
+      setDoctorError('Provide both a doctor name and department.');
+      return;
+    }
 
-    const created = await addDoctor({ name: trimmedName, department: trimmedDepartment });
-    setDoctorForm({ name: '', department: '' });
-    setSelectedDoctorId(created.doctorId);
-    setAvailabilityForm({ dayOfWeek: '1', start: '09:00', end: '17:00' });
+    setDoctorError(null);
+    setDoctorMessage(null);
+    setDoctorSavingId('new');
+    try {
+      const created = await addDoctor({ name: trimmedName, department: trimmedDepartment });
+      setDoctorForm({ name: '', department: '' });
+      setSelectedDoctorId(created.doctorId);
+      setAvailabilityForm({ dayOfWeek: '1', start: '09:00', end: '17:00' });
+      setDoctorMessage('Doctor added.');
+    } catch (error) {
+      setDoctorError(parseErrorMessage(error, 'Unable to add doctor.'));
+    } finally {
+      setDoctorSavingId(null);
+    }
+  }
+
+  function startEditingDoctor(doctor: Doctor) {
+    setEditingDoctorId(doctor.doctorId);
+    setEditingDoctorForm({ name: doctor.name, department: doctor.department });
+    setDoctorMessage(null);
+    setDoctorError(null);
+  }
+
+  function cancelEditingDoctor() {
+    setEditingDoctorId(null);
+    setEditingDoctorForm({ name: '', department: '' });
+    setDoctorSavingId(null);
+  }
+
+  async function handleUpdateDoctor(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingDoctorId) return;
+
+    const trimmedName = editingDoctorForm.name.trim();
+    const trimmedDepartment = editingDoctorForm.department.trim();
+
+    if (!trimmedName || !trimmedDepartment) {
+      setDoctorError('Provide both a doctor name and department.');
+      return;
+    }
+
+    setDoctorSavingId(editingDoctorId);
+    setDoctorError(null);
+    setDoctorMessage(null);
+
+    try {
+      await updateDoctor(editingDoctorId, {
+        name: trimmedName,
+        department: trimmedDepartment,
+      });
+      setDoctorMessage('Doctor updated.');
+      cancelEditingDoctor();
+    } catch (error) {
+      setDoctorError(parseErrorMessage(error, 'Unable to update doctor.'));
+    } finally {
+      setDoctorSavingId(null);
+    }
   }
 
   async function handleAddAvailability(event: FormEvent<HTMLFormElement>) {
@@ -942,28 +1004,102 @@ export default function Settings() {
                 <div className="md:col-span-2 flex justify-end">
                   <button
                     type="submit"
-                    className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
+                    disabled={doctorSavingId === 'new'}
+                    className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
                   >
-                    Add Doctor
+                    {doctorSavingId === 'new' ? 'Adding…' : 'Add Doctor'}
                   </button>
                 </div>
               </form>
 
               <div className="mt-6">
                 <h3 className="text-sm font-semibold text-gray-900">Active Doctors</h3>
+                {(doctorError || doctorMessage) && (
+                  <div className="mt-2 text-sm">
+                    {doctorError && <p className="text-red-600">{doctorError}</p>}
+                    {doctorMessage && <p className="text-green-600">{doctorMessage}</p>}
+                  </div>
+                )}
                 {totalDoctors > 0 ? (
                   <ul className="mt-3 space-y-3">
-                    {doctors.map((doctor) => (
-                      <li
-                        key={`${doctor.name}-${doctor.department}`}
-                        className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700"
-                      >
-                        <span className="font-medium text-gray-900">{doctor.name}</span>
-                        <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-600 shadow-sm">
-                          {doctor.department}
-                        </span>
-                      </li>
-                    ))}
+                    {doctors.map((doctor) => {
+                      const isEditing = editingDoctorId === doctor.doctorId;
+                      const isSaving = doctorSavingId === doctor.doctorId;
+                      return (
+                        <li
+                          key={doctor.doctorId}
+                          className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700"
+                        >
+                          {isEditing ? (
+                            <form
+                              onSubmit={handleUpdateDoctor}
+                              className="flex w-full flex-col gap-3 md:flex-row md:items-center"
+                            >
+                              <div className="flex-1">
+                                <label className="sr-only" htmlFor={`doctor-name-${doctor.doctorId}`}>
+                                  Doctor Name
+                                </label>
+                                <input
+                                  id={`doctor-name-${doctor.doctorId}`}
+                                  type="text"
+                                  value={editingDoctorForm.name}
+                                  onChange={(event) =>
+                                    setEditingDoctorForm((prev) => ({ ...prev, name: event.target.value }))
+                                  }
+                                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <label className="sr-only" htmlFor={`doctor-department-${doctor.doctorId}`}>
+                                  Department
+                                </label>
+                                <input
+                                  id={`doctor-department-${doctor.doctorId}`}
+                                  type="text"
+                                  value={editingDoctorForm.department}
+                                  onChange={(event) =>
+                                    setEditingDoctorForm((prev) => ({ ...prev, department: event.target.value }))
+                                  }
+                                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  className="rounded-full px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100"
+                                  onClick={cancelEditingDoctor}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="submit"
+                                  className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+                                  disabled={isSaving}
+                                >
+                                  {isSaving ? 'Saving…' : 'Save'}
+                                </button>
+                              </div>
+                            </form>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-3">
+                                <span className="font-medium text-gray-900">{doctor.name}</span>
+                                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-600 shadow-sm">
+                                  {doctor.department}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                                onClick={() => startEditingDoctor(doctor)}
+                              >
+                                Edit
+                              </button>
+                            </>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <p className="mt-3 text-sm text-gray-500">

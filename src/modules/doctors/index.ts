@@ -17,6 +17,15 @@ const createSchema = z.object({
   department: z.string().min(1),
 });
 
+const updateSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    department: z.string().min(1).optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'No updates provided',
+  });
+
 const doctorIdSchema = z.object({
   doctorId: z.string().uuid({ message: 'doctorId must be a valid UUID' }),
 });
@@ -64,6 +73,59 @@ router.post('/', async (req: Request, res: Response) => {
   }
   const doctor = await prisma.doctor.create({ data: parsed.data });
   res.status(201).json(doctor);
+});
+
+router.patch('/:doctorId', async (req: Request, res: Response) => {
+  const params = doctorIdSchema.safeParse(req.params);
+  if (!params.success) {
+    return res.status(400).json({ message: 'Invalid doctorId' });
+  }
+
+  const parsedBody = updateSchema.safeParse(req.body);
+  if (!parsedBody.success) {
+    return res.status(400).json({ error: parsedBody.error.flatten() });
+  }
+
+  const { doctorId } = params.data;
+  const existing = await prisma.doctor.findUnique({
+    where: { doctorId },
+    select: { doctorId: true, name: true, department: true },
+  });
+
+  if (!existing) {
+    return res.status(404).json({ message: 'Doctor not found' });
+  }
+
+  const data: { name?: string; department?: string } = {};
+  const { name, department } = parsedBody.data;
+
+  if (name !== undefined) {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return res.status(400).json({ message: 'Name cannot be empty' });
+    }
+    data.name = trimmed;
+  }
+
+  if (department !== undefined) {
+    const trimmed = department.trim();
+    if (!trimmed) {
+      return res.status(400).json({ message: 'Department cannot be empty' });
+    }
+    data.department = trimmed;
+  }
+
+  if (Object.keys(data).length === 0) {
+    return res.status(400).json({ message: 'No updates provided' });
+  }
+
+  const updated = await prisma.doctor.update({
+    where: { doctorId },
+    data,
+    select: { doctorId: true, name: true, department: true },
+  });
+
+  res.json(updated);
 });
 
 router.get('/:doctorId/availability', async (req: Request, res: Response) => {
