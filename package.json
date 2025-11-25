@@ -8,7 +8,7 @@
     "start": "NODE_ENV=production node dist/index.js",
     "start:deploy": "npm run migrate:deploy && npm run prisma:seed && NODE_ENV=production node dist/index.js",
     "prebuild": "prisma generate",
-    "prestart": "prisma generate",
+    "prestart": "npm run migrate:deploy && prisma generate",
     "postinstall": "prisma generate",
     "dev": "concurrently -k -n API,WEB \"tsx watch --exclude dist_client --exclude client/node_modules src/index.ts\" \"cd client && npm run dev\"",
     "dev:api": "tsx watch --exclude dist_client --exclude client/node_modules src/index.ts",
