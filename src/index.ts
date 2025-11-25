@@ -13,6 +13,8 @@ import { docsRouter } from './docs/openapi.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import authRouter, { requireAuth } from './modules/auth/index.js';
 import { resolveTenant } from './middleware/tenant.js';
+import doctorsRouter from './modules/doctors/index.js';
+import appointmentsRouter from './routes/appointments.js';
 
 if (
   process.env.DATABASE_URL &&
@@ -145,6 +147,13 @@ app.use('/api/auth', authRouter);
 
 app.use('/api/docs', docsRouter);
 app.use('/docs', docsRouter);
+
+const publicApi = Router();
+publicApi.use(resolveTenant);
+publicApi.use('/doctors', doctorsRouter);
+publicApi.use('/appointments', appointmentsRouter);
+
+app.use('/api', publicApi);
 
 const protectedApi = Router();
 protectedApi.use(requireAuth);

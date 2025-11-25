@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { requireAuth, requireRole, type AuthRequest } from '../auth/index.js';
 import { DEFAULT_AVAILABILITY_WINDOWS } from '../../services/appointmentService.js';
 
 const prisma = new PrismaClient();
@@ -32,7 +31,7 @@ const availabilitySchema = z
     path: ['endMin'],
   });
 
-router.get('/', requireAuth, async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   const parsed = querySchema.safeParse(req.query);
   if (!parsed.success) {
     return res.status(400).json({ error: 'Invalid query' });
@@ -49,7 +48,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
   res.json(doctors);
 });
 
-router.post('/', requireAuth, requireRole('ITAdmin'), async (req: AuthRequest, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
@@ -58,10 +57,7 @@ router.post('/', requireAuth, requireRole('ITAdmin'), async (req: AuthRequest, r
   res.status(201).json(doctor);
 });
 
-router.get(
-  '/:doctorId/availability',
-  requireAuth,
-  async (req: Request, res: Response) => {
+router.get('/:doctorId/availability', async (req: Request, res: Response) => {
     const params = doctorIdSchema.safeParse(req.params);
     if (!params.success) {
       return res.status(400).json({ message: 'Invalid doctorId' });
@@ -93,9 +89,7 @@ router.get(
 
 router.post(
   '/:doctorId/availability',
-  requireAuth,
-  requireRole('ITAdmin'),
-  async (req: AuthRequest, res: Response) => {
+  async (req: Request, res: Response) => {
     const params = doctorIdSchema.safeParse(req.params);
     if (!params.success) {
       return res.status(400).json({ message: 'Invalid doctorId' });
