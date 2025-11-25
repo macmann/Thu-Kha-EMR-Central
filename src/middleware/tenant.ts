@@ -133,6 +133,20 @@ async function findTenantIdByCode(code: string): Promise<string | null> {
   return tenant?.tenantId ?? null;
 }
 
+function extractTenantCode(req: AuthRequest): string | null {
+  const headerCode = req.get('x-tenant-code')?.trim();
+  if (headerCode) {
+    return headerCode;
+  }
+
+  const query = req.query?.tenant ?? req.query?.tenantCode;
+  if (typeof query === 'string' && query.trim()) {
+    return query.trim();
+  }
+
+  return null;
+}
+
 export async function resolveTenant(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     if (req.tenantId) {
@@ -161,6 +175,19 @@ export async function resolveTenant(req: AuthRequest, res: Response, next: NextF
       }
       req.tenantId = verifiedTenantId;
       return next();
+    }
+
+    const code = extractTenantCode(req);
+    if (code) {
+      const tenantId = await findTenantIdByCode(code);
+      if (!tenantId) {
+        if (!isSuperAdmin && !isSystemAdmin) {
+          return res.status(404).json({ error: 'Tenant not found' });
+        }
+      } else {
+        req.tenantId = tenantId;
+        return next();
+      }
     }
 
     const slug = extractTenantSlug(req.headers.host);
