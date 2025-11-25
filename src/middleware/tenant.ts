@@ -134,6 +134,11 @@ async function findTenantIdByCode(code: string): Promise<string | null> {
 }
 
 function extractTenantCode(req: AuthRequest): string | null {
+  const paramCode = typeof req.params?.tenantCode === 'string' ? req.params.tenantCode : null;
+  if (paramCode?.trim()) {
+    return paramCode.trim();
+  }
+
   const headerCode = req.get('x-tenant-code')?.trim();
   if (headerCode) {
     return headerCode;

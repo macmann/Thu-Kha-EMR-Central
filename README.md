@@ -89,26 +89,48 @@ The OpenAPI specification is served at `/api/docs/openapi.json`.
 
 ### Multi-tenant API access (Render deploy)
 
-The Render deployment expects every request to include a clinic/tenant context. Use
-the tenant code as the subdomain so requests are routed to the correct clinic:
+The Render deployment expects every request to include a clinic/tenant context.
+Use the new tenant-specific path to call public endpoints without authentication:
 
 ```bash
-curl -X GET "https://<tenant-code>.thu-kha-emr-saas.onrender.com/api/doctors"
+curl -X GET "https://thu-kha-emr-saas.onrender.com/api/<tenant-code>/doctors"
 ```
 
 Replace `<tenant-code>` with the clinic code you provisioned (for example,
 `downtown` when created via `npm run tenant:create -- --code downtown`). The same
-subdomain pattern applies to all API endpoints and the web client
-(`https://<tenant-code>.thu-kha-emr-saas.onrender.com`).
+pattern applies to other public endpoints such as appointments.
 
-If you cannot reach a tenant-specific subdomain (for example, while testing behind
-certain proxies), include the tenant code explicitly using either the
-`x-tenant-code` header or a `tenant`/`tenantCode` query string parameter:
+If you cannot use the path-based tenant selector, you can still pass the tenant
+code using the `x-tenant-code` header or a `tenant`/`tenantCode` query string
+parameter:
 
 ```bash
 curl -H "x-tenant-code: downtown" \
   "https://thu-kha-emr-saas.onrender.com/api/doctors"
 ```
+
+### Troubleshooting TLS/SSL errors when calling the Render API
+
+If a Windows client reports `schannel: next InitializeSecurityContext failed: SEC_E_ILLEGAL_MESSAGE`, the HTTPS handshake is
+failing before the request reaches the API. Common causes include an out-of-date Windows trust store/TLS stack or a proxy
+terminating TLS. To diagnose and work around the problem:
+
+1. **Verify from another environment.** If `curl https://tk.thu-kha-emr-saas.onrender.com/api/doctors` succeeds from WSL,
+   macOS, or Linux, the Windows TLS stack is likely the root cause.
+2. **Force TLS 1.2 and skip revocation checks.** This often resolves Schannel alerts on older Windows builds:
+   ```powershell
+   curl.exe --tlsv1.2 --ssl-no-revoke https://tk.thu-kha-emr-saas.onrender.com/api/doctors
+   ```
+3. **Account for proxies.** Configure `HTTPS_PROXY`/`http_proxy` if you are behind an intercepting proxy, or retry on a network
+   without SSL inspection.
+4. **Update Windows and root certificates.** Ensuring TLS 1.2+ support and current root CAs helps Schannel negotiate the Render
+   certificate chain successfully.
+
+For connectivity checks only, you can test plain HTTP reachability:
+```powershell
+curl.exe http://tk.thu-kha-emr-saas.onrender.com/health
+```
+If HTTP works but HTTPS fails, the issue is isolated to TLS negotiation on the client network.
 
 ## Deploying to Render
 1. Create a new Web Service and connect this repository.
