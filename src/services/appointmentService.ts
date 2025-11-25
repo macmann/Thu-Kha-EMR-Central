@@ -1,6 +1,10 @@
 import { Prisma } from '@prisma/client';
 import type { AppPrismaClient } from '../types/appointments.js';
-import type { CreateAppointmentInput, UpdateAppointmentInput } from '../validation/appointment.js';
+import type {
+  CreateAppointmentInput,
+  CreateNameOnlyBookingInput,
+  UpdateAppointmentInput,
+} from '../validation/appointment.js';
 import { composeDateTime, dayOfWeekUTC, toDateOnly } from '../utils/time.js';
 import {
   ConflictError,
@@ -309,17 +313,34 @@ async function assertNoOverlap(
   }
 }
 
+async function assertDoctorSlotBookable(
+  prisma: AppPrismaClient,
+  dto: Pick<CreateAppointmentInput, 'doctorId' | 'date' | 'startTimeMin' | 'endTimeMin'>
+): Promise<void> {
+  const { doctorId, date: dateStr, startTimeMin, endTimeMin } = dto;
+  const appointmentDate = toDateOnly(dateStr);
+
+  await ensureDoctorExists(prisma, doctorId);
+  await assertWithinAvailability(prisma, doctorId, appointmentDate, startTimeMin, endTimeMin);
+  await assertNoBlackout(prisma, doctorId, appointmentDate, startTimeMin, endTimeMin);
+  await assertNoOverlap(prisma, doctorId, appointmentDate, startTimeMin, endTimeMin);
+}
+
 export async function assertCreatable(
   prisma: AppPrismaClient,
   dto: CreateAppointmentInput
 ): Promise<void> {
-  const { patientId, doctorId, date: dateStr, startTimeMin, endTimeMin } = dto;
-  const appointmentDate = toDateOnly(dateStr);
+  const { patientId, doctorId, date, startTimeMin, endTimeMin } = dto;
 
-  await Promise.all([ensurePatientExists(prisma, patientId), ensureDoctorExists(prisma, doctorId)]);
-  await assertWithinAvailability(prisma, doctorId, appointmentDate, startTimeMin, endTimeMin);
-  await assertNoBlackout(prisma, doctorId, appointmentDate, startTimeMin, endTimeMin);
-  await assertNoOverlap(prisma, doctorId, appointmentDate, startTimeMin, endTimeMin);
+  await ensurePatientExists(prisma, patientId);
+  await assertDoctorSlotBookable(prisma, { doctorId, date, startTimeMin, endTimeMin });
+}
+
+export async function assertNameOnlyBookable(
+  prisma: AppPrismaClient,
+  dto: CreateNameOnlyBookingInput
+): Promise<void> {
+  await assertDoctorSlotBookable(prisma, dto);
 }
 
 export async function assertUpdatable(
@@ -343,7 +364,7 @@ export async function assertUpdatable(
     throw new NotFoundError('Appointment not found');
   }
 
-  const patientId = dto.patientId ?? appointment.patientId;
+  const patientId = dto.patientId ?? appointment.patientId ?? undefined;
   const doctorId = dto.doctorId ?? appointment.doctorId;
   const appointmentDate = dto.date
     ? toDateOnly(dto.date)
@@ -351,7 +372,12 @@ export async function assertUpdatable(
   const startMin = dto.startTimeMin ?? appointment.startTimeMin;
   const endMin = dto.endTimeMin ?? appointment.endTimeMin;
 
-  await Promise.all([ensurePatientExists(prisma, patientId), ensureDoctorExists(prisma, doctorId)]);
+  const validations: Array<Promise<void>> = [ensureDoctorExists(prisma, doctorId)];
+  if (patientId) {
+    validations.push(ensurePatientExists(prisma, patientId));
+  }
+
+  await Promise.all(validations);
   await assertWithinAvailability(prisma, doctorId, appointmentDate, startMin, endMin);
   await assertNoBlackout(prisma, doctorId, appointmentDate, startMin, endMin);
   await assertNoOverlap(prisma, doctorId, appointmentDate, startMin, endMin, appointmentId);
