@@ -41,6 +41,32 @@ const availabilitySchema = z
     path: ['endMin'],
   });
 
+const availabilityUpdateSchema = z
+  .object({
+    dayOfWeek: z.coerce.number().int().min(0).max(6).optional(),
+    startMin: z.coerce.number().int().min(0).max(24 * 60 - 1).optional(),
+    endMin: z.coerce.number().int().min(1).max(24 * 60).optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: 'No updates provided',
+  })
+  .refine(
+    (data) => {
+      if (data.startMin !== undefined && data.endMin !== undefined) {
+        return data.endMin > data.startMin;
+      }
+      return true;
+    },
+    {
+      message: 'endMin must be greater than startMin',
+      path: ['endMin'],
+    }
+  );
+
+const availabilityParamSchema = doctorIdSchema.extend({
+  availabilityId: z.string().uuid({ message: 'availabilityId must be a valid UUID' }),
+});
+
 router.get('/', async (req: AuthRequest, res: Response) => {
   const parsed = querySchema.safeParse(req.query);
   if (!parsed.success) {
@@ -209,6 +235,72 @@ router.post(
     });
 
     res.status(201).json(created);
+  }
+);
+
+router.patch(
+  '/:doctorId/availability/:availabilityId',
+  async (req: Request, res: Response) => {
+    const params = availabilityParamSchema.safeParse(req.params);
+    if (!params.success) {
+      return res.status(400).json({ message: 'Invalid availabilityId or doctorId' });
+    }
+
+    const { doctorId, availabilityId } = params.data;
+
+    const doctor = await prisma.doctor.findUnique({
+      where: { doctorId },
+      select: { doctorId: true },
+    });
+
+    if (!doctor) {
+      return res.status(404).json({ message: 'Doctor not found' });
+    }
+
+    const availability = await prisma.doctorAvailability.findFirst({
+      where: { availabilityId, doctorId },
+      select: { availabilityId: true, doctorId: true, dayOfWeek: true, startMin: true, endMin: true },
+    });
+
+    if (!availability) {
+      return res.status(404).json({ message: 'Availability not found' });
+    }
+
+    const parsedBody = availabilityUpdateSchema.safeParse(req.body);
+    if (!parsedBody.success) {
+      return res.status(400).json({ error: parsedBody.error.flatten() });
+    }
+
+    const dayOfWeek = parsedBody.data.dayOfWeek ?? availability.dayOfWeek;
+    const startMin = parsedBody.data.startMin ?? availability.startMin;
+    const endMin = parsedBody.data.endMin ?? availability.endMin;
+
+    if (endMin <= startMin) {
+      return res.status(400).json({ message: 'endMin must be greater than startMin' });
+    }
+
+    const overlap = await prisma.doctorAvailability.findFirst({
+      where: {
+        doctorId,
+        dayOfWeek,
+        availabilityId: { not: availabilityId },
+        startMin: { lt: endMin },
+        endMin: { gt: startMin },
+      },
+    });
+
+    if (overlap) {
+      return res
+        .status(409)
+        .json({ message: 'Availability overlaps with an existing window' });
+    }
+
+    const updated = await prisma.doctorAvailability.update({
+      where: { availabilityId },
+      data: { dayOfWeek, startMin, endMin },
+    });
+
+    res.json(updated);
   }
 );
 

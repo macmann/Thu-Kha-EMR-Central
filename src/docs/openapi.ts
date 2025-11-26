@@ -169,6 +169,15 @@ const openapi: any = {
           endMin: { type: 'integer', minimum: 1, maximum: 1440 },
         },
       },
+      DoctorAvailabilityUpdateRequest: {
+        type: 'object',
+        description: 'At least one property is required when updating an availability slot.',
+        properties: {
+          dayOfWeek: { type: 'integer', minimum: 0, maximum: 6 },
+          startMin: { type: 'integer', minimum: 0, maximum: 1439 },
+          endMin: { type: 'integer', minimum: 1, maximum: 1440 },
+        },
+      },
       Visit: {
         type: 'object',
         properties: {
@@ -859,6 +868,44 @@ addPath('/doctors/{doctorId}/availability', 'post', {
     },
     '400': { description: 'Invalid request payload' },
     '404': { description: 'Doctor not found' },
+    '409': { description: 'Conflicts with an existing window' },
+  },
+});
+
+addPath('/doctors/{doctorId}/availability/{availabilityId}', 'patch', {
+  summary: 'Update an availability window for a doctor',
+  security: [],
+  parameters: [
+    {
+      name: 'doctorId',
+      in: 'path',
+      required: true,
+      schema: { type: 'string', format: 'uuid' },
+    },
+    {
+      name: 'availabilityId',
+      in: 'path',
+      required: true,
+      schema: { type: 'string', format: 'uuid' },
+    },
+  ],
+  requestBody: {
+    required: true,
+    content: {
+      'application/json': {
+        schema: { $ref: '#/components/schemas/DoctorAvailabilityUpdateRequest' },
+      },
+    },
+  },
+  responses: {
+    '200': {
+      description: 'Updated availability window',
+      content: {
+        'application/json': { schema: { $ref: '#/components/schemas/DoctorAvailabilitySlot' } },
+      },
+    },
+    '400': { description: 'Invalid request payload' },
+    '404': { description: 'Doctor or availability not found' },
     '409': { description: 'Conflicts with an existing window' },
   },
 });
