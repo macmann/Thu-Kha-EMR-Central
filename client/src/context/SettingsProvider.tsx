@@ -32,6 +32,7 @@ interface SettingsContextType {
   updateUser: (id: string, data: UpdateUserPayload) => Promise<UserAccount>;
   addDoctor: (doctor: { name: string; department: string }) => Promise<Doctor>;
   updateDoctor: (doctorId: string, data: UpdateDoctorPayload) => Promise<Doctor>;
+  refreshDoctors: () => Promise<void>;
   widgetEnabled: boolean;
   setWidgetEnabled: (enabled: boolean) => void;
   assignExistingUser: (userId: string) => Promise<UserAccount>;
@@ -50,6 +51,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [widgetEnabled, setWidgetEnabledState] = useState<boolean>(false);
   const { accessToken } = useAuth();
   const { activeTenant } = useTenant();
+
+  const loadDoctors = async () => {
+    const data = await listDoctors();
+    setDoctors(data);
+  };
 
   useEffect(() => {
     if (!accessToken || !activeTenant) {
@@ -92,10 +98,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     let active = true;
-    listDoctors()
-      .then((data) => {
+    loadDoctors()
+      .then(() => {
         if (!active) return;
-        setDoctors(data);
       })
       .catch(() => {
         if (!active) return;
@@ -222,17 +227,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         contactPhone,
         users,
         doctors,
+        refreshDoctors: loadDoctors,
         updateSettings,
         addUser,
         updateUser,
         addDoctor,
         updateDoctor: updateDoctorDetails,
-      widgetEnabled,
-      setWidgetEnabled,
-      assignExistingUser,
-      removeUserFromClinic,
-    }}
-  >
+        widgetEnabled,
+        setWidgetEnabled,
+        assignExistingUser,
+        removeUserFromClinic,
+      }}
+    >
       {children}
     </SettingsContext.Provider>
   );

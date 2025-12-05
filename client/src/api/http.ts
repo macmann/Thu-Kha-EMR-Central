@@ -121,3 +121,39 @@ export async function fetchText(path: string, options: RequestInit = {}, retry =
 
   return response.text();
 }
+
+export async function fetchBlob(path: string, options: RequestInit = {}, retry = true) {
+  const headers = new Headers(options.headers || {});
+  if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
+
+  const response = await fetch(`/api${path}`, { ...options, headers });
+
+  if (response.status === 401 && retry) {
+    const refreshRes = await fetch('/api/auth/token/refresh', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (refreshRes.ok) {
+      const refreshData = await refreshRes.json();
+      setAccessToken(refreshData.accessToken);
+      headers.set('Authorization', `Bearer ${refreshData.accessToken}`);
+      const retryRes = await fetch(`/api${path}`, { ...options, headers });
+      if (!retryRes.ok) {
+        const message = await parseErrorMessage(retryRes);
+        throw new HttpError(retryRes.status, message || retryRes.statusText);
+      }
+      return retryRes.blob();
+    }
+    setAccessToken(null);
+  }
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      setAccessToken(null);
+    }
+    const message = await parseErrorMessage(response);
+    throw new HttpError(response.status, message || response.statusText);
+  }
+
+  return response.blob();
+}

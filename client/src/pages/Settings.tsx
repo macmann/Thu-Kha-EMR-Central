@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import ClinicBrand from '../components/ClinicBrand';
 import { AvatarIcon, CheckIcon, PatientsIcon, SettingsIcon } from '../components/icons';
@@ -6,9 +6,12 @@ import { useSettings } from '../context/SettingsProvider';
 import { useTranslation, type Language } from '../hooks/useTranslation';
 import {
   DoctorAvailabilitySlot,
+  downloadDoctorTemplate,
   createDoctorAvailability,
   listDoctorAvailability,
   listAssignableUsers,
+  uploadDoctors,
+  type BulkDoctorUploadResult,
   type Doctor,
   type Role,
   type UserAccount,
@@ -106,6 +109,7 @@ export default function Settings() {
     updateUser,
     addDoctor,
     updateDoctor,
+    refreshDoctors,
     widgetEnabled,
     setWidgetEnabled,
     assignExistingUser,
@@ -132,6 +136,13 @@ export default function Settings() {
   const [doctorMessage, setDoctorMessage] = useState<string | null>(null);
   const [doctorError, setDoctorError] = useState<string | null>(null);
   const [doctorSavingId, setDoctorSavingId] = useState<string | null>(null);
+  const [doctorUploadFile, setDoctorUploadFile] = useState<File | null>(null);
+  const [doctorUploadStatus, setDoctorUploadStatus] = useState<string | null>(null);
+  const [doctorUploadError, setDoctorUploadError] = useState<string | null>(null);
+  const [doctorUploadSummary, setDoctorUploadSummary] = useState<BulkDoctorUploadResult | null>(null);
+  const [uploadingDoctors, setUploadingDoctors] = useState(false);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
+  const doctorUploadInputRef = useRef<HTMLInputElement | null>(null);
   const [selectedDoctorId, setSelectedDoctorId] = useState<string>('');
   const [availabilitySlots, setAvailabilitySlots] = useState<DoctorAvailabilitySlot[]>([]);
   const [defaultAvailability, setDefaultAvailability] = useState<{ startMin: number; endMin: number }[]>([]);
@@ -531,6 +542,58 @@ export default function Settings() {
       setDoctorSavingId(null);
     }
   }
+
+  const handleDoctorFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    setDoctorUploadFile(file ?? null);
+  };
+
+  const handleDownloadDoctorTemplate = async () => {
+    setDoctorUploadError(null);
+    setDownloadingTemplate(true);
+    try {
+      const blob = await downloadDoctorTemplate();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'doctor-bulk-template.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setDoctorUploadError(parseErrorMessage(error, 'Unable to download the sample sheet.'));
+    } finally {
+      setDownloadingTemplate(false);
+    }
+  };
+
+  const handleBulkUploadDoctors = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!doctorUploadFile) {
+      setDoctorUploadError('Choose a CSV file to upload.');
+      return;
+    }
+
+    setDoctorUploadStatus(null);
+    setDoctorUploadError(null);
+    setDoctorUploadSummary(null);
+    setUploadingDoctors(true);
+    try {
+      const result = await uploadDoctors(doctorUploadFile);
+      setDoctorUploadSummary(result);
+      setDoctorUploadStatus(
+        `Processed ${result.processedDoctors} doctor${result.processedDoctors === 1 ? '' : 's'}.`,
+      );
+      setDoctorUploadFile(null);
+      if (doctorUploadInputRef.current) {
+        doctorUploadInputRef.current.value = '';
+      }
+      await refreshDoctors();
+    } catch (error) {
+      setDoctorUploadError(parseErrorMessage(error, 'Unable to upload doctor list.'));
+    } finally {
+      setUploadingDoctors(false);
+    }
+  };
 
   function startEditingDoctor(doctor: Doctor) {
     setEditingDoctorId(doctor.doctorId);
@@ -1012,6 +1075,81 @@ export default function Settings() {
                   </button>
                 </div>
               </form>
+
+              <div className="mt-6 rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-4">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Bulk upload doctor list</h3>
+                    <p className="mt-1 text-xs text-gray-600">
+                      Upload a CSV containing each doctor, department, and weekly availability (day plus start/end times).
+                    </p>
+                    <ul className="mt-2 space-y-1 text-xs text-gray-600">
+                      <li>• Columns: Doctor Name, Department, Day of Week, Start Time (HH:MM), End Time (HH:MM).</li>
+                      <li>• Day of week accepts Sunday–Saturday or 0–6; times use the 24-hour clock.</li>
+                    </ul>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDownloadDoctorTemplate}
+                    disabled={downloadingTemplate}
+                    className="inline-flex items-center justify-center rounded-full border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-50 disabled:cursor-not-allowed disabled:border-blue-100 disabled:text-blue-400"
+                  >
+                    {downloadingTemplate ? 'Preparing…' : 'Download sample CSV'}
+                  </button>
+                </div>
+
+                <form
+                  onSubmit={handleBulkUploadDoctors}
+                  className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:gap-4"
+                >
+                  <input
+                    ref={doctorUploadInputRef}
+                    type="file"
+                    accept=".csv"
+                    onChange={handleDoctorFileChange}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={uploadingDoctors}
+                    className="inline-flex items-center justify-center rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+                  >
+                    {uploadingDoctors ? 'Uploading…' : 'Upload doctor list'}
+                  </button>
+                </form>
+
+                {(doctorUploadError || doctorUploadStatus) && (
+                  <div className="mt-2 text-xs">
+                    {doctorUploadError && <p className="text-red-600">{doctorUploadError}</p>}
+                    {doctorUploadStatus && <p className="text-green-600">{doctorUploadStatus}</p>}
+                  </div>
+                )}
+
+                {doctorUploadSummary && (
+                  <dl className="mt-3 grid grid-cols-2 gap-3 text-xs text-gray-700 md:grid-cols-4">
+                    <div>
+                      <dt className="font-semibold text-gray-900">Doctors added</dt>
+                      <dd className="mt-1 rounded-lg bg-white px-3 py-2 shadow-sm">{doctorUploadSummary.created}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold text-gray-900">Doctors updated</dt>
+                      <dd className="mt-1 rounded-lg bg-white px-3 py-2 shadow-sm">{doctorUploadSummary.updated}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold text-gray-900">Availability windows</dt>
+                      <dd className="mt-1 rounded-lg bg-white px-3 py-2 shadow-sm">
+                        {doctorUploadSummary.availabilityConfigured}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="font-semibold text-gray-900">Total doctors processed</dt>
+                      <dd className="mt-1 rounded-lg bg-white px-3 py-2 shadow-sm">
+                        {doctorUploadSummary.processedDoctors}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
+              </div>
 
               <div className="mt-6">
                 <h3 className="text-sm font-semibold text-gray-900">Active Doctors</h3>
