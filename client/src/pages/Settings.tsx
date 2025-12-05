@@ -11,6 +11,7 @@ import {
   listDoctorAvailability,
   listAssignableUsers,
   uploadDoctors,
+  updateDoctorAvailability,
   type BulkDoctorUploadResult,
   type Doctor,
   type Role,
@@ -96,6 +97,13 @@ function formatTimeRange(startMin: number, endMin: number): string {
   return `${formatTime(startMin)} – ${formatTime(endMin)}`;
 }
 
+function minutesToTimeString(minutes: number): string {
+  const clamped = Math.max(0, Math.min(24 * 60, minutes));
+  const hours = Math.floor(clamped / 60);
+  const mins = clamped % 60;
+  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+}
+
 export default function Settings() {
   const {
     appName,
@@ -151,6 +159,7 @@ export default function Settings() {
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   const [availabilitySuccess, setAvailabilitySuccess] = useState<string | null>(null);
   const [addingAvailability, setAddingAvailability] = useState(false);
+  const [editingAvailabilityId, setEditingAvailabilityId] = useState<string | null>(null);
   const [brandingError, setBrandingError] = useState<string | null>(null);
   const [brandingSuccess, setBrandingSuccess] = useState<string | null>(null);
   const [brandingSaving, setBrandingSaving] = useState(false);
@@ -197,6 +206,11 @@ export default function Settings() {
       return doctors[0].doctorId;
     });
   }, [doctors]);
+
+  useEffect(() => {
+    setEditingAvailabilityId(null);
+    setAvailabilityForm({ dayOfWeek: '1', start: '09:00', end: '17:00' });
+  }, [selectedDoctorId]);
 
   useEffect(() => {
     const drafts: Record<string, UserDraft> = {};
@@ -664,26 +678,64 @@ export default function Settings() {
     setAvailabilitySuccess(null);
 
     try {
-      const created = await createDoctorAvailability(selectedDoctorId, {
-        dayOfWeek,
-        startMin,
-        endMin,
-      });
+      if (editingAvailabilityId) {
+        const updated = await updateDoctorAvailability(selectedDoctorId, editingAvailabilityId, {
+          dayOfWeek,
+          startMin,
+          endMin,
+        });
 
-      setAvailabilitySlots((previous) => {
-        const next = [...previous, created];
-        next.sort((a, b) =>
-          a.dayOfWeek === b.dayOfWeek ? a.startMin - b.startMin : a.dayOfWeek - b.dayOfWeek
-        );
-        return next;
-      });
-      setAvailabilitySuccess('Availability window added.');
+        setAvailabilitySlots((previous) => {
+          const next = previous.map((slot) => (slot.availabilityId === editingAvailabilityId ? updated : slot));
+          next.sort((a, b) =>
+            a.dayOfWeek === b.dayOfWeek ? a.startMin - b.startMin : a.dayOfWeek - b.dayOfWeek
+          );
+          return next;
+        });
+        setAvailabilitySuccess('Availability window updated.');
+        setEditingAvailabilityId(null);
+      } else {
+        const created = await createDoctorAvailability(selectedDoctorId, {
+          dayOfWeek,
+          startMin,
+          endMin,
+        });
+
+        setAvailabilitySlots((previous) => {
+          const next = [...previous, created];
+          next.sort((a, b) =>
+            a.dayOfWeek === b.dayOfWeek ? a.startMin - b.startMin : a.dayOfWeek - b.dayOfWeek
+          );
+          return next;
+        });
+        setAvailabilitySuccess('Availability window added.');
+      }
     } catch (error) {
-      setAvailabilityError(parseErrorMessage(error, 'Unable to add availability window.'));
+      setAvailabilityError(parseErrorMessage(error, 'Unable to save availability window.'));
     } finally {
       setAddingAvailability(false);
     }
   }
+
+  function handleEditAvailability(slot: DoctorAvailabilitySlot) {
+    setEditingAvailabilityId(slot.availabilityId);
+    setAvailabilityForm({
+      dayOfWeek: String(slot.dayOfWeek),
+      start: minutesToTimeString(slot.startMin),
+      end: minutesToTimeString(slot.endMin),
+    });
+    setAvailabilityError(null);
+    setAvailabilitySuccess(null);
+  }
+
+  function cancelAvailabilityEdit() {
+    setEditingAvailabilityId(null);
+    setAvailabilityForm({ dayOfWeek: '1', start: '09:00', end: '17:00' });
+    setAvailabilityError(null);
+    setAvailabilitySuccess(null);
+  }
+
+  const isEditingAvailability = Boolean(editingAvailabilityId);
 
   const headerStatus = hasActiveTenant ? (
     <div className="flex flex-col gap-3 text-sm text-gray-600 md:flex-row md:items-center md:gap-4">
@@ -1339,7 +1391,7 @@ export default function Settings() {
                           className="mt-2 w-full rounded-xl border border-gray-200 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                         />
                       </div>
-                      <div className="flex items-end">
+                      <div className="flex items-end gap-2">
                         <button
                           type="submit"
                           disabled={addingAvailability}
@@ -1347,8 +1399,21 @@ export default function Settings() {
                             addingAvailability ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
                           }`}
                         >
-                          {addingAvailability ? 'Saving…' : 'Add Availability'}
+                          {addingAvailability
+                            ? 'Saving…'
+                            : isEditingAvailability
+                              ? 'Update Availability'
+                              : 'Add Availability'}
                         </button>
+                        {isEditingAvailability && (
+                          <button
+                            type="button"
+                            onClick={cancelAvailabilityEdit}
+                            className="inline-flex w-full items-center justify-center rounded-full border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+                          >
+                            Cancel
+                          </button>
+                        )}
                       </div>
                     </form>
 
@@ -1379,7 +1444,16 @@ export default function Settings() {
                                       className="flex items-center justify-between rounded-lg bg-blue-50 px-3 py-2 text-blue-700"
                                     >
                                       <span>{formatTimeRange(slot.startMin, slot.endMin)}</span>
-                                      <span className="text-xs font-medium uppercase tracking-wide text-blue-500">Custom</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-xs font-medium uppercase tracking-wide text-blue-500">Custom</span>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleEditAvailability(slot)}
+                                          className="rounded-full border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-600 hover:text-white"
+                                        >
+                                          Edit
+                                        </button>
+                                      </div>
                                     </div>
                                   ))
                                 ) : (
