@@ -516,6 +516,18 @@ export function createDoctorAvailability(
   });
 }
 
+export function updateDoctorAvailability(
+  doctorId: string,
+  availabilityId: string,
+  payload: { dayOfWeek?: number; startMin?: number; endMin?: number },
+): Promise<DoctorAvailabilitySlot> {
+  return fetchJSON(`/doctors/${doctorId}/availability/${availabilityId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function getPatient(
   id: string,
   params?: { include?: 'summary' },
