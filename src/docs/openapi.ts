@@ -798,6 +798,62 @@ addPath('/doctors', 'post', {
   },
 });
 
+addPath('/doctors/bulk-template', 'get', {
+  summary: 'Download doctor bulk upload template',
+  security: [],
+  responses: {
+    '200': {
+      description: 'CSV template for bulk uploads',
+      content: { 'text/csv': { schema: { type: 'string', format: 'binary' } } },
+    },
+  },
+});
+
+addPath('/doctors/bulk-upload', 'post', {
+  summary: 'Bulk upload doctors with availability',
+  security: [],
+  requestBody: {
+    required: true,
+    content: {
+      'multipart/form-data': {
+        schema: {
+          type: 'object',
+          required: ['file'],
+          properties: {
+            file: { type: 'string', format: 'binary' },
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    '200': {
+      description: 'Bulk upload summary',
+      content: {
+        'application/json': {
+          schema: {
+            type: 'object',
+            properties: {
+              created: { type: 'integer' },
+              updated: { type: 'integer' },
+              processedDoctors: { type: 'integer' },
+              availabilityConfigured: { type: 'integer' },
+              errors: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: { row: { type: 'integer' }, message: { type: 'string' } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    '400': { description: 'Invalid or unreadable upload' },
+  },
+});
+
 addPath('/doctors/{doctorId}/availability', 'get', {
   summary: 'List doctor availability windows',
   security: [],

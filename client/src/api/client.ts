@@ -1,4 +1,4 @@
-import { fetchJSON, HttpError } from './http';
+import { fetchBlob, fetchJSON, HttpError } from './http';
 
 export type Role =
   | 'Doctor'
@@ -456,11 +456,35 @@ export interface CreateDoctorPayload {
   department: string;
 }
 
+export interface BulkDoctorUploadResult {
+  created: number;
+  updated: number;
+  processedDoctors: number;
+  availabilityConfigured: number;
+  errors?: Array<{ row: number; message: string }>;
+}
+
 export async function createDoctor(payload: CreateDoctorPayload): Promise<Doctor> {
   return fetchJSON('/doctors', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+  });
+}
+
+export async function uploadDoctors(file: File): Promise<BulkDoctorUploadResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return fetchJSON('/doctors/bulk-upload', {
+    method: 'POST',
+    body: formData,
+  });
+}
+
+export async function downloadDoctorTemplate(): Promise<Blob> {
+  return fetchBlob('/doctors/bulk-template', {
+    method: 'GET',
   });
 }
 
