@@ -120,6 +120,7 @@ export interface Doctor {
   doctorId: string;
   name: string;
   department: string;
+  tenantId?: string | null;
 }
 
 export interface DoctorAvailabilitySlot {

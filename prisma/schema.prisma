@@ -78,6 +78,7 @@ model Tenant {
   payments           Payment[]
   paymentAllocations PaymentAllocation[]
   configuration      TenantConfiguration?
+  doctors            Doctor[]
 }
 
 enum AppointmentStatus {
@@ -111,6 +112,7 @@ model Doctor {
   doctorId   String   @id @default(uuid()) @db.Uuid
   name       String
   department String
+  tenantId   String?  @db.Uuid
   createdAt  DateTime @default(now())
 
   appointments   Appointment[]
@@ -120,6 +122,9 @@ model Doctor {
   observations   Observation[]
   user           User?
   prescriptions  Prescription[]
+  tenant         Tenant? @relation(fields: [tenantId], references: [tenantId], onDelete: SetNull)
+
+  @@index([tenantId])
 }
 
 model Appointment {

@@ -51,15 +51,25 @@ router.get('/', async (req: AuthRequest, res: Response, next: NextFunction) => {
       },
     });
 
-    const doctors = await prisma.doctor.findMany({
-      where: {
-        name: { contains: query, mode: 'insensitive' },
-        user: {
-          tenantMemberships: {
-            some: { tenantId },
+    const doctorWhere: any = {
+      name: { contains: query, mode: 'insensitive' },
+    };
+
+    if (tenantId) {
+      doctorWhere.OR = [
+        {
+          user: {
+            tenantMemberships: {
+              some: { tenantId },
+            },
           },
         },
-      },
+        { tenantId },
+      ];
+    }
+
+    const doctors = await prisma.doctor.findMany({
+      where: doctorWhere,
       take,
       orderBy: { name: 'asc' },
       include: {
