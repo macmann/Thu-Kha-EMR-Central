@@ -117,6 +117,7 @@ export default function Settings() {
     updateUser,
     addDoctor,
     updateDoctor,
+    removeDoctor,
     refreshDoctors,
     widgetEnabled,
     setWidgetEnabled,
@@ -552,6 +553,32 @@ export default function Settings() {
       setDoctorMessage('Doctor added.');
     } catch (error) {
       setDoctorError(parseErrorMessage(error, 'Unable to add doctor.'));
+    } finally {
+      setDoctorSavingId(null);
+    }
+  }
+
+  async function handleDeleteDoctor(doctorId: string) {
+    setDoctorSavingId(doctorId);
+    setDoctorError(null);
+    setDoctorMessage(null);
+    try {
+      const remaining = doctors.filter((doctor) => doctor.doctorId !== doctorId);
+      await removeDoctor(doctorId);
+      setDoctorMessage('Doctor removed.');
+
+      if (editingDoctorId === doctorId) {
+        cancelEditingDoctor();
+      }
+
+      if (selectedDoctorId === doctorId) {
+        const nextSelectedId = remaining[0]?.doctorId ?? '';
+        setSelectedDoctorId(nextSelectedId);
+        setAvailabilitySlots([]);
+        setDefaultAvailability([]);
+      }
+    } catch (error) {
+      setDoctorError(parseErrorMessage(error, 'Unable to delete doctor.'));
     } finally {
       setDoctorSavingId(null);
     }
@@ -1279,13 +1306,24 @@ export default function Settings() {
                                   {doctor.department}
                                 </span>
                               </div>
-                              <button
-                                type="button"
-                                className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-                                onClick={() => startEditingDoctor(doctor)}
-                              >
-                                Edit
-                              </button>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  className="text-sm font-semibold text-blue-600 hover:text-blue-700"
+                                  onClick={() => startEditingDoctor(doctor)}
+                                  disabled={doctorSavingId === doctor.doctorId}
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  className="text-sm font-semibold text-red-600 hover:text-red-700 disabled:text-red-400"
+                                  onClick={() => handleDeleteDoctor(doctor.doctorId)}
+                                  disabled={doctorSavingId === doctor.doctorId}
+                                >
+                                  {doctorSavingId === doctor.doctorId ? 'Deleting…' : 'Delete'}
+                                </button>
+                              </div>
                             </>
                           )}
                         </li>
