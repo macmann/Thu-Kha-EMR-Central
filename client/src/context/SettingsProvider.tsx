@@ -6,6 +6,7 @@ import {
   assignUserToActiveTenant,
   listDoctors,
   listUsers,
+  deleteDoctor,
   updateClinicConfiguration,
   updateDoctor,
   updateUserAccount,
@@ -32,6 +33,7 @@ interface SettingsContextType {
   updateUser: (id: string, data: UpdateUserPayload) => Promise<UserAccount>;
   addDoctor: (doctor: { name: string; department: string }) => Promise<Doctor>;
   updateDoctor: (doctorId: string, data: UpdateDoctorPayload) => Promise<Doctor>;
+  removeDoctor: (doctorId: string) => Promise<void>;
   refreshDoctors: () => Promise<void>;
   widgetEnabled: boolean;
   setWidgetEnabled: (enabled: boolean) => void;
@@ -214,6 +216,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return updated;
   };
 
+  const removeDoctor = async (doctorId: string) => {
+    await deleteDoctor(doctorId);
+    setDoctors((prev) => prev.filter((doctor) => doctor.doctorId !== doctorId));
+  };
+
   const setWidgetEnabled = (enabled: boolean) => {
     setWidgetEnabledState(enabled);
   };
@@ -233,6 +240,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateUser,
         addDoctor,
         updateDoctor: updateDoctorDetails,
+        removeDoctor,
         widgetEnabled,
         setWidgetEnabled,
         assignExistingUser,

@@ -393,6 +393,41 @@ router.patch('/:doctorId', async (req: Request, res: Response) => {
   res.json(updated);
 });
 
+router.delete('/:doctorId', async (req: AuthRequest, res: Response) => {
+  const params = doctorIdSchema.safeParse(req.params);
+  if (!params.success) {
+    return res.status(400).json({ message: 'Invalid doctorId' });
+  }
+
+  const doctorWhere = { doctorId: params.data.doctorId, ...(req.tenantId ? { tenantId: req.tenantId } : {}) };
+
+  const existing = await prisma.doctor.findFirst({ where: doctorWhere, select: { doctorId: true } });
+
+  if (!existing) {
+    return res.status(404).json({ message: 'Doctor not found' });
+  }
+
+  const [appointments, visits, prescriptions, observations] = await Promise.all([
+    prisma.appointment.count({ where: doctorWhere }),
+    prisma.visit.count({ where: doctorWhere }),
+    prisma.prescription.count({ where: doctorWhere }),
+    prisma.observation.count({ where: { doctorId: doctorWhere.doctorId } }),
+  ]);
+
+  if (appointments > 0 || visits > 0 || prescriptions > 0 || observations > 0) {
+    return res.status(400).json({ message: 'Doctor has existing records and cannot be deleted.' });
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.updateMany({ where: { doctorId: existing.doctorId }, data: { doctorId: null } });
+    await tx.doctorAvailability.deleteMany({ where: { doctorId: existing.doctorId } });
+    await tx.doctorBlackout.deleteMany({ where: { doctorId: existing.doctorId } });
+    await tx.doctor.delete({ where: { doctorId: existing.doctorId } });
+  });
+
+  res.status(204).send();
+});
+
 router.get('/:doctorId/availability', async (req: Request, res: Response) => {
     const params = doctorIdSchema.safeParse(req.params);
     if (!params.success) {

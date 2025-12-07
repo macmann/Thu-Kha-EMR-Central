@@ -502,6 +502,12 @@ export async function updateDoctor(id: string, payload: UpdateDoctorPayload): Pr
   });
 }
 
+export async function deleteDoctor(id: string): Promise<void> {
+  await fetchJSON(`/doctors/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 export function listDoctorAvailability(doctorId: string): Promise<DoctorAvailabilityResponse> {
   return fetchJSON(`/doctors/${doctorId}/availability`);
 }
