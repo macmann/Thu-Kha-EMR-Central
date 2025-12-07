@@ -202,7 +202,7 @@ router.get('/bulk-template', (_req: Request, res: Response) => {
   res.send(sampleRows.join('\n'));
 });
 
-router.post('/bulk-upload', upload.single('file'), async (req: Request, res: Response) => {
+router.post('/bulk-upload', upload.single('file'), async (req: AuthRequest, res: Response) => {
   if (!req.file) {
     return res.status(400).json({ message: 'Upload a CSV file with the doctor list.' });
   }
@@ -249,12 +249,15 @@ router.post('/bulk-upload', upload.single('file'), async (req: Request, res: Res
     errors: [],
   };
 
+  const tenantId = req.tenantId ?? null;
+
   await prisma.$transaction(async (tx) => {
     for (const doctor of doctorsByKey.values()) {
       const existing = await tx.doctor.findFirst({
         where: {
           name: { equals: doctor.name, mode: 'insensitive' },
           department: { equals: doctor.department, mode: 'insensitive' },
+          ...(tenantId ? { tenantId } : {}),
         },
         select: { doctorId: true },
       });
@@ -269,7 +272,7 @@ router.post('/bulk-upload', upload.single('file'), async (req: Request, res: Res
         result.updated += 1;
       } else {
         const created = await tx.doctor.create({
-          data: { name: doctor.name, department: doctor.department },
+          data: { name: doctor.name, department: doctor.department, tenantId },
         });
         doctorId = created.doctorId;
         result.created += 1;
@@ -307,11 +310,16 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   const where: any = {};
 
   if (req.tenantId) {
-    where.user = {
-      tenantMemberships: {
-        some: { tenantId: req.tenantId },
+    where.OR = [
+      {
+        user: {
+          tenantMemberships: {
+            some: { tenantId: req.tenantId },
+          },
+        },
       },
-    };
+      { tenantId: req.tenantId },
+    ];
   }
   if (department) {
     where.department = { contains: department, mode: 'insensitive' };
@@ -323,12 +331,12 @@ router.get('/', async (req: AuthRequest, res: Response) => {
   res.json(doctors);
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', async (req: AuthRequest, res: Response) => {
   const parsed = createSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.flatten() });
   }
-  const doctor = await prisma.doctor.create({ data: parsed.data });
+  const doctor = await prisma.doctor.create({ data: { ...parsed.data, tenantId: req.tenantId ?? null } });
   res.status(201).json(doctor);
 });
 
